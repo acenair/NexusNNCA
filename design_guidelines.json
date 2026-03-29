@@ -1,0 +1,101 @@
+{
+  "theme": "LIGHT",
+  "archetype": "Archetype 4 (Swiss & High-Contrast - Corporate Variant)",
+  "concept": "Swiss Corporate Precision. A highly functional, trust-inspiring command center for UAE compliance and audit workflows. Focuses on information clarity, objective data presentation, and rigid grid structures.",
+  "colors": {
+    "background_primary": "#FFFFFF",
+    "background_secondary": "#F8FAFC",
+    "surface": "#FFFFFF",
+    "surface_hover": "#F1F5F9",
+    "primary": "#0F172A",
+    "primary_hover": "#1E293B",
+    "accent": "#2563EB",
+    "accent_hover": "#1D4ED8",
+    "text_main": "#0F172A",
+    "text_muted": "#64748B",
+    "border": "#E2E8F0",
+    "border_focus": "#94A3B8",
+    "status": {
+      "success": "#059669",
+      "warning": "#D97706",
+      "danger": "#DC2626",
+      "info": "#0284C7"
+    }
+  },
+  "typography": {
+    "heading_font": "Outfit",
+    "body_font": "Manrope",
+    "weights": {
+      "light": 300,
+      "regular": 400,
+      "medium": 500,
+      "bold": 700
+    },
+    "scale": {
+      "h1": "text-3xl sm:text-4xl lg:text-5xl tracking-tight text-slate-900",
+      "h2": "text-2xl sm:text-3xl tracking-tight text-slate-900",
+      "h3": "text-xl sm:text-2xl text-slate-800",
+      "h4": "text-lg sm:text-xl text-slate-800",
+      "body": "text-sm md:text-base leading-relaxed text-slate-600",
+      "label": "text-xs tracking-[0.2em] uppercase font-bold text-slate-500",
+      "metric": "text-3xl sm:text-4xl font-light tracking-tighter text-slate-900"
+    }
+  },
+  "layout_and_spacing": {
+    "grid_system": "The 'Control Room' Grid",
+    "structure": "grid-cols-1 md:grid-cols-3 lg:grid-cols-4 lg:grid-cols-12",
+    "gaps": "gap-4 md:gap-6",
+    "padding_scale": "p-4, p-6, p-8 (Generous internal padding for forms and cards)",
+    "corners": "rounded-md (max 8px) for containers, rounded-sm for inputs",
+    "surfaces": "Grid Borders (Technical Look). Use flat backgrounds with 1px subtle borders (border-slate-200). Avoid soft, heavy shadows to maintain a strict, objective corporate feel."
+  },
+  "components_strategy": {
+    "framework": "React (.js) with Tailwind CSS and heavily customized Shadcn UI primitives",
+    "icons": {
+      "library": "@phosphor-icons/react",
+      "style": "Duotone or regular weight, matching text color unless indicating status",
+      "install_command": "yarn add @phosphor-icons/react"
+    },
+    "kpi_cards": "Flat background (bg-white), 1px border (border-slate-200). On hover: slight lift (-translate-y-1), shadow-sm, border darkens to border-slate-300.",
+    "ai_assistant": "Dockable/Contextual side panel. Use a strict 1px vertical border to separate from main content. AI chat bubbles must contrast strictly (e.g., user: bg-blue-50, AI: bg-slate-50).",
+    "forms_and_inputs": "Shadcn components. Native HTML inputs are forbidden for complex elements (use Shadcn Select, Calendar). Labels must be left-aligned. Use focus:ring-2 focus:ring-blue-600 focus:outline-none.",
+    "tables_and_lists": "High-density data views. Use border-b on rows. Hover state: bg-slate-50. Use clear status pills (px-2 py-1 text-xs rounded-full) for VAT/Audit/AML statuses."
+  },
+  "motion_and_interactions": {
+    "philosophy": "Minimalist micro-interactions. No bouncy or playful animations.",
+    "hover_states": "Explicitly set on all interactives. E.g., hover:bg-slate-100 hover:text-slate-900",
+    "focus_states": "High contrast ring for accessibility. focus:ring-2 focus:ring-blue-600",
+    "transitions": "transition-all duration-200 ease-in-out"
+  },
+  "media": {
+    "images": [
+      {
+        "category": "user_avatar_primary",
+        "url": "https://images.unsplash.com/photo-1576558656222-ba66febe3dec?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2MzR8MHwxfHNlYXJjaHw0fHxidXNpbmVzcyUyMHByb2Zlc3Npb25hbCUyMGhlYWRzaG90fGVufDB8fHx8MTc3NDc1NjM1MXww&ixlib=rb-4.1.0&q=85",
+        "description": "Male corporate executive profile picture"
+      },
+      {
+        "category": "user_avatar_secondary",
+        "url": "https://images.unsplash.com/photo-1689600944138-da3b150d9cb8?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2MzR8MHwxfHNlYXJjaHwxfHxidXNpbmVzcyUyMHByb2Zlc3Npb25hbCUyMGhlYWRzaG90fGVufDB8fHx8MTc3NDc1NjM1MXww&ixlib=rb-4.1.0&q=85",
+        "description": "Female corporate executive profile picture"
+      },
+      {
+        "category": "auth_background",
+        "url": "https://images.pexels.com/photos/29703226/pexels-photo-29703226.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "description": "Minimalistic blue geometric abstract shape for authentication screens"
+      }
+    ]
+  },
+  "accessibility_and_testing": {
+    "data_testid_rules": "All interactive and key informational elements MUST include a 'data-testid' attribute. Format: kebab-case, role-based (e.g., data-testid='vat-filing-submit-button').",
+    "contrast": "Ensure text contrast meets APCA/WCAG standards. Never use gray-on-gray for essential compliance data."
+  },
+  "instructions_to_main_agent": [
+    "Do not use TypeScript (.tsx), stick entirely to React JavaScript (.js) and JSX (.jsx).",
+    "Create the layout using pure HTML/Tailwind. Avoid overusing generic 'Card' wrappers if they restrict layout; use raw divs with the defined surface classes.",
+    "For the AI Compliance Assistant, build a chat interface that utilizes the 'Pastel & Soft' contrast rule internally (soft backgrounds with stark text) to differentiate it from the rigid compliance tables.",
+    "Implement navigation using a fixed left sidebar or a sticky top navigation with 'Crystal Glassmorphism' (backdrop-blur-md bg-white/80 border-b border-slate-200).",
+    "Ensure all forms for corporate services and VAT use Shadcn multi-step logic with clear progress indicators.",
+    "When applying styles, rely on the color hex codes specified via standard Tailwind palette mappings (e.g., slate-900, blue-600) rather than inventing arbitrary custom colors."
+  ]
+}
