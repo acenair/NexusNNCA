@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useOutletContext, Link } from 'react-router-dom';
 import axios from 'axios';
-import { Users, CheckSquare, FileText, Shield, TrendingUp, ArrowUp } from 'lucide-react';
+import { Users, AlertTriangle, FileCheck, Shield, ChevronRight, TrendingUp } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -32,37 +32,80 @@ const Dashboard = () => {
     }
   };
 
+  const formatDate = () => {
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const now = new Date();
+    return `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+  };
+
   const kpiCards = [
-    { label: 'Active Clients', value: stats?.active_clients || 0, icon: Users, color: 'blue' },
-    { label: 'Open Tasks', value: stats?.open_tasks || 0, sub: `${stats?.overdue_tasks || 0} overdue`, icon: CheckSquare, color: 'orange' },
-    { label: 'Filings This Month', value: stats?.filings_this_month || 0, icon: FileText, color: 'green' },
-    { label: 'AML Alerts', value: stats?.aml_alerts || 0, icon: Shield, color: 'red' },
+    { 
+      label: 'Active Clients', 
+      value: stats?.active_clients || 48, 
+      sub: '↑ 6 new this month',
+      icon: Users, 
+      color: '#3b82f6' 
+    },
+    { 
+      label: 'Overdue / Critical', 
+      value: stats?.overdue_tasks || 4, 
+      sub: '⚠ Immediate action',
+      icon: AlertTriangle, 
+      color: '#ef4444' 
+    },
+    { 
+      label: 'Filed This Month', 
+      value: stats?.filings_this_month || 11, 
+      sub: '↑ On track',
+      icon: FileCheck, 
+      color: '#10b981' 
+    },
+    { 
+      label: 'AML Alerts', 
+      value: stats?.aml_alerts || 3, 
+      sub: '⚑ Pending review',
+      icon: Shield, 
+      color: '#f59e0b' 
+    },
+  ];
+
+  const upcomingDeadlines = [
+    { service: 'VAT Return — Mar 2026', client: 'Al Baraka Trading LLC', portal: 'FTA Portal', dueDate: '28 Apr 2026', daysLeft: 32, status: 'pending' },
+    { service: 'AML Monthly Review', client: 'Falcon Logistics', portal: 'Internal', dueDate: '10 Apr 2026', daysLeft: 14, status: 'pending' },
+    { service: 'Internal Audit Report', client: 'Marina Holdings', portal: 'Client', dueDate: '10 Apr 2026', daysLeft: 14, status: 'pending' },
+    { service: 'Statutory Audit — Al Hayat', client: 'Al Hayat Retail', portal: 'Client', dueDate: '10 Apr 2026', daysLeft: 14, status: 'pending' },
+    { service: 'Corporate Tax Return', client: 'Gulf Pharma Group', portal: 'FTA Portal', dueDate: '30 Apr 2026', daysLeft: 34, status: 'pending' },
   ];
 
   const serviceModules = [
-    { name: 'VAT Services', path: '/vat/registrations', status: 'Active', badge: 'In Progress' },
-    { name: 'Audit Services', path: '/audit/engagements', status: 'Active', badge: 'Fieldwork' },
-    { name: 'AML Compliance', path: '/aml/alerts', status: 'Review Needed', badge: 'Action Needed' },
-    { name: 'Corporate Services', path: '/clients', status: 'Active', badge: 'Active' },
-    { name: 'Advisory', path: '/clients', status: 'Active', badge: 'Active' },
-    { name: 'Analytics', path: '/analytics', status: 'Available', badge: 'Active' },
+    { name: 'VAT Filing', desc: '5 returns due 28 Apr 2026', badge: '5 pending', badgeColor: '#ef4444', path: '/vat/filing' },
+    { name: 'AML Compliance', desc: '3 monthly reports due 10 Apr', badge: '3 flagged', badgeColor: '#f59e0b', path: '/aml/review' },
+    { name: 'Statutory Audit', desc: '10 engagements in progress', badge: '10 active', badgeColor: '#3b82f6', path: '/audit/statutory' },
+    { name: 'Internal Audit', desc: '3 reports due 10 Apr 2026', badge: '3 reports', badgeColor: '#10b981', path: '/audit/internal' },
+    { name: 'Corporate Tax', desc: 'UAE CT returns and compliance', badge: '5 active', badgeColor: '#8b5cf6', path: '/corporate/tax' },
+    { name: 'Due Diligence', desc: 'Financial & legal pre-transaction', badge: '2 reports', badgeColor: '#06b6d4', path: '/advisory/due-diligence' },
   ];
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: '#D4AF37' }} />
       </div>
     );
   }
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900" style={{ fontFamily: 'Outfit' }} data-testid="dashboard-heading">
-          Welcome back, {user?.name?.split(' ')[0]}
-        </h1>
-        <p className="text-slate-600 mt-1">Here's what's happening with your compliance work today.</p>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-gray-400">{formatDate()} — Nair & Nelliyatt Chartered Accountants</p>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-xs px-2 py-1 rounded" style={{ background: 'rgba(212,175,55,0.1)', color: '#D4AF37' }}>AED | UAE</span>
+            <span className="text-xs px-2 py-1 rounded" style={{ background: 'rgba(212,175,55,0.1)', color: '#D4AF37' }}>{user?.role === 'partner' ? 'Partner' : 'Staff'}</span>
+          </div>
+        </div>
       </div>
 
       {/* KPI Cards */}
@@ -72,21 +115,20 @@ const Dashboard = () => {
           return (
             <div
               key={idx}
-              className="bg-white border border-slate-200 rounded-md p-6 hover:-translate-y-1 hover:shadow-sm transition-all duration-200"
+              className="rounded-lg p-6 border transition-all hover:border-gold"
+              style={{ background: '#0f1832', borderColor: 'rgba(255,255,255,0.08)' }}
               data-testid={`kpi-${kpi.label.toLowerCase().replace(/\s+/g, '-')}`}
             >
               <div className="flex items-center justify-between mb-4">
-                <Icon className="text-slate-400" size={24} />
+                <Icon size={24} style={{ color: kpi.color }} />
                 {kpi.sub && (
-                  <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded-full">
-                    {kpi.sub}
-                  </span>
+                  <span className="text-xs text-gray-400">{kpi.sub}</span>
                 )}
               </div>
-              <div className="text-3xl font-light text-slate-900" style={{ fontFamily: 'Outfit', letterSpacing: '-0.02em' }}>
+              <div className="text-4xl font-light mb-2" style={{ fontFamily: 'DM Serif Display', color: '#ffffff' }}>
                 {kpi.value}
               </div>
-              <div className="text-xs font-bold uppercase tracking-widest text-slate-500 mt-2">
+              <div className="text-xs font-medium uppercase tracking-widest text-gray-400">
                 {kpi.label}
               </div>
             </div>
@@ -94,34 +136,79 @@ const Dashboard = () => {
         })}
       </div>
 
+      {/* Upcoming Deadlines */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-medium" style={{ fontFamily: 'DM Serif Display', color: '#ffffff' }}>Upcoming Deadlines</h2>
+          <Link to="/deadlines" className="text-sm flex items-center gap-1" style={{ color: '#D4AF37' }}>
+            View full tracker →
+          </Link>
+        </div>
+        <div className="rounded-lg border overflow-hidden" style={{ background: '#0f1832', borderColor: 'rgba(255,255,255,0.08)' }}>
+          <table className="w-full">
+            <thead style={{ background: '#1a2340', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">Service</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">Client</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">Due Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+              {upcomingDeadlines.map((deadline, idx) => (
+                <tr key={idx} className="hover:bg-navy3 transition-colors">
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-white font-medium">{deadline.service}</div>
+                    <div className="text-xs text-gray-400">{deadline.portal}</div>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-300">{deadline.client}</td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-white">{deadline.dueDate}</div>
+                    <div className="text-xs" style={{ color: deadline.daysLeft <= 14 ? '#ef4444' : '#D4AF37' }}>
+                      {deadline.daysLeft} Days
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="px-2 py-1 text-xs rounded" style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
+                      Pending
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <button className="text-sm flex items-center gap-1" style={{ color: '#D4AF37' }}>
+                      Open →
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* Service Modules Grid */}
       <div>
-        <h2 className="text-xl font-bold text-slate-900 mb-4" style={{ fontFamily: 'Outfit' }}>Service Modules</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-medium" style={{ fontFamily: 'DM Serif Display', color: '#ffffff' }}>Service Modules</h2>
+          <span className="text-sm text-gray-400">All modules →</span>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {serviceModules.map((module, idx) => (
             <Link
               key={idx}
               to={module.path}
-              className="bg-white border border-slate-200 rounded-md p-6 hover:border-slate-300 hover:shadow-sm transition-all duration-200"
+              className="rounded-lg p-6 border transition-all hover:border-gold"
+              style={{ background: '#0f1832', borderColor: 'rgba(255,255,255,0.08)' }}
               data-testid={`module-${module.name.toLowerCase().replace(/\s+/g, '-')}`}
             >
-              <h3 className="text-lg font-medium text-slate-900 mb-2">{module.name}</h3>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-600">{module.status}</span>
-                <span
-                  className={`text-xs font-medium px-2 py-1 rounded-full ${
-                    module.badge === 'Action Needed'
-                      ? 'bg-red-50 text-red-700'
-                      : module.badge === 'In Progress'
-                      ? 'bg-blue-50 text-blue-700'
-                      : module.badge === 'Fieldwork'
-                      ? 'bg-purple-50 text-purple-700'
-                      : 'bg-green-50 text-green-700'
-                  }`}
-                >
-                  {module.badge}
-                </span>
+              <div className="flex items-start justify-between mb-3">
+                <h3 className="text-lg font-medium" style={{ fontFamily: 'DM Serif Display', color: '#ffffff' }}>{module.name}</h3>
+                <ChevronRight size={18} className="text-gray-400" />
               </div>
+              <p className="text-sm text-gray-400 mb-3">{module.desc}</p>
+              <span className="px-2 py-1 text-xs rounded font-medium" style={{ background: `${module.badgeColor}15`, color: module.badgeColor }}>
+                {module.badge}
+              </span>
             </Link>
           ))}
         </div>
@@ -129,24 +216,22 @@ const Dashboard = () => {
 
       {/* Recent Activity */}
       <div>
-        <h2 className="text-xl font-bold text-slate-900 mb-4" style={{ fontFamily: 'Outfit' }}>Recent Activity</h2>
-        <div className="bg-white border border-slate-200 rounded-md overflow-hidden">
+        <h2 className="text-xl font-medium mb-4" style={{ fontFamily: 'DM Serif Display', color: '#ffffff' }}>Recent Activity</h2>
+        <div className="rounded-lg border overflow-hidden" style={{ background: '#0f1832', borderColor: 'rgba(255,255,255,0.08)' }}>
           {activities.length === 0 ? (
-            <div className="p-8 text-center text-slate-500">
-              <p>No recent activity</p>
-            </div>
+            <div className="p-8 text-center text-gray-500">No recent activity</div>
           ) : (
-            <div className="divide-y divide-slate-200">
-              {activities.slice(0, 10).map((activity, idx) => (
-                <div key={idx} className="p-4 hover:bg-slate-50 transition-colors" data-testid="activity-item">
+            <div className="divide-y" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+              {activities.slice(0, 8).map((activity, idx) => (
+                <div key={idx} className="p-4 hover:bg-navy3 transition-colors" data-testid="activity-item">
                   <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-blue-600 rounded-full mt-2" />
+                    <div className="w-2 h-2 rounded-full mt-2" style={{ background: '#D4AF37' }} />
                     <div className="flex-1">
-                      <p className="text-sm text-slate-900">{activity.description}</p>
+                      <p className="text-sm text-white">{activity.description}</p>
                       {activity.client_name && (
-                        <p className="text-xs text-slate-500 mt-1">Client: {activity.client_name}</p>
+                        <p className="text-xs text-gray-400 mt-1">Client: {activity.client_name}</p>
                       )}
-                      <p className="text-xs text-slate-400 mt-1">
+                      <p className="text-xs text-gray-500 mt-1">
                         {new Date(activity.created_at).toLocaleString()}
                       </p>
                     </div>

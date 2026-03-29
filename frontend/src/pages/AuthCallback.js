@@ -40,10 +40,10 @@ const AuthCallback = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center" style={{ background: '#0a1128' }}>
       <div className="text-center">
-        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
-        <p className="mt-4 text-slate-600">Completing sign in...</p>
+        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: '#D4AF37' }} />
+        <p className="mt-4 text-gray-400">Completing sign in...</p>
       </div>
     </div>
   );

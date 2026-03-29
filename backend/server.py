@@ -50,6 +50,8 @@ class User(BaseModel):
     user_id: str
     email: str
     name: str
+    title: Optional[str] = None
+    role: Optional[str] = None
     picture: Optional[str] = None
     created_at: str
 
@@ -252,6 +254,8 @@ async def login(email: str, password: str):
         "user_id": user_doc["user_id"],
         "email": user_doc["email"],
         "name": user_doc["name"],
+        "title": user_doc.get("title"),
+        "role": user_doc.get("role", "staff"),
         "picture": user_doc.get("picture"),
         "session_token": session_token
     }
