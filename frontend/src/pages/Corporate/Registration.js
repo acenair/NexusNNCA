@@ -1,21 +1,25 @@
 import React from 'react';
 import { useOutletContext } from 'react-router-dom';
+import ServicePage from '@/components/ServicePage';
 
 const CorporateRegistration = () => {
   const { user } = useOutletContext();
-
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-white" style={{ fontFamily: 'DM Serif Display' }}>Corporate Registration</h1>
-        <p className="text-gray-400 mt-1">Company registration in UAE mainland and free zones</p>
-      </div>
-
-      <div className="rounded-lg border p-6" style={{ background: '#0f1832', borderColor: 'rgba(255,255,255,0.08)' }}>
-        <h2 className="text-lg font-medium text-white mb-4" style={{ fontFamily: 'DM Serif Display' }}>Registration Checklist</h2>
-        <p className="text-gray-400">Corporate registration workflow will be displayed here</p>
-      </div>
-    </div>
+    <ServicePage
+      title="Corporate Registration"
+      subtitle="Company registration with UAE DED"
+      stats={[
+        { value: 'DED', label: 'Authority' },
+        { value: '5-10 Days', label: 'Timeline' },
+        { value: 'LLC/EST', label: 'Types' },
+      ]}
+      clients={[
+        { name: 'New Company Setup', sub: 'DED Registration · Jithin', status: 'In Progress', statusType: 'pill-blue', progress: 50,
+          docGroups: [
+            { title: 'Registration Documents', items: [{ label: 'MOA / AOA', done: true }, { label: 'Partner passports', done: true }, { label: 'NOC letters', done: false }, { label: 'DED application', done: false }, { label: 'Trade licence issuance', done: false }] },
+          ] },
+      ]}
+    />
   );
 };
 

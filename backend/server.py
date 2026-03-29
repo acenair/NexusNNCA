@@ -235,10 +235,14 @@ async def register(email: str, password: str, name: str):
     
     return {"user_id": user_id, "email": email, "name": name, "session_token": session_token}
 
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
 @api_router.post("/auth/login")
-async def login(email: str, password: str):
-    user_doc = await db.users.find_one({"email": email})
-    if not user_doc or not verify_password(password, user_doc.get("password", "")):
+async def login(req: LoginRequest):
+    user_doc = await db.users.find_one({"email": req.email})
+    if not user_doc or not verify_password(req.password, user_doc.get("password", "")):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
     session_token = create_jwt_token(user_doc["user_id"])
@@ -259,6 +263,11 @@ async def login(email: str, password: str):
         "picture": user_doc.get("picture"),
         "session_token": session_token
     }
+
+@api_router.get("/auth/users-list")
+async def get_users_list():
+    users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(100)
+    return [{"name": u.get("name"), "email": u.get("email"), "role": u.get("role", "staff"), "title": u.get("title", "")} for u in users]
 
 @api_router.post("/auth/session")
 async def create_session(session_id: str):
@@ -834,6 +843,36 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+async def seed_nn_users():
+    """Seed the Nair & Nelliyatt team into the database if not already present."""
+    default_password = hash_password("nn123456")
+    team = [
+        {"name": "Arjun Srinivas", "email": "arjun@nnadvisory.ae", "role": "partner", "title": "Managing Partner"},
+        {"name": "Sooraj Nelliyatt", "email": "sooraj@nnadvisory.ae", "role": "partner", "title": "Senior Partner"},
+        {"name": "Fazil", "email": "fazil@nnadvisory.ae", "role": "staff", "title": "Associate"},
+        {"name": "Subin", "email": "subin@nnadvisory.ae", "role": "staff", "title": "Associate"},
+        {"name": "Anju", "email": "anju@nnadvisory.ae", "role": "staff", "title": "Senior Associate"},
+        {"name": "Roshith", "email": "roshith@nnadvisory.ae", "role": "staff", "title": "Associate"},
+        {"name": "Thasleema", "email": "thasleema@nnadvisory.ae", "role": "staff", "title": "Senior Associate"},
+        {"name": "Jithin", "email": "jithin@nnadvisory.ae", "role": "staff", "title": "Associate"},
+        {"name": "Shamil A.", "email": "shamil@nnadvisory.ae", "role": "staff", "title": "Associate"},
+        {"name": "Akhil", "email": "akhil@nnadvisory.ae", "role": "staff", "title": "Associate"},
+        {"name": "Haritha", "email": "haritha@nnadvisory.ae", "role": "staff", "title": "Senior Associate"},
+    ]
+    for member in team:
+        existing = await db.users.find_one({"email": member["email"]})
+        if not existing:
+            await db.users.insert_one({
+                "user_id": f"user_{uuid.uuid4().hex[:12]}",
+                "email": member["email"],
+                "name": member["name"],
+                "title": member["title"],
+                "role": member["role"],
+                "password": default_password,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
+            logger.info(f"Seeded user: {member['name']}")
+
 @app.on_event("startup")
 async def startup():
     try:
@@ -841,6 +880,7 @@ async def startup():
         logger.info("Storage initialized")
     except Exception as e:
         logger.error(f"Storage init failed: {e}")
+    await seed_nn_users()
 
 @app.on_event("shutdown")
 async def shutdown_db_client():

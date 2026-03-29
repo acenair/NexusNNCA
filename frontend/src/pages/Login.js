@@ -1,45 +1,64 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 const Login = () => {
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('partner');
-  const [partnerEmail, setPartnerEmail] = useState('');
-  const [staffName, setStaffName] = useState('');
+  const [step, setStep] = useState('select');
+  const [selectedUser, setSelectedUser] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [users, setUsers] = useState([]);
+  const navigate = useNavigate();
 
-  const partners = [
-    { email: 'arjun@nairnelliyatt.ae', name: 'Arjun Srinivas', title: 'Managing Partner' },
-    { email: 'sooraj@nairnelliyatt.ae', name: 'Sooraj Nelliyatt', title: 'Partner' }
-  ];
+  useEffect(() => {
+    loadUsers();
+  }, []);
 
-  const staff = ['Fazil', 'Subin', 'Anju', 'Roshith', 'Thasleema', 'Jithin', 'Shamil Aflah', 'Akhil', 'Haritha'];
+  const loadUsers = async () => {
+    try {
+      const res = await axios.get(`${API}/auth/users-list`);
+      setUsers(res.data);
+    } catch (err) {
+      setUsers([
+        { name: 'Arjun Srinivas', email: 'arjun@nnadvisory.ae', role: 'partner', title: 'Managing Partner' },
+        { name: 'Sooraj Nelliyatt', email: 'sooraj@nnadvisory.ae', role: 'partner', title: 'Senior Partner' },
+        { name: 'Fazil', email: 'fazil@nnadvisory.ae', role: 'staff', title: 'Associate' },
+        { name: 'Subin', email: 'subin@nnadvisory.ae', role: 'staff', title: 'Associate' },
+        { name: 'Anju', email: 'anju@nnadvisory.ae', role: 'staff', title: 'Senior Associate' },
+        { name: 'Roshith', email: 'roshith@nnadvisory.ae', role: 'staff', title: 'Associate' },
+        { name: 'Thasleema', email: 'thasleema@nnadvisory.ae', role: 'staff', title: 'Senior Associate' },
+        { name: 'Jithin', email: 'jithin@nnadvisory.ae', role: 'staff', title: 'Associate' },
+        { name: 'Shamil A.', email: 'shamil@nnadvisory.ae', role: 'staff', title: 'Associate' },
+        { name: 'Akhil', email: 'akhil@nnadvisory.ae', role: 'staff', title: 'Associate' },
+        { name: 'Haritha', email: 'haritha@nnadvisory.ae', role: 'staff', title: 'Senior Associate' },
+      ]);
+    }
+  };
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  const partners = users.filter(u => u.role === 'partner');
+  const staff = users.filter(u => u.role === 'staff');
+
+  const handleLogin = async () => {
+    if (!selectedUser || !password) {
+      setError('Please select a user and enter password');
+      return;
+    }
     setLoading(true);
     setError('');
-
     try {
-      const email = activeTab === 'partner' ? partnerEmail : `${staffName.toLowerCase().replace(' ', '.')}@nairnelliyatt.ae`;
-      
-      const response = await axios.post(`${API}/auth/login`, null, {
-        params: { email, password }
-      });
-      
-      document.cookie = `session_token=${response.data.session_token}; path=/; secure; samesite=none; max-age=604800`;
-      navigate('/dashboard', { state: { user: response.data } });
+      const user = users.find(u => u.email === selectedUser);
+      const res = await axios.post(`${API}/auth/login`, {
+        email: selectedUser,
+        password: password,
+      }, { withCredentials: true });
+      if (res.data.session_token) {
+        document.cookie = `session_token=${res.data.session_token}; path=/; max-age=86400`;
+      }
+      navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.detail || 'Login failed');
     } finally {
@@ -48,101 +67,140 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(135deg, #0a1128 0%, #1a2340 100%)' }}>
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2" style={{ fontFamily: 'DM Serif Display', color: '#D4AF37' }}>Nair & Nelliyatt</h1>
-          <p className="text-gray-400" style={{ fontFamily: 'DM Sans' }}>Chartered Accountants</p>
-          <p className="text-sm text-gray-500 mt-1">Practice Management Suite</p>
+    <div style={{
+      minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'linear-gradient(135deg, #0B1526 0%, #10203e 50%, #172d52 100%)',
+      position: 'relative', overflow: 'hidden',
+    }} data-testid="login-page">
+      {/* Decorative circle */}
+      <div style={{ position: 'absolute', width: 600, height: 600, borderRadius: '50%', background: 'rgba(201,168,76,0.03)', top: '-200px', right: '-200px' }} />
+      <div style={{ position: 'absolute', width: 400, height: 400, borderRadius: '50%', background: 'rgba(201,168,76,0.02)', bottom: '-150px', left: '-100px' }} />
+
+      <div style={{ width: 420, maxWidth: '90vw', position: 'relative', zIndex: 1 }}>
+        {/* Logo */}
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <div style={{
+            width: 52, height: 52, borderRadius: 12, background: 'var(--gold)', display: 'inline-flex',
+            alignItems: 'center', justifyContent: 'center', color: '#0B1526',
+            fontFamily: 'DM Serif Display', fontSize: 20, fontWeight: 700, marginBottom: 12,
+          }}>
+            N&N
+          </div>
+          <h1 style={{ fontFamily: 'DM Serif Display', color: '#C9A84C', fontSize: 24, marginBottom: 4 }}>Nair & Nelliyatt</h1>
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', letterSpacing: 1 }}>CHARTERED ACCOUNTANTS</p>
         </div>
 
-        <div className="bg-navy2 rounded-lg border border-gray-800 shadow-2xl p-8" style={{ background: '#0f1832', borderColor: 'rgba(255,255,255,0.08)' }}>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6" style={{ background: '#1a2340' }}>
-              <TabsTrigger value="partner" data-testid="partner-tab" style={{ color: activeTab === 'partner' ? '#D4AF37' : '#8892a6' }}>Partner Login</TabsTrigger>
-              <TabsTrigger value="staff" data-testid="staff-tab" style={{ color: activeTab === 'staff' ? '#D4AF37' : '#8892a6' }}>Staff Login</TabsTrigger>
-            </TabsList>
+        {/* Login Card */}
+        <div style={{
+          background: '#fff', borderRadius: 14, padding: '28px 30px',
+          boxShadow: '0 16px 64px rgba(0,0,0,0.25)',
+        }}>
+          <h2 style={{ fontFamily: 'DM Serif Display', fontSize: 18, color: '#0B1526', marginBottom: 4 }}>Welcome Back</h2>
+          <p style={{ fontSize: 12, color: '#60718a', marginBottom: 20 }}>Sign in to your practice management dashboard</p>
 
-            <TabsContent value="partner">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div>
-                  <Label className="text-gray-300 text-sm font-medium">Select Partner</Label>
-                  <Select value={partnerEmail} onValueChange={setPartnerEmail} required>
-                    <SelectTrigger className="mt-1 bg-navy3 border-gray-700 text-white" data-testid="partner-select">
-                      <SelectValue placeholder="— Select —" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-navy2 border-gray-700">
-                      {partners.map((p) => (
-                        <SelectItem key={p.email} value={p.email} className="text-white hover:bg-navy3">
-                          {p.name} — {p.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="partner-password" className="text-gray-300 text-sm font-medium">Password</Label>
-                  <Input
-                    id="partner-password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="mt-1 bg-navy3 border-gray-700 text-white"
-                    data-testid="partner-password"
-                  />
-                </div>
-                <div className="text-xs text-gray-500 bg-navy3 p-3 rounded" style={{ background: 'rgba(212,175,55,0.05)' }}>
-                  <strong className="text-gold">Demo credentials:</strong><br />
-                  Arjun Srinivas → password: <strong className="text-white">arjun123</strong><br />
-                  Sooraj Nelliyatt → password: <strong className="text-white">sooraj123</strong>
-                </div>
-                {error && <p className="text-sm text-red-400" data-testid="login-error">{error}</p>}
-                <Button type="submit" className="w-full" disabled={loading} data-testid="partner-login-btn" style={{ background: '#D4AF37', color: '#0a1128', fontWeight: 600 }}>
-                  {loading ? 'Signing in...' : 'Sign In as Partner'}
-                </Button>
-              </form>
-            </TabsContent>
+          {error && (
+            <div style={{ padding: '8px 14px', borderRadius: 8, background: '#fef2f2', color: '#991b1b', fontSize: 12, marginBottom: 14, fontWeight: 500 }} data-testid="login-error">
+              {error}
+            </div>
+          )}
 
-            <TabsContent value="staff">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div>
-                  <Label className="text-gray-300 text-sm font-medium">Select Your Name</Label>
-                  <Select value={staffName} onValueChange={setStaffName} required>
-                    <SelectTrigger className="mt-1 bg-navy3 border-gray-700 text-white" data-testid="staff-select">
-                      <SelectValue placeholder="— Select —" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-navy2 border-gray-700">
-                      {staff.map((name) => (
-                        <SelectItem key={name} value={name} className="text-white hover:bg-navy3">
-                          {name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="staff-password" className="text-gray-300 text-sm font-medium">Password</Label>
-                  <Input
-                    id="staff-password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="mt-1 bg-navy3 border-gray-700 text-white"
-                    data-testid="staff-password"
-                  />
-                </div>
-                <div className="text-xs text-gray-500 bg-navy3 p-3 rounded" style={{ background: 'rgba(212,175,55,0.05)' }}>
-                  <strong className="text-gold">Demo:</strong> Select any name, password: <strong className="text-white">staff123</strong>
-                </div>
-                {error && <p className="text-sm text-red-400">{error}</p>}
-                <Button type="submit" className="w-full" disabled={loading} data-testid="staff-login-btn" style={{ background: '#D4AF37', color: '#0a1128', fontWeight: 600 }}>
-                  {loading ? 'Signing in...' : 'Sign In'}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
+          {/* Role Section Selection */}
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 11, fontWeight: 600, color: '#60718a', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', marginBottom: 6 }}>Select User</label>
+
+            {/* Partners */}
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ fontSize: 9, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1, color: '#C9A84C', marginBottom: 4 }}>Partners</div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {partners.map((p) => (
+                  <button
+                    key={p.email}
+                    onClick={() => setSelectedUser(p.email)}
+                    style={{
+                      flex: 1, padding: '10px 8px', borderRadius: 8,
+                      border: selectedUser === p.email ? '2px solid #C9A84C' : '1.5px solid rgba(11,21,38,0.09)',
+                      background: selectedUser === p.email ? '#faf5e8' : '#fff',
+                      cursor: 'pointer', transition: 'all 0.15s', textAlign: 'center',
+                      fontFamily: 'DM Sans',
+                    }}
+                    data-testid={`user-${p.email.split('@')[0]}`}
+                  >
+                    <div style={{
+                      width: 28, height: 28, borderRadius: '50%', background: '#C9A84C', color: '#0B1526',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontWeight: 700, fontSize: 12, margin: '0 auto 4px',
+                    }}>
+                      {p.name.charAt(0)}
+                    </div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#0B1526' }}>{p.name.split(' ')[0]}</div>
+                    <div style={{ fontSize: 9, color: '#60718a' }}>{p.title}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Staff */}
+            <div>
+              <div style={{ fontSize: 9, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1, color: '#60718a', marginBottom: 4 }}>Staff</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
+                {staff.map((s) => (
+                  <button
+                    key={s.email}
+                    onClick={() => setSelectedUser(s.email)}
+                    style={{
+                      padding: '7px 6px', borderRadius: 6,
+                      border: selectedUser === s.email ? '2px solid #C9A84C' : '1.5px solid rgba(11,21,38,0.09)',
+                      background: selectedUser === s.email ? '#faf5e8' : '#fff',
+                      cursor: 'pointer', transition: 'all 0.15s', textAlign: 'center',
+                      fontFamily: 'DM Sans',
+                    }}
+                    data-testid={`user-${s.email.split('@')[0]}`}
+                  >
+                    <div style={{ fontSize: 11, fontWeight: 500, color: '#0B1526' }}>{s.name}</div>
+                    <div style={{ fontSize: 9, color: '#60718a' }}>{s.title}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Password */}
+          <div style={{ marginBottom: 18 }}>
+            <label style={{ fontSize: 11, fontWeight: 600, color: '#60718a', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', marginBottom: 4 }}>Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter password"
+              onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+              style={{
+                width: '100%', padding: '10px 14px', borderRadius: 8,
+                border: '1.5px solid rgba(11,21,38,0.09)', fontSize: 13,
+                fontFamily: 'DM Sans', outline: 'none',
+                transition: 'border-color 0.15s',
+              }}
+              data-testid="password-input"
+            />
+          </div>
+
+          {/* Login Button */}
+          <button
+            onClick={handleLogin}
+            disabled={loading}
+            style={{
+              width: '100%', padding: '11px 0', borderRadius: 8,
+              background: loading ? '#dfc06a' : '#C9A84C', color: '#fff',
+              fontSize: 14, fontWeight: 600, border: 'none', cursor: loading ? 'default' : 'pointer',
+              fontFamily: 'DM Sans', transition: 'all 0.15s',
+            }}
+            data-testid="login-btn"
+          >
+            {loading ? 'Signing in...' : 'Sign In'}
+          </button>
+
+          <p style={{ fontSize: 10, color: '#9eafc0', textAlign: 'center', marginTop: 14 }}>
+            Nair & Nelliyatt Chartered Accountants · Practice Management
+          </p>
         </div>
       </div>
     </div>

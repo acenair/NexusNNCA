@@ -1,36 +1,36 @@
 import React from 'react';
 import { useOutletContext } from 'react-router-dom';
+import ServicePage from '@/components/ServicePage';
 
 const InternalAudit = () => {
   const { user } = useOutletContext();
-
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-white" style={{ fontFamily: 'DM Serif Display' }}>Internal Audit</h1>
-        <p className="text-gray-400 mt-1">Process review and internal control assessment</p>
-      </div>
-
-      <div className="grid grid-cols-3 gap-4">
-        <div className="p-4 rounded-lg border" style={{ background: '#0f1832', borderColor: 'rgba(255,255,255,0.08)' }}>
-          <h3 className="text-2xl font-light mb-1" style={{ fontFamily: 'DM Serif Display', color: '#3b82f6' }}>3</h3>
-          <p className="text-sm text-gray-400">Active Projects</p>
-        </div>
-        <div className="p-4 rounded-lg border" style={{ background: '#0f1832', borderColor: 'rgba(255,255,255,0.08)' }}>
-          <h3 className="text-2xl font-light mb-1" style={{ fontFamily: 'DM Serif Display', color: '#10b981' }}>2</h3>
-          <p className="text-sm text-gray-400">In Progress</p>
-        </div>
-        <div className="p-4 rounded-lg border" style={{ background: '#0f1832', borderColor: 'rgba(255,255,255,0.08)' }}>
-          <h3 className="text-2xl font-light mb-1" style={{ fontFamily: 'DM Serif Display', color: '#f59e0b' }}>1</h3>
-          <p className="text-sm text-gray-400">Report Pending</p>
-        </div>
-      </div>
-
-      <div className="rounded-lg border p-6" style={{ background: '#0f1832', borderColor: 'rgba(255,255,255,0.08)' }}>
-        <h2 className="text-lg font-medium text-white mb-4" style={{ fontFamily: 'DM Serif Display' }}>Internal Audit Checklist</h2>
-        <p className="text-gray-400">Internal audit checklist and workflow will be displayed here</p>
-      </div>
-    </div>
+    <ServicePage
+      title="Internal Audit"
+      subtitle="Process effectiveness and control review"
+      stats={[
+        { value: '3', label: 'Reports' },
+        { value: 'IIA', label: 'Standard' },
+        { value: '10 Apr', label: 'All Due' },
+      ]}
+      clients={[
+        { name: 'Falcon Logistics Co.', sub: 'Procurement & Payables · Akhil', status: 'In Progress', statusType: 'pill-blue', progress: 70,
+          info: [{ label: 'Findings', value: '7 findings' }, { label: 'Due', value: '10 Apr 2026' }],
+          docGroups: [
+            { title: 'Audit Procedures', items: [{ label: 'Process walkthrough', done: true }, { label: 'Control testing', done: true }, { label: 'Exception analysis', done: false }, { label: 'Report draft', done: false }] },
+          ] },
+        { name: 'Marina Holdings', sub: 'HR & Payroll Controls · Haritha', status: 'In Progress', statusType: 'pill-blue', progress: 55,
+          info: [{ label: 'Findings', value: '4 findings' }, { label: 'Due', value: '10 Apr 2026' }],
+          docGroups: [
+            { title: 'Audit Procedures', items: [{ label: 'Process walkthrough', done: true }, { label: 'Control testing', done: false }, { label: 'Report draft', done: false }] },
+          ] },
+        { name: 'Sunrise Holdings', sub: 'IT General Controls · Shamil A.', status: 'In Progress', statusType: 'pill-blue', progress: 30,
+          info: [{ label: 'Findings', value: 'Pending' }, { label: 'Due', value: '10 Apr 2026' }],
+          docGroups: [
+            { title: 'Audit Procedures', items: [{ label: 'Process walkthrough', done: true }, { label: 'Control testing', done: false }, { label: 'Report draft', done: false }] },
+          ] },
+      ]}
+    />
   );
 };
 

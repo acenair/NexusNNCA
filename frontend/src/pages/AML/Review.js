@@ -1,36 +1,36 @@
 import React from 'react';
 import { useOutletContext } from 'react-router-dom';
+import ServicePage from '@/components/ServicePage';
 
 const AMLReview = () => {
   const { user } = useOutletContext();
-
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-white" style={{ fontFamily: 'DM Serif Display' }}>AML Monthly Review</h1>
-        <p className="text-gray-400 mt-1">Transaction monitoring and suspicious activity screening</p>
-      </div>
-
-      <div className="grid grid-cols-3 gap-4">
-        <div className="p-4 rounded-lg border" style={{ background: '#0f1832', borderColor: 'rgba(255,255,255,0.08)' }}>
-          <h3 className="text-2xl font-light mb-1" style={{ fontFamily: 'DM Serif Display', color: '#ef4444' }}>3</h3>
-          <p className="text-sm text-gray-400">Flagged Transactions</p>
-        </div>
-        <div className="p-4 rounded-lg border" style={{ background: '#0f1832', borderColor: 'rgba(255,255,255,0.08)' }}>
-          <h3 className="text-2xl font-light mb-1" style={{ fontFamily: 'DM Serif Display', color: '#f59e0b' }}>55K</h3>
-          <p className="text-sm text-gray-400">Threshold (AED)</p>
-        </div>
-        <div className="p-4 rounded-lg border" style={{ background: '#0f1832', borderColor: 'rgba(255,255,255,0.08)' }}>
-          <h3 className="text-2xl font-light mb-1" style={{ fontFamily: 'DM Serif Display', color: '#10b981' }}>2</h3>
-          <p className="text-sm text-gray-400">Cleared</p>
-        </div>
-      </div>
-
-      <div className="rounded-lg border p-6" style={{ background: '#0f1832', borderColor: 'rgba(255,255,255,0.08)' }}>
-        <h2 className="text-lg font-medium text-white mb-4" style={{ fontFamily: 'DM Serif Display' }}>AML Review Checklist</h2>
-        <p className="text-gray-400">AML review workflow will be displayed here</p>
-      </div>
-    </div>
+    <ServicePage
+      title="Monthly AML Review"
+      subtitle="AML compliance monitoring — DNFBP obligations"
+      stats={[
+        { value: '3', label: 'Clients' },
+        { value: 'DNFBP', label: 'Category' },
+        { value: '10 Apr', label: 'All Due' },
+      ]}
+      clients={[
+        { name: 'Al Baraka Trading LLC', sub: 'March 2026 · Subin · MLRO: Arjun S.', status: 'In Progress', statusType: 'pill-blue', progress: 60,
+          info: [{ label: 'STRs', value: '1 STR filed' }, { label: 'Risk Rating', value: 'Medium' }],
+          docGroups: [
+            { title: 'AML Review Checklist', items: [{ label: 'Transaction monitoring', done: true }, { label: 'KYC update check', done: true }, { label: 'Suspicious activity review', done: false }, { label: 'MLRO sign-off', done: false }] },
+          ] },
+        { name: 'Desert Rose Trading', sub: 'March 2026 · Thasleema · MLRO: Arjun S.', status: 'In Progress', statusType: 'pill-blue', progress: 50,
+          info: [{ label: 'STRs', value: '2 STRs filed' }, { label: 'Risk Rating', value: 'High' }],
+          docGroups: [
+            { title: 'AML Review Checklist', items: [{ label: 'Transaction monitoring', done: true }, { label: 'KYC update check', done: true }, { label: 'Suspicious activity review', done: false }, { label: 'MLRO sign-off', done: false }] },
+          ] },
+        { name: 'Gulf Pharma Group', sub: 'March 2026 · Anju · MLRO: Sooraj N.', status: 'In Progress', statusType: 'pill-blue', progress: 40,
+          info: [{ label: 'STRs', value: 'None' }, { label: 'Risk Rating', value: 'Low' }],
+          docGroups: [
+            { title: 'AML Review Checklist', items: [{ label: 'Transaction monitoring', done: true }, { label: 'KYC update check', done: false }, { label: 'MLRO sign-off', done: false }] },
+          ] },
+      ]}
+    />
   );
 };
 

@@ -1,36 +1,31 @@
 import React from 'react';
 import { useOutletContext } from 'react-router-dom';
+import ServicePage from '@/components/ServicePage';
 
 const DueDiligence = () => {
   const { user } = useOutletContext();
-
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-white" style={{ fontFamily: 'DM Serif Display' }}>Due Diligence</h1>
-        <p className="text-gray-400 mt-1">Financial, legal, and tax due diligence for M&A</p>
-      </div>
-
-      <div className="grid grid-cols-3 gap-4">
-        <div className="p-4 rounded-lg border" style={{ background: '#0f1832', borderColor: 'rgba(255,255,255,0.08)' }}>
-          <h3 className="text-2xl font-light mb-1" style={{ fontFamily: 'DM Serif Display', color: '#06b6d4' }}>2</h3>
-          <p className="text-sm text-gray-400">Active Projects</p>
-        </div>
-        <div className="p-4 rounded-lg border" style={{ background: '#0f1832', borderColor: 'rgba(255,255,255,0.08)' }}>
-          <h3 className="text-2xl font-light mb-1" style={{ fontFamily: 'DM Serif Display', color: '#10b981' }}>1</h3>
-          <p className="text-sm text-gray-400">Data Room Access</p>
-        </div>
-        <div className="p-4 rounded-lg border" style={{ background: '#0f1832', borderColor: 'rgba(255,255,255,0.08)' }}>
-          <h3 className="text-2xl font-light mb-1" style={{ fontFamily: 'DM Serif Display', color: '#f59e0b' }}>1</h3>
-          <p className="text-sm text-gray-400">Findings Report</p>
-        </div>
-      </div>
-
-      <div className="rounded-lg border p-6" style={{ background: '#0f1832', borderColor: 'rgba(255,255,255,0.08)' }}>
-        <h2 className="text-lg font-medium text-white mb-4" style={{ fontFamily: 'DM Serif Display' }}>Due Diligence Checklist</h2>
-        <p className="text-gray-400">Due diligence workflow will be displayed here</p>
-      </div>
-    </div>
+    <ServicePage
+      title="Due Diligence"
+      subtitle="Pre-transaction financial, tax and operational review"
+      stats={[
+        { value: '2', label: 'Active' },
+        { value: 'Phase 1', label: 'Current' },
+        { value: 'FDD/TDD', label: 'Scope' },
+      ]}
+      clients={[
+        { name: 'Target Co. Alpha', sub: 'Financial Due Diligence · Haritha', status: 'Phase 1', statusType: 'pill-blue', progress: 45,
+          info: [{ label: 'Scope', value: 'FDD + TDD' }, { label: 'Timeline', value: '4 weeks' }],
+          docGroups: [
+            { title: 'Financial DD', items: [{ label: 'Revenue analysis', done: true }, { label: 'Working capital review', done: true }, { label: 'Debt structure', done: false }, { label: 'Tax compliance check', done: false }] },
+            { title: 'Tax DD', items: [{ label: 'VAT compliance', done: true }, { label: 'CT assessment', done: false }, { label: 'Tax risk memo', done: false }] },
+          ] },
+        { name: 'Target Co. Beta', sub: 'Operational Due Diligence · Shamil A.', status: 'Phase 1', statusType: 'pill-blue', progress: 25,
+          docGroups: [
+            { title: 'Operational DD', items: [{ label: 'Business model review', done: true }, { label: 'Key contracts', done: false }, { label: 'HR assessment', done: false }] },
+          ] },
+      ]}
+    />
   );
 };
 

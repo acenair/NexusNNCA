@@ -1,36 +1,36 @@
 import React from 'react';
 import { useOutletContext } from 'react-router-dom';
+import ServicePage from '@/components/ServicePage';
 
 const CorporateTax = () => {
   const { user } = useOutletContext();
-
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-white" style={{ fontFamily: 'DM Serif Display' }}>Corporate Tax</h1>
-        <p className="text-gray-400 mt-1">UAE Corporate Tax compliance — 9% standard rate</p>
-      </div>
-
-      <div className="grid grid-cols-3 gap-4">
-        <div className="p-4 rounded-lg border" style={{ background: '#0f1832', borderColor: 'rgba(255,255,255,0.08)' }}>
-          <h3 className="text-2xl font-light mb-1" style={{ fontFamily: 'DM Serif Display', color: '#8b5cf6' }}>5</h3>
-          <p className="text-sm text-gray-400">Active CT Clients</p>
-        </div>
-        <div className="p-4 rounded-lg border" style={{ background: '#0f1832', borderColor: 'rgba(255,255,255,0.08)' }}>
-          <h3 className="text-2xl font-light mb-1" style={{ fontFamily: 'DM Serif Display', color: '#10b981' }}>3</h3>
-          <p className="text-sm text-gray-400">Filed Returns</p>
-        </div>
-        <div className="p-4 rounded-lg border" style={{ background: '#0f1832', borderColor: 'rgba(255,255,255,0.08)' }}>
-          <h3 className="text-2xl font-light mb-1" style={{ fontFamily: 'DM Serif Display', color: '#f59e0b' }}>2</h3>
-          <p className="text-sm text-gray-400">Pending</p>
-        </div>
-      </div>
-
-      <div className="rounded-lg border p-6" style={{ background: '#0f1832', borderColor: 'rgba(255,255,255,0.08)' }}>
-        <h2 className="text-lg font-medium text-white mb-4" style={{ fontFamily: 'DM Serif Display' }}>CT Return Workflow</h2>
-        <p className="text-gray-400">Corporate tax filing interface will be displayed here</p>
-      </div>
-    </div>
+    <ServicePage
+      title="Corporate Tax"
+      subtitle="UAE CT registration, compliance and returns"
+      stats={[
+        { value: '9%', label: 'CT Rate' },
+        { value: 'AED 375K', label: 'Threshold' },
+        { value: 'Jun 2023', label: 'Effective' },
+      ]}
+      clients={[
+        { name: 'Gulf Pharma Group', sub: 'CT Return · Anju', status: 'In Progress', statusType: 'pill-blue', progress: 55,
+          info: [{ label: 'Tax Period', value: 'FY 2025' }, { label: 'Due Date', value: '30 Apr 2026' }],
+          docGroups: [
+            { title: 'CT Return Process', items: [{ label: 'Financial statements', done: true }, { label: 'Tax computation', done: true }, { label: 'Transfer pricing review', done: false }, { label: 'Return filing', done: false }] },
+          ] },
+        { name: 'Al Baraka Trading LLC', sub: 'CT Compliance · Subin', status: 'In Progress', statusType: 'pill-blue', progress: 40,
+          docGroups: [
+            { title: 'CT Return Process', items: [{ label: 'Financial statements', done: true }, { label: 'Tax computation', done: false }, { label: 'Return filing', done: false }] },
+          ] },
+        { name: 'Falcon Logistics Co.', sub: 'CT Registration · Roshith', status: 'Registered', statusType: 'pill-green', progress: 100,
+          info: [{ label: 'CT Registration', value: 'Complete' }, { label: 'First Return', value: 'Dec 2026' }] },
+        { name: 'Marina Holdings', sub: 'CT Compliance · Thasleema', status: 'In Progress', statusType: 'pill-blue', progress: 35,
+          docGroups: [
+            { title: 'CT Return Process', items: [{ label: 'Financial statements', done: true }, { label: 'Tax computation', done: false }] },
+          ] },
+      ]}
+    />
   );
 };
 

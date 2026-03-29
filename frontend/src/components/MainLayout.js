@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Clock, Calendar, Star, Bell, FileText, Activity, Receipt, Building2, Briefcase, TrendingUp, Shield, LogOut } from 'lucide-react';
+import { LayoutDashboard, Clock, Calendar, Star, Bell, FileText, Activity, Receipt, Building2, Briefcase, TrendingUp, Shield, LogOut, Users, Mail, Plus } from 'lucide-react';
 import axios from 'axios';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -9,6 +9,7 @@ const API = `${BACKEND_URL}/api`;
 const MainLayout = ({ user }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -16,7 +17,8 @@ const MainLayout = ({ user }) => {
       document.cookie = 'session_token=; path=/; max-age=0';
       navigate('/login');
     } catch (error) {
-      console.error('Logout failed:', error);
+      document.cookie = 'session_token=; path=/; max-age=0';
+      navigate('/login');
     }
   };
 
@@ -76,97 +78,196 @@ const MainLayout = ({ user }) => {
     },
   ];
 
+  const getPageTitle = () => {
+    const path = location.pathname;
+    for (const section of menuSections) {
+      for (const item of section.items) {
+        if (item.path === path) return item.label;
+      }
+    }
+    return 'Dashboard';
+  };
+
   return (
-    <div className="min-h-screen flex" style={{ background: '#0a1128' }}>
-      {/* Sidebar */}
-      <aside className="w-64 flex flex-col" style={{ background: '#0f1832', borderRight: '1px solid rgba(255,255,255,0.08)', height: '100vh', position: 'sticky', top: 0 }}>
+    <div className="min-h-screen flex" style={{ height: '100vh', overflow: 'hidden' }}>
+      {/* Sidebar - Dark Navy */}
+      <aside
+        className="flex flex-col flex-shrink-0"
+        style={{
+          width: 252,
+          minWidth: 252,
+          background: 'var(--navy)',
+          borderRight: '1px solid rgba(255,255,255,0.055)',
+          height: '100vh',
+          overflowY: 'auto',
+          backgroundImage: 'linear-gradient(180deg,rgba(201,168,76,0.03) 0%,transparent 40%)',
+        }}
+        data-testid="sidebar"
+      >
         {/* Logo */}
-        <div className="p-6 border-b" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-          <h1 className="text-2xl font-bold" style={{ fontFamily: 'DM Serif Display', color: '#D4AF37' }}>N&N</h1>
-          <p className="text-xs text-gray-500 mt-1">Chartered Accountants</p>
+        <div style={{ padding: '20px 20px 14px', borderBottom: '1px solid rgba(255,255,255,0.055)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--navy)', fontFamily: 'DM Serif Display', fontWeight: 700, fontSize: 16 }}>
+              N&N
+            </div>
+            <div>
+              <div style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 15, lineHeight: 1.2 }}>Nair & Nelliyatt</div>
+              <div style={{ fontSize: 10, color: 'var(--light)', letterSpacing: 0.5 }}>Chartered Accountants</div>
+            </div>
+          </div>
         </div>
 
         {/* Partners */}
-        <div className="px-4 py-3 border-b" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-          <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Active Partners</p>
-          <div className="space-y-1">
-            <div className="text-xs text-gray-300">Arjun Srinivas</div>
-            <div className="text-xs text-gray-300">Sooraj Nelliyatt</div>
+        <div style={{ padding: '10px 20px', borderBottom: '1px solid rgba(255,255,255,0.055)' }}>
+          <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: 1.2, color: 'var(--light)', marginBottom: 6 }}>Active Partners</div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(201,168,76,0.08)', borderRadius: 6, padding: '4px 8px' }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)' }}>Arjun S.</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(201,168,76,0.08)', borderRadius: 6, padding: '4px 8px' }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)' }}>Sooraj N.</span>
+            </div>
           </div>
         </div>
-        
+
         {/* Navigation */}
-        <nav className="flex-1 p-4 overflow-y-auto">
+        <nav style={{ flex: 1, padding: '8px 10px', overflowY: 'auto' }}>
           {menuSections.map((section) => (
-            <div key={section.title} className="mb-6">
-              <p className="text-xs text-gray-500 uppercase tracking-wider mb-2 px-3">{section.title}</p>
-              <div className="space-y-1">
-                {section.items.map((item) => {
-                  if (item.partnerOnly && !isPartner) return null;
-                  
-                  const Icon = item.icon;
-                  const isActive = location.pathname === item.path;
-                  
-                  return (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      className={`flex items-center justify-between gap-3 px-3 py-2.5 rounded-md text-sm transition-all ${
-                        isActive
-                          ? 'text-navy font-medium'
-                          : 'text-gray-300 hover:text-white hover:bg-navy3'
-                      }`}
-                      style={isActive ? { background: '#D4AF37', color: '#0a1128' } : {}}
-                      data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <Icon size={16} />
-                        <span>{item.label}</span>
-                      </div>
-                      {item.badge && (
-                        <span className="px-1.5 py-0.5 text-xs rounded-full" style={{ background: isActive ? '#0a1128' : '#D4AF37', color: isActive ? '#D4AF37' : '#0a1128' }}>
-                          {item.badge}
-                        </span>
-                      )}
-                    </Link>
-                  );
-                })}
-              </div>
+            <div key={section.title} style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: 1.2, color: 'var(--light)', padding: '6px 10px 4px', fontWeight: 600 }}>{section.title}</div>
+              {section.items.map((item) => {
+                if (item.partnerOnly && !isPartner) return null;
+                const Icon = item.icon;
+                const isActive = location.pathname === item.path;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '7px 10px',
+                      borderRadius: 7,
+                      fontSize: 13,
+                      textDecoration: 'none',
+                      transition: 'all 0.15s',
+                      background: isActive ? 'var(--gold)' : 'transparent',
+                      color: isActive ? 'var(--navy)' : 'rgba(255,255,255,0.65)',
+                      fontWeight: isActive ? 600 : 400,
+                      marginBottom: 1,
+                    }}
+                    data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Icon size={15} />
+                      <span>{item.label}</span>
+                    </div>
+                    {item.badge && (
+                      <span style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        padding: '1px 7px',
+                        borderRadius: 10,
+                        background: isActive ? 'var(--navy)' : 'rgba(201,168,76,0.15)',
+                        color: isActive ? 'var(--gold)' : 'var(--gold)',
+                      }}>
+                        {item.badge}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
             </div>
           ))}
         </nav>
-        
+
         {/* User Footer */}
         {user && (
-          <div className="p-4 border-t" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: '#D4AF37', color: '#0a1128', fontWeight: 600 }}>
-                {user.name?.charAt(0) || 'U'}
+          <div style={{ padding: '12px 14px', borderTop: '1px solid rgba(255,255,255,0.055)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <div style={{
+                width: 32, height: 32, borderRadius: '50%',
+                background: 'var(--gold)', color: 'var(--navy)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontWeight: 700, fontSize: 13
+              }}>
+                {user.name?.charAt(0)}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">{user.name}</p>
-                <p className="text-xs truncate" style={{ color: '#D4AF37' }}>{user.title || user.role}</p>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.name}</div>
+                <div style={{ fontSize: 10, color: 'var(--gold)' }}>{user.title || user.role}</div>
               </div>
             </div>
             <button
               onClick={handleLogout}
-              className="w-full px-4 py-2 text-sm font-medium rounded-md transition-colors flex items-center justify-center gap-2"
-              style={{ background: 'rgba(255,255,255,0.05)', color: '#8892a6' }}
+              style={{
+                width: '100%', padding: '6px 0', borderRadius: 6,
+                background: 'rgba(255,255,255,0.05)', border: 'none',
+                color: 'var(--light)', fontSize: 12, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                transition: 'all 0.15s',
+                fontFamily: 'DM Sans, sans-serif',
+              }}
               data-testid="logout-btn"
             >
-              <LogOut size={14} />
-              Logout
+              <LogOut size={13} /> Logout
             </button>
           </div>
         )}
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto" style={{ height: '100vh' }}>
-        <div className="p-8">
+      {/* Main Content Area - Light Theme */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', minWidth: 0 }}>
+        {/* Topbar */}
+        <header
+          style={{
+            background: 'var(--white)',
+            borderBottom: '1px solid var(--nn-border)',
+            padding: '0 24px',
+            height: 56,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexShrink: 0,
+            zIndex: 20,
+            boxShadow: '0 1px 0 var(--nn-border)',
+          }}
+          data-testid="topbar"
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <h2 style={{ fontSize: 17, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>{getPageTitle()}</h2>
+            <span style={{ fontSize: 11, color: 'var(--muted)' }}>
+              {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            </span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {isPartner && (
+              <>
+                <button className="tbtn tbtn-green" data-testid="topbar-meeting-btn">
+                  <Users size={13} /> + Meeting
+                </button>
+                <button className="tbtn tbtn-blue" data-testid="topbar-followup-btn">
+                  <Mail size={13} /> Follow-up
+                </button>
+                <button className="tbtn" style={{ background: 'var(--gold5)', color: 'var(--gold4)' }} data-testid="topbar-appreciate-btn">
+                  <Star size={13} /> Appreciate Staff
+                </button>
+              </>
+            )}
+            <button className="tbtn tbtn-gold" data-testid="topbar-newtask-btn">
+              <Plus size={13} /> New Task
+            </button>
+          </div>
+        </header>
+
+        {/* View Content */}
+        <main style={{ flex: 1, overflowY: 'auto', padding: '22px 24px', background: 'var(--off)' }}>
           <Outlet context={{ user }} />
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 };

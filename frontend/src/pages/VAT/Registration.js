@@ -1,21 +1,27 @@
 import React from 'react';
 import { useOutletContext } from 'react-router-dom';
+import ServicePage from '@/components/ServicePage';
 
 const VATRegistration = () => {
   const { user } = useOutletContext();
-
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-white" style={{ fontFamily: 'DM Serif Display' }}>VAT Registration</h1>
-        <p className="text-gray-400 mt-1">FTA VAT registration process — thresholds: AED 375K (mandatory) | 187.5K (voluntary)</p>
-      </div>
-
-      <div className="rounded-lg border p-6" style={{ background: '#0f1832', borderColor: 'rgba(255,255,255,0.08)' }}>
-        <h2 className="text-lg font-medium text-white mb-4" style={{ fontFamily: 'DM Serif Display' }}>Registration Checklist</h2>
-        <p className="text-gray-400">VAT registration workflow will be displayed here</p>
-      </div>
-    </div>
+    <ServicePage
+      title="VAT Registration"
+      subtitle="New TRN registration with UAE Federal Tax Authority"
+      stats={[
+        { value: 'AED 375K', label: 'Threshold' },
+        { value: '20 Days', label: 'Timeline' },
+        { value: 'FTA', label: 'Authority' },
+      ]}
+      clients={[
+        { name: 'New Client Pending', sub: 'TRN Application · Subin', status: 'Pending', statusType: 'pill-amber', progress: 30,
+          info: [{ label: 'Threshold', value: 'AED 375,000' }, { label: 'Timeline', value: '20 business days' }],
+          docGroups: [
+            { title: 'Required Documents', items: [{ label: 'Trade licence copy', done: true }, { label: 'Emirates ID', done: true }, { label: 'Passport copies', done: false }, { label: 'Bank statements (6 months)', done: false }, { label: 'Turnover declaration', done: false }] },
+            { title: 'FTA Submission', items: [{ label: 'Online application', done: false }, { label: 'Document upload', done: false }, { label: 'TRN issuance', done: false }] },
+          ] },
+      ]}
+    />
   );
 };
 
