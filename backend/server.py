@@ -438,44 +438,44 @@ async def get_tasks(authorization: str = Header(None), session_token: str = Cook
     tasks = await db.tasks.find(query, {"_id": 0}).sort("due_date", 1).to_list(1000)
     return tasks
 
+class CreateTaskRequest(BaseModel):
+    title: str
+    service_module: str
+    due_date: str
+    priority: str
+    description: Optional[str] = None
+    client_id: Optional[str] = None
+    client_name: Optional[str] = None
+    assigned_to: Optional[str] = None
+    assigned_to_name: Optional[str] = None
+
 @api_router.post("/tasks")
-async def create_task(title: str, service_module: str, due_date: str, priority: str,
-                     authorization: str = Header(None), session_token: str = Cookie(None),
-                     description: Optional[str] = None, client_id: Optional[str] = None,
-                     assigned_to: Optional[str] = None):
+async def create_task(req: CreateTaskRequest,
+                     authorization: str = Header(None), session_token: str = Cookie(None)):
     user = await get_current_user(authorization, session_token)
     
     task_id = f"task_{uuid.uuid4().hex[:12]}"
     task_doc = {
         "task_id": task_id,
-        "title": title,
-        "description": description,
-        "service_module": service_module,
-        "client_id": client_id,
-        "due_date": due_date,
-        "priority": priority,
-        "assigned_to": assigned_to or user["user_id"],
+        "title": req.title,
+        "description": req.description,
+        "service_module": req.service_module,
+        "client_id": req.client_id,
+        "client_name": req.client_name,
+        "due_date": req.due_date,
+        "priority": req.priority,
+        "assigned_to": req.assigned_to or user["user_id"],
+        "assigned_to_name": req.assigned_to_name,
         "status": "Pending",
         "created_by": user["user_id"],
+        "created_by_name": user.get("name"),
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.tasks.insert_one(task_doc)
-    await log_activity("Task created", f"Created task: {title}", user["user_id"])
+    await log_activity("Task created", f"Created task: {req.title}", user["user_id"], req.client_id, req.client_name)
     
-    # Return without _id
-    return {
-        "task_id": task_id,
-        "title": title,
-        "description": description,
-        "service_module": service_module,
-        "client_id": client_id,
-        "due_date": due_date,
-        "priority": priority,
-        "assigned_to": assigned_to or user["user_id"],
-        "status": "Pending",
-        "created_by": user["user_id"],
-        "created_at": task_doc["created_at"]
-    }
+    task_doc.pop("_id", None)
+    return task_doc
 
 @api_router.patch("/tasks/{task_id}")
 async def update_task(task_id: str, status: Optional[str] = None, authorization: str = Header(None), session_token: str = Cookie(None)):
@@ -873,6 +873,35 @@ async def seed_nn_users():
             })
             logger.info(f"Seeded user: {member['name']}")
 
+async def seed_nn_clients():
+    """Seed demo clients for Nair & Nelliyatt practice."""
+    demo_clients = [
+        {"name": "Al Baraka Trading LLC", "entity_type": "LLC", "jurisdiction": "Dubai Mainland", "trn": "100234567890003", "status": "Active", "active_services": ["Statutory Audit", "VAT Filing", "AML"]},
+        {"name": "Falcon Logistics Co.", "entity_type": "LLC", "jurisdiction": "Dubai Mainland", "trn": "100456789000123", "status": "Active", "active_services": ["Statutory Audit", "VAT Filing", "Internal Audit", "AML"]},
+        {"name": "Gulf Pharma Group", "entity_type": "Group", "jurisdiction": "Abu Dhabi", "trn": "100345678900012", "status": "Active", "active_services": ["Statutory Audit", "VAT Filing", "Corporate Tax", "AML"]},
+        {"name": "Zara Tech LLC", "entity_type": "LLC", "jurisdiction": "DMCC Free Zone", "trn": "100678900012345", "status": "Active", "active_services": ["Statutory Audit", "VAT Filing"]},
+        {"name": "Sunrise Holdings", "entity_type": "Holding", "jurisdiction": "Dubai Mainland", "status": "Active", "active_services": ["Statutory Audit", "Company Formation"]},
+        {"name": "Marina Holdings", "entity_type": "LLC", "jurisdiction": "Dubai Marina", "trn": "100567890001234", "status": "Active", "active_services": ["Statutory Audit", "VAT Filing", "Internal Audit", "Corporate Tax"]},
+        {"name": "Desert Rose Trading", "entity_type": "LLC", "jurisdiction": "Sharjah", "status": "Active", "active_services": ["Statutory Audit", "AML", "Valuation"]},
+        {"name": "Al Hayat Retail", "entity_type": "LLC", "jurisdiction": "Dubai Mainland", "status": "Active", "active_services": ["Statutory Audit"]},
+        {"name": "Blue Horizon Co.", "entity_type": "LLC", "jurisdiction": "Ajman Free Zone", "status": "Active", "active_services": ["Statutory Audit"]},
+        {"name": "Bright Vision LLC", "entity_type": "LLC", "jurisdiction": "Dubai Mainland", "status": "Active", "active_services": ["Statutory Audit"]},
+    ]
+    for c in demo_clients:
+        existing = await db.clients.find_one({"name": c["name"]})
+        if not existing:
+            await db.clients.insert_one({
+                "client_id": f"client_{uuid.uuid4().hex[:12]}",
+                "name": c["name"],
+                "entity_type": c["entity_type"],
+                "jurisdiction": c.get("jurisdiction"),
+                "trn": c.get("trn"),
+                "status": c.get("status", "Active"),
+                "active_services": c.get("active_services", []),
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
+            logger.info(f"Seeded client: {c['name']}")
+
 @app.on_event("startup")
 async def startup():
     try:
@@ -881,6 +910,7 @@ async def startup():
     except Exception as e:
         logger.error(f"Storage init failed: {e}")
     await seed_nn_users()
+    await seed_nn_clients()
 
 @app.on_event("shutdown")
 async def shutdown_db_client():

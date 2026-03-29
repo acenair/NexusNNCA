@@ -67,11 +67,20 @@ Build a comprehensive practice management system for "Nair & Nelliyatt Chartered
 - **Advisory**: Valuation (2 clients), Due Diligence (2 clients)
 - **AML**: Monthly Review (3 clients), Filing (2 clients), Monthly Reports (3 clients)
 
+### Phase 8 — New Task Modal (Functional) ✅
+- "+ New Task" button in topbar opens modal from any page
+- Fields: Title, Service Module (16 options), Priority, Client (from DB), Assign To Staff (from DB), Due Date, Description
+- Client dropdown populated from /api/clients (10 seeded UAE companies)
+- Staff dropdown populated from /api/auth/users-list (9 staff members)
+- Task saved to MongoDB via POST /api/tasks (JSON body) with client_name, assigned_to_name
+- Activity logged on creation (appears in Dashboard Recent Activity panel)
+- Success confirmation with auto-close
+
 ### Auth & Backend ✅
 - Login page with user selection (partner/staff buttons)
 - JWT session-based auth with cookie
 - /api/auth/login (JSON body), /api/auth/me, /api/auth/logout, /api/auth/users-list
-- Auto-seed 11 users on startup
+- Auto-seed 11 users + 10 clients on startup
 - Dashboard stats and activities endpoints
 
 ## Test Results
