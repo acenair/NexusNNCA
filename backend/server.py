@@ -27,7 +27,7 @@ db = client[os.environ['DB_NAME']]
 
 # Environment variables
 EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY')
-JWT_SECRET = os.environ.get('JWT_SECRET', 'ca-ai-compliance-secret-key-2026')
+JWT_SECRET = os.environ['JWT_SECRET']
 JWT_ALGORITHM = 'HS256'
 
 # Object Storage
