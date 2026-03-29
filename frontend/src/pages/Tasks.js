@@ -18,6 +18,7 @@ const Tasks = () => {
   const [clients, setClients] = useState([]);
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -56,6 +57,9 @@ const Tasks = () => {
 
   const handleAdd = async (e) => {
     e.preventDefault();
+    if (submitting) return; // Prevent double submission
+    
+    setSubmitting(true);
     try {
       await axios.post(`${API}/tasks`, null, {
         params: formData,
@@ -63,9 +67,12 @@ const Tasks = () => {
       });
       setShowAdd(false);
       setFormData({ title: '', service_module: 'VAT', due_date: '', priority: 'Medium', client_id: '', description: '' });
-      loadTasks();
+      await loadTasks();
     } catch (error) {
       console.error('Failed to add task:', error);
+      alert('Failed to add task. Please try again.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -160,8 +167,8 @@ const Tasks = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" data-testid="task-submit-btn">
-                Create Task
+              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={submitting} data-testid="task-submit-btn">
+                {submitting ? 'Creating Task...' : 'Create Task'}
               </Button>
             </form>
           </DialogContent>

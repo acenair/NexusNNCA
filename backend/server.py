@@ -382,7 +382,20 @@ async def create_client(name: str, entity_type: str, authorization: str = Header
     await db.clients.insert_one(client_doc)
     await log_activity("Client added", f"Added new client: {name}", user["user_id"], client_id, name)
     
-    return client_doc
+    # Return without _id
+    return {
+        "client_id": client_id,
+        "name": name,
+        "entity_type": entity_type,
+        "jurisdiction": jurisdiction,
+        "trade_licence_no": trade_licence_no,
+        "trn": trn,
+        "aml_risk_rating": aml_risk_rating,
+        "pep_flag": False,
+        "status": "Active",
+        "active_services": [],
+        "created_at": client_doc["created_at"]
+    }
 
 @api_router.get("/clients/{client_id}")
 async def get_client(client_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
@@ -436,7 +449,20 @@ async def create_task(title: str, service_module: str, due_date: str, priority: 
     await db.tasks.insert_one(task_doc)
     await log_activity("Task created", f"Created task: {title}", user["user_id"])
     
-    return task_doc
+    # Return without _id
+    return {
+        "task_id": task_id,
+        "title": title,
+        "description": description,
+        "service_module": service_module,
+        "client_id": client_id,
+        "due_date": due_date,
+        "priority": priority,
+        "assigned_to": assigned_to or user["user_id"],
+        "status": "Pending",
+        "created_by": user["user_id"],
+        "created_at": task_doc["created_at"]
+    }
 
 @api_router.patch("/tasks/{task_id}")
 async def update_task(task_id: str, status: Optional[str] = None, authorization: str = Header(None), session_token: str = Cookie(None)):
@@ -596,7 +622,16 @@ async def create_vat_registration(client_id: str, annual_turnover: float, regist
     await db.vat_registrations.insert_one(reg_doc)
     await log_activity("VAT registration", f"VAT registration started for {client['name']}", user["user_id"], client_id, client["name"])
     
-    return reg_doc
+    # Return without _id
+    return {
+        "registration_id": reg_id,
+        "client_id": client_id,
+        "client_name": client["name"],
+        "annual_turnover": annual_turnover,
+        "registration_type": registration_type,
+        "status": "Pending Documents",
+        "created_at": reg_doc["created_at"]
+    }
 
 @api_router.get("/vat/filings")
 async def get_vat_filings(authorization: str = Header(None), session_token: str = Cookie(None)):
@@ -632,7 +667,22 @@ async def create_vat_filing(client_id: str, tax_period: str, period_end_date: st
     await db.vat_filings.insert_one(filing_doc)
     await log_activity("VAT filing", f"VAT filing created for {client['name']}", user["user_id"], client_id, client["name"])
     
-    return filing_doc
+    # Return without _id
+    return {
+        "filing_id": filing_id,
+        "client_id": client_id,
+        "client_name": client["name"],
+        "tax_period": tax_period,
+        "period_end_date": period_end_date,
+        "filing_due_date": filing_due_date,
+        "status": "Pending",
+        "box_1a": 0,
+        "box_1b": 0,
+        "box_2": 0,
+        "box_3": 0,
+        "box_4": 0,
+        "created_at": filing_doc["created_at"]
+    }
 
 @api_router.get("/audit/engagements")
 async def get_audit_engagements(authorization: str = Header(None), session_token: str = Cookie(None), engagement_type: Optional[str] = None):
@@ -667,7 +717,20 @@ async def create_audit_engagement(client_id: str, engagement_type: str, period_s
     await db.audit_engagements.insert_one(engagement_doc)
     await log_activity("Audit engagement", f"{engagement_type} audit started for {client['name']}", user["user_id"], client_id, client["name"])
     
-    return engagement_doc
+    # Return without _id
+    return {
+        "engagement_id": engagement_id,
+        "client_id": client_id,
+        "client_name": client["name"],
+        "engagement_type": engagement_type,
+        "period_start": period_start,
+        "period_end": period_end,
+        "lead_auditor": lead_auditor,
+        "phase": "Planning",
+        "risk_level": "Medium",
+        "status": "Active",
+        "created_at": engagement_doc["created_at"]
+    }
 
 @api_router.get("/aml/alerts")
 async def get_aml_alerts(authorization: str = Header(None), session_token: str = Cookie(None)):
@@ -706,7 +769,19 @@ async def create_aml_alert(client_id: str, amount: float, flag_reason: str,
     await db.aml_alerts.insert_one(alert_doc)
     await log_activity("AML flag", f"Transaction flagged for {client['name']}: AED {amount:,.2f}", user["user_id"], client_id, client["name"])
     
-    return alert_doc
+    # Return without _id
+    return {
+        "alert_id": alert_id,
+        "client_id": client_id,
+        "client_name": client["name"],
+        "transaction_id": alert_doc["transaction_id"],
+        "amount": amount,
+        "flag_reason": flag_reason,
+        "risk_score": risk_score,
+        "assigned_to": user["user_id"],
+        "status": "Flagged",
+        "created_at": alert_doc["created_at"]
+    }
 
 @api_router.patch("/aml/alerts/{alert_id}")
 async def update_aml_alert(alert_id: str, status: str, notes: Optional[str] = None,

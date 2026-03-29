@@ -16,6 +16,7 @@ const Clients = () => {
   const [clients, setClients] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -43,6 +44,9 @@ const Clients = () => {
 
   const handleAdd = async (e) => {
     e.preventDefault();
+    if (submitting) return; // Prevent double submission
+    
+    setSubmitting(true);
     try {
       await axios.post(`${API}/clients`, null, {
         params: formData,
@@ -50,9 +54,12 @@ const Clients = () => {
       });
       setShowAdd(false);
       setFormData({ name: '', entity_type: 'LLC', jurisdiction: 'Dubai', trade_licence_no: '', trn: '', aml_risk_rating: 'Low' });
-      loadClients();
+      await loadClients();
     } catch (error) {
       console.error('Failed to add client:', error);
+      alert('Failed to add client. Please try again.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -128,8 +135,8 @@ const Clients = () => {
                   data-testid="client-trn-input"
                 />
               </div>
-              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" data-testid="client-submit-btn">
-                Add Client
+              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={submitting} data-testid="client-submit-btn">
+                {submitting ? 'Adding Client...' : 'Add Client'}
               </Button>
             </form>
           </DialogContent>
