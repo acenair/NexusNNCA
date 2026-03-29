@@ -81,13 +81,12 @@ const VATRegistrations = () => {
           </Button>
           <Dialog open={showAdd} onOpenChange={setShowAdd}>
             <DialogTrigger asChild>
-          <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700" data-testid="add-vat-registration-btn">
-              <Plus size={18} className="mr-2" />
-              New Registration
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
+              <Button className="bg-blue-600 hover:bg-blue-700" data-testid="add-vat-registration-btn">
+                <Plus size={18} className="mr-2" />
+                New Registration
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
             <DialogHeader>
               <DialogTitle>New VAT Registration</DialogTitle>
             </DialogHeader>
@@ -133,6 +132,7 @@ const VATRegistrations = () => {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <div className="bg-white border border-slate-200 rounded-md overflow-hidden">
