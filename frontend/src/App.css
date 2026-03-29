@@ -1,34 +1,57 @@
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&family=Manrope:wght@300;400;500;700&display=swap');
+
+* {
+  box-sizing: border-box;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
-    }
+body {
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.App-header {
-    background-color: #0f0f10;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Outfit', sans-serif;
 }
 
-.App-link {
-    color: #61dafb;
+.App {
+  min-height: 100vh;
+  background: #FFFFFF;
 }
 
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+/* Utility classes for design system */
+.text-slate-900 { color: #0F172A; }
+.text-slate-800 { color: #1E293B; }
+.text-slate-600 { color: #475569; }
+.text-slate-500 { color: #64748B; }
+.text-blue-600 { color: #2563EB; }
+
+.bg-white { background-color: #FFFFFF; }
+.bg-slate-50 { background-color: #F8FAFC; }
+.bg-blue-50 { background-color: #EFF6FF; }
+.bg-blue-600 { background-color: #2563EB; }
+
+.border-slate-200 { border-color: #E2E8F0; }
+.border-slate-300 { border-color: #CBD5E1; }
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Table styles */
+table {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Focus states */
+.focus-ring:focus {
+  outline: none;
+  ring: 2px;
+  ring-color: #2563EB;
 }
