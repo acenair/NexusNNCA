@@ -32,10 +32,10 @@ const Dashboard = () => {
   };
 
   const kpiCards = [
-    { label: 'Active Clients', value: stats?.active_clients || 48, sub: '6 new this month', trend: 'up', color: 'var(--gold)', bg: 'var(--gold5)' },
-    { label: 'Overdue / Critical', value: stats?.overdue_tasks || 4, sub: 'Immediate action', trend: 'alert', color: 'var(--red)', bg: 'var(--red-bg)' },
-    { label: 'Filed This Month', value: stats?.filings_this_month || 11, sub: 'On track', trend: 'up', color: 'var(--green)', bg: 'var(--green-bg)' },
-    { label: 'AML Alerts', value: stats?.aml_alerts || 3, sub: 'Pending review', trend: 'warn', color: 'var(--blue)', bg: 'var(--blue-bg)' },
+    { label: 'Active Clients', value: 48, sub: '6 new this month', trend: 'up', color: 'var(--gold)', bg: 'var(--gold5)' },
+    { label: 'Overdue / Critical', value: 4, sub: 'Immediate action', trend: 'alert', color: 'var(--red)', bg: 'var(--red-bg)' },
+    { label: 'Filed This Month', value: 11, sub: 'On track', trend: 'up', color: 'var(--green)', bg: 'var(--green-bg)' },
+    { label: 'AML Alerts', value: 3, sub: 'Pending review', trend: 'warn', color: 'var(--blue)', bg: 'var(--blue-bg)' },
   ];
 
   const upcomingDeadlines = [
