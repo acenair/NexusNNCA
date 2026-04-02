@@ -30,6 +30,7 @@ Build a comprehensive practice management system for "Nair & Nelliyatt Chartered
 10. Staff Appreciation (partner-only)
 11. User seeding (11 team members)
 12. Client seeding (10 demo clients)
+13. **Client Master** — Managing Partner-only section with full client table, search/filter/sort, edit modal with all fields + 16 service toggles. RBAC enforced on both frontend (sidebar + page) and backend (PATCH 403).
 
 ## Testing Status
 - Iteration 1: 100% pass (backend + frontend)
@@ -48,7 +49,7 @@ Build a comprehensive practice management system for "Nair & Nelliyatt Chartered
 - POST /api/events, GET /api/events
 - POST /api/ai/chat, GET /api/ai/sessions, GET /api/ai/chat/{session_id}, DELETE /api/ai/chat/{session_id}
 - POST /api/appreciations
-- GET /api/clients
+- GET /api/clients, PATCH /api/clients/{client_id} (Managing Partner only)
 
 ## DB Collections
 users, clients, tasks, events, activities, appreciations, chat_messages, vat_registrations, vat_filings, audit_engagements, aml_alerts, documents, user_sessions
