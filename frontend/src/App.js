@@ -24,6 +24,7 @@ import DueDiligence from '@/pages/Advisory/DueDiligence';
 import AMLReview from '@/pages/AML/Review';
 import AMLFiling from '@/pages/AML/Filing';
 import AMLReports from '@/pages/AML/Reports';
+import AIAssistant from '@/pages/AIAssistant';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import MainLayout from '@/components/MainLayout';
 
@@ -67,6 +68,9 @@ function App() {
             <Route path="aml/review" element={<AMLReview />} />
             <Route path="aml/filing" element={<AMLFiling />} />
             <Route path="aml/reports" element={<AMLReports />} />
+            
+            {/* AI Assistant */}
+            <Route path="ai-assistant" element={<AIAssistant />} />
           </Route>
         </Routes>
       </BrowserRouter>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Clock, Calendar, Star, Bell, FileText, Activity, Receipt, Building2, Briefcase, TrendingUp, Shield, LogOut, Users, Mail, Plus, X, CheckCircle, ChevronDown, ChevronRight, Menu, PanelLeftClose } from 'lucide-react';
+import { LayoutDashboard, Clock, Calendar, Star, Bell, FileText, Activity, Receipt, Building2, Briefcase, TrendingUp, Shield, LogOut, Users, Mail, Plus, X, CheckCircle, ChevronDown, ChevronRight, Menu, PanelLeftClose, MessageSquare } from 'lucide-react';
 import axios from 'axios';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -134,6 +134,7 @@ const MainLayout = ({ user }) => {
         { path: '/calendar', label: 'Calendar', icon: Calendar },
         { path: '/appreciation', label: 'Staff Appreciation', icon: Star, partnerOnly: true },
         { path: '/reminders', label: 'Reminders', icon: Bell, badge: '5' },
+        { path: '/ai-assistant', label: 'AI Assistant', icon: MessageSquare },
       ]
     },
     {
