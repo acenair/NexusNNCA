@@ -73,7 +73,7 @@ const Dashboard = () => {
   return (
     <div className="fade-in" data-testid="dashboard-view">
       {/* KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 18 }} data-testid="kpi-row">
+      <div className="dash-kpi-grid" data-testid="kpi-row">
         {kpiCards.map((kpi, idx) => (
           <div
             key={idx}
@@ -93,7 +93,7 @@ const Dashboard = () => {
       </div>
 
       {/* Bottom Grid: Deadlines + Service Modules | Activity + Calendar */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 316px', gap: 14 }}>
+      <div className="dash-main-grid">
         {/* Left Column */}
         <div>
           {/* Upcoming Deadlines */}
@@ -141,7 +141,7 @@ const Dashboard = () => {
               <h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Service Modules</h3>
               <span className="sec-link">All modules →</span>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }} data-testid="service-modules-grid">
+            <div className="dash-modules-grid" data-testid="service-modules-grid">
               {serviceModules.map((m, idx) => (
                 <Link
                   key={idx}
@@ -214,6 +214,17 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      <style>{`
+        .dash-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
+        .dash-main-grid { display: grid; grid-template-columns: 1fr 316px; gap: 14px; }
+        .dash-modules-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        @media (max-width: 768px) {
+          .dash-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+          .dash-main-grid { grid-template-columns: 1fr; }
+          .dash-modules-grid { grid-template-columns: 1fr; }
+        }
+      `}</style>
     </div>
   );
 };

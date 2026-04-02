@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { Star, Award, TrendingUp, Users, FileText } from 'lucide-react';
+import { Star, Award, CheckCircle } from 'lucide-react';
+import axios from 'axios';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
 
 const StaffAppreciation = () => {
   const { user } = useOutletContext();
@@ -10,6 +14,10 @@ const StaffAppreciation = () => {
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedRating, setSelectedRating] = useState(0);
+  const [appreciationMonth, setAppreciationMonth] = useState('2026-03');
+  const [appreciationMessage, setAppreciationMessage] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
 
   if (user?.role !== 'partner') {
     return (
@@ -84,7 +92,7 @@ const StaffAppreciation = () => {
       </div>
 
       {/* Stats Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 11, marginBottom: 20 }} data-testid="appr-stats-row">
+      <div className="appr-stats-row" data-testid="appr-stats-row">
         {statsRow.map((s, idx) => (
           <div key={idx} className="nn-card" style={{ padding: '14px 16px' }}>
             <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.7, color: 'var(--muted)', marginBottom: 4 }}>{s.label}</div>
@@ -109,7 +117,7 @@ const StaffAppreciation = () => {
 
       {/* Team Cards Grid */}
       {activeTab === 'cards' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }} data-testid="team-cards-grid">
+        <div className="appr-team-grid" data-testid="team-cards-grid">
           {staffMembers.map((staff, idx) => (
             <div key={idx} className="nn-card" style={{ padding: 18, position: 'relative' }}>
               {/* Staff Header */}
@@ -304,7 +312,7 @@ const StaffAppreciation = () => {
 
               <div style={{ marginBottom: 14 }}>
                 <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', marginBottom: 4 }}>Month</label>
-                <input type="month" defaultValue="2026-03" style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--rs)', border: '1px solid var(--nn-border)', fontSize: 13, fontFamily: 'DM Sans' }} />
+                <input type="month" value={appreciationMonth} onChange={(e) => setAppreciationMonth(e.target.value)} style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--rs)', border: '1px solid var(--nn-border)', fontSize: 13, fontFamily: 'DM Sans' }} />
               </div>
 
               <div>
@@ -312,15 +320,42 @@ const StaffAppreciation = () => {
                 <textarea
                   placeholder="Write a personal appreciation message for this staff member..."
                   rows={3}
+                  value={appreciationMessage}
+                  onChange={(e) => setAppreciationMessage(e.target.value)}
                   style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--rs)', border: '1px solid var(--nn-border)', fontSize: 13, fontFamily: 'DM Sans', resize: 'vertical' }}
                   data-testid="appr-message"
                 />
               </div>
             </div>
-            <div className="modal-footer">
-              <button className="tbtn tbtn-outline" onClick={() => setShowAppreciationModal(false)}>Cancel</button>
-              <button className="tbtn tbtn-gold" onClick={() => setShowAppreciationModal(false)} data-testid="save-appreciation-btn">Save Appreciation</button>
-            </div>
+
+            {successMsg ? (
+              <div style={{ padding: '30px 24px', textAlign: 'center' }}>
+                <CheckCircle size={38} color="var(--green)" style={{ marginBottom: 10 }} />
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{successMsg}</div>
+              </div>
+            ) : (
+              <div className="modal-footer">
+                <button className="tbtn tbtn-outline" onClick={() => setShowAppreciationModal(false)}>Cancel</button>
+                <button className="tbtn tbtn-gold" disabled={submitting || !selectedStaff || selectedCategories.length === 0 || selectedRating === 0} style={{ opacity: (!selectedStaff || selectedCategories.length === 0 || selectedRating === 0) ? 0.5 : 1 }} onClick={async () => {
+                  if (!selectedStaff || selectedCategories.length === 0 || selectedRating === 0) return;
+                  setSubmitting(true);
+                  try {
+                    const staffEmail = staffMembers.find(s => s.name === (typeof selectedStaff === 'string' ? selectedStaff : selectedStaff.name));
+                    await axios.post(`${API}/appreciations`, {
+                      staff_email: staffEmail?.name ? `${staffEmail.name.toLowerCase().replace(/\s+/g, '').replace('.', '')}@nnadvisory.ae` : '',
+                      staff_name: typeof selectedStaff === 'string' ? selectedStaff : selectedStaff.name,
+                      categories: selectedCategories,
+                      rating: selectedRating,
+                      month: appreciationMonth,
+                      message: appreciationMessage,
+                    }, { withCredentials: true });
+                    setSuccessMsg(`Appreciation saved for ${typeof selectedStaff === 'string' ? selectedStaff : selectedStaff.name}`);
+                    setTimeout(() => { setShowAppreciationModal(false); setSuccessMsg(''); setSelectedCategories([]); setSelectedRating(0); setAppreciationMessage(''); }, 1800);
+                  } catch (err) { console.error(err); }
+                  finally { setSubmitting(false); }
+                }} data-testid="save-appreciation-btn">{submitting ? 'Saving...' : 'Save Appreciation'}</button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -384,6 +419,15 @@ const StaffAppreciation = () => {
           </div>
         </div>
       )}
+
+      <style>{`
+        .appr-stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 11px; margin-bottom: 20px; }
+        .appr-team-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+        @media (max-width: 768px) {
+          .appr-stats-row { grid-template-columns: repeat(2, 1fr); }
+          .appr-team-grid { grid-template-columns: 1fr; }
+        }
+      `}</style>
     </div>
   );
 };
