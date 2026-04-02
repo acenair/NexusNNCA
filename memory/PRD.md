@@ -76,6 +76,29 @@ Build a comprehensive practice management system for "Nair & Nelliyatt Chartered
 - Activity logged on creation (appears in Dashboard Recent Activity panel)
 - Success confirmation with auto-close
 
+### Phase 9 — All Topbar Buttons Functional ✅ (April 2, 2026)
+- **+ Meeting**: Opens scheduling modal → saves to /api/events (type: meeting) → shows success → auto-closes
+- **Follow-up**: Opens follow-up modal → saves to /api/events (type: followup) → shows success → auto-closes
+- **Appreciate Staff**: Navigates to /appreciation page
+- **Staff Appreciation**: Save Appreciation button saves to /api/appreciations (categories, rating, month, message)
+- **Calendar Events**: All 4 quick-action buttons (Meeting, Follow-up, Task, Deadline) save to backend
+- **Calendar**: Loads events from /api/events, merges with seed data, renders on grid
+
+### Phase 10 — Collapsible Sidebar + Submenus ✅ (April 2, 2026)
+- Sidebar collapse button → slim 64px icon-only mode with badge totals on each section
+- Click icon in collapsed mode → expands back to 252px
+- Section headers (Overview, Audit, VAT, Corporate, Advisory, AML) are click-to-toggle
+- Only expanded section shows sub-items; collapsed sections show chevron + total badge
+- Auto-expands section matching current route on navigation
+
+### Phase 11 — PWA + Mobile Optimization ✅ (April 2, 2026)
+- manifest.json with app name, theme color, icon
+- Service worker (sw.js) with network-first caching for static assets
+- Mobile meta tags (apple-mobile-web-app-capable, theme-color)
+- At <768px: sidebar hidden, hamburger menu appears, topbar buttons icon-only
+- Mobile sidebar overlay with backdrop blur and close button
+- Dashboard/StaffAppreciation grids stack to 2-col/1-col on mobile
+
 ### Auth & Backend ✅
 - Login page with user selection (partner/staff buttons)
 - JWT session-based auth with cookie
