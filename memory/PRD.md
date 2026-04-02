@@ -1,120 +1,54 @@
 # Nair & Nelliyatt Chartered Accountants — Practice Management System
 
 ## Original Problem Statement
-Build a comprehensive practice management system for "Nair & Nelliyatt Chartered Accountants" (UAE-based accounting firm). The user uploaded an HTML reference file (`nn_advisory (11).html`) and demanded the app look **exactly** like it, including all sections, data, and styling.
+Build a comprehensive practice management system for "Nair & Nelliyatt Chartered Accountants" based on an uploaded HTML file. Features: Dark Navy (#0a1128) and Gold (#D4AF37) theme, Partner vs. Staff RBAC, complex Dashboard KPIs, Deadline Tracker, Calendar, and specific service modules (Audit, VAT, Corporate, Advisory, AML).
+
+## Tech Stack
+- Frontend: React, Tailwind CSS, Shadcn UI, DM Serif Display + DM Sans fonts
+- Backend: FastAPI, Motor (async MongoDB), bcrypt, PyJWT
+- Database: MongoDB
+- AI: Gemini 3 Flash via emergentintegrations (Emergent LLM Key)
+- PWA: Service Worker + manifest.json
 
 ## Core Requirements
-- **Theme**: Dark Navy sidebar (#0B1526) + Gold (#C9A84C) + Light cream main content (#f7f6f3)
-- **Fonts**: DM Serif Display (headings) + DM Sans (body)
-- **Auth**: Dual-role login (Partner vs Staff) with seeded users
-- **All 11 team members**: 2 partners (Arjun Srinivas, Sooraj Nelliyatt) + 9 staff
+- Dark Navy + Gold branding throughout
+- Partner vs Staff RBAC (partners see Appreciation, Meeting, Follow-up buttons)
+- Collapsible sidebar with nested sections
+- Mobile-responsive with hamburger menu overlay
+- PWA-compliant for mobile optimization
 
-## Architecture
-- Frontend: React + Tailwind CSS + Shadcn UI (DM Serif Display / DM Sans fonts)
-- Backend: FastAPI + PyJWT + bcrypt
-- Database: MongoDB (motor async)
-- Auth: JWT session tokens, seeded users, cookie-based auth
+## Completed Features (as of 2026-04-02)
+1. Dashboard with KPI cards (Active Clients, Overdue Tasks, Filings, AML Alerts)
+2. Deadline Tracker page
+3. Calendar page — fully responsive (desktop: full events, mobile: colored dots with tap-to-reveal)
+4. Service module UI pages (Statutory Audit, Internal Audit, Stock Audit, Fraud Audit, VAT Registration/Filing/Amendments, Corporate Registration/Tax/Formation/Liquidation, Advisory Valuation/Due Diligence, AML Review/Filing/Reports)
+5. CRUD: + New Task modal, + Meeting modal, Follow-up modal, Appreciation modal — all connected to backend
+6. Collapsible sidebar with nested submenus
+7. Mobile responsive layout with hamburger menu
+8. PWA: manifest.json + service worker
+9. AI Compliance Assistant — Gemini 3 Flash, context-aware (firm clients, tasks, events, staff), session management, quick prompts
+10. Staff Appreciation (partner-only)
+11. User seeding (11 team members)
+12. Client seeding (10 demo clients)
 
-## What's Implemented (March 29, 2026)
+## Testing Status
+- Iteration 1: 100% pass (backend + frontend)
+- Iteration 2: 100% pass (backend + frontend)
+- Iteration 3: 100% pass (18/18 backend, 12/12 frontend) — AI Assistant + Calendar mobile verified
 
-### Phase 1 — Core Layout & Theme ✅
-- Dark navy sidebar with gold active state, partner indicators, section badges
-- Light cream main content area with topbar (date, action buttons)
-- Partner-only buttons in topbar (Meeting, Follow-up, Appreciate Staff)
-- Responsive sidebar navigation with all module routes
+## Backlog
+- P1: File upload for document checklists
+- P2: Push notifications for deadline reminders
+- P2: Business logic for service sub-modules (Audit, VAT, AML, etc.)
 
-### Phase 2 — Dashboard ✅
-- 4 KPI cards (Active Clients: 48, Overdue: 4, Filed: 11, AML Alerts: 3)
-- Upcoming Deadlines table (5 rows with service, client, due date, status)
-- Service Modules 2-column grid (6 modules: VAT, AML, Statutory, Internal, CT, DD)
-- Right sidebar: Recent Activity panel + Today's Schedule
+## Key API Endpoints
+- POST /api/auth/login
+- GET /api/dashboard/stats
+- POST /api/tasks, GET /api/tasks
+- POST /api/events, GET /api/events
+- POST /api/ai/chat, GET /api/ai/sessions, GET /api/ai/chat/{session_id}, DELETE /api/ai/chat/{session_id}
+- POST /api/appreciations
+- GET /api/clients
 
-### Phase 3 — Deadline Tracker ✅
-- 5 summary KPI cards (Total: 21, This Week: 0, 14 Days: 7, 30 Days: 10, Overdue: 0)
-- Workload Distribution strip (9 staff with avatars and item counts)
-- 5 filter tabs (All, Statutory, VAT, Internal Audit, AML) with counts
-- Staff filter dropdown + search input
-- 4 categorized tables: Statutory (10), VAT (5), Internal (3), AML (3)
-- Progress bars and status pills per row
-
-### Phase 4 — Calendar ✅
-- Monthly grid view with prev/next navigation
-- Event type legend (Meeting, Follow-up, Task, Deadline)
-- Events displayed on calendar cells
-- Side panel: Quick action buttons + Upcoming Events list + Monthly summary
-- New Event modal with type selection, title, date, time, client, notes
-
-### Phase 5 — Staff Appreciation ✅
-- Partner-only access (staff sees "Partner Access Only")
-- Navy gradient hero banner
-- 5 stats cards (Team Size: 9, Appreciations: 59, Avg Rating: 4.4, Tasks: 86, Top: Haritha)
-- 3 tabs: Team Cards, Staff Report, Leaderboard
-- 9 staff cards with avatar, rating, work breakdown (Audits/VAT/AML), task metrics
-- Give Appreciation modal (staff selection, 8 categories, star rating, month, message)
-- Performance Report modal (overview stats, work breakdown, task completion rate)
-- Leaderboard table sorted by rating
-
-### Phase 6 — Reminders ✅
-- Summary banner with urgent count
-- 5 reminder items with priority indicators and item counts
-- Right sidebar: Quick Links, Monthly Checklist, Key Dates
-
-### Phase 7 — All Service Detail Pages ✅
-- Reusable `ServicePage` component with banner, stats, client cards, document checklists
-- **Audit**: Statutory (4 clients), Internal (3 clients), Stock (1 client), Fraud (1 client)
-- **VAT**: Registration, Filing (4 clients), Amendments
-- **Corporate**: Registration, Tax (4 clients), Formation (3 clients), Liquidation
-- **Advisory**: Valuation (2 clients), Due Diligence (2 clients)
-- **AML**: Monthly Review (3 clients), Filing (2 clients), Monthly Reports (3 clients)
-
-### Phase 8 — New Task Modal (Functional) ✅
-- "+ New Task" button in topbar opens modal from any page
-- Fields: Title, Service Module (16 options), Priority, Client (from DB), Assign To Staff (from DB), Due Date, Description
-- Client dropdown populated from /api/clients (10 seeded UAE companies)
-- Staff dropdown populated from /api/auth/users-list (9 staff members)
-- Task saved to MongoDB via POST /api/tasks (JSON body) with client_name, assigned_to_name
-- Activity logged on creation (appears in Dashboard Recent Activity panel)
-- Success confirmation with auto-close
-
-### Phase 9 — All Topbar Buttons Functional ✅ (April 2, 2026)
-- **+ Meeting**: Opens scheduling modal → saves to /api/events (type: meeting) → shows success → auto-closes
-- **Follow-up**: Opens follow-up modal → saves to /api/events (type: followup) → shows success → auto-closes
-- **Appreciate Staff**: Navigates to /appreciation page
-- **Staff Appreciation**: Save Appreciation button saves to /api/appreciations (categories, rating, month, message)
-- **Calendar Events**: All 4 quick-action buttons (Meeting, Follow-up, Task, Deadline) save to backend
-- **Calendar**: Loads events from /api/events, merges with seed data, renders on grid
-
-### Phase 10 — Collapsible Sidebar + Submenus ✅ (April 2, 2026)
-- Sidebar collapse button → slim 64px icon-only mode with badge totals on each section
-- Click icon in collapsed mode → expands back to 252px
-- Section headers (Overview, Audit, VAT, Corporate, Advisory, AML) are click-to-toggle
-- Only expanded section shows sub-items; collapsed sections show chevron + total badge
-- Auto-expands section matching current route on navigation
-
-### Phase 11 — PWA + Mobile Optimization ✅ (April 2, 2026)
-- manifest.json with app name, theme color, icon
-- Service worker (sw.js) with network-first caching for static assets
-- Mobile meta tags (apple-mobile-web-app-capable, theme-color)
-- At <768px: sidebar hidden, hamburger menu appears, topbar buttons icon-only
-- Mobile sidebar overlay with backdrop blur and close button
-- Dashboard/StaffAppreciation grids stack to 2-col/1-col on mobile
-
-### Auth & Backend ✅
-- Login page with user selection (partner/staff buttons)
-- JWT session-based auth with cookie
-- /api/auth/login (JSON body), /api/auth/me, /api/auth/logout, /api/auth/users-list
-- Auto-seed 11 users + 10 clients on startup
-- Dashboard stats and activities endpoints
-
-## Test Results
-- Backend: 94% (17/18 tests passed)
-- Frontend: 100% (all critical flows working)
-- All 20 test scenarios: PASS
-
-## Remaining / Backlog
-- P1: Connect service detail pages to dynamic backend data (currently using static demo data)
-- P1: Backend CRUD for deadlines, calendar events, appreciations, reminders
-- P2: Real-time activity feed from backend
-- P2: RBAC refinement (Staff-specific workload views)
-- P2: File upload for document checklists
-- P3: AI assistant integration for compliance queries
+## DB Collections
+users, clients, tasks, events, activities, appreciations, chat_messages, vat_registrations, vat_filings, audit_engagements, aml_alerts, documents, user_sessions
