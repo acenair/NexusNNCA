@@ -25,6 +25,7 @@ import AMLReview from '@/pages/AML/Review';
 import AMLFiling from '@/pages/AML/Filing';
 import AMLReports from '@/pages/AML/Reports';
 import AIAssistant from '@/pages/AIAssistant';
+import ClientMaster from '@/pages/ClientMaster';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import MainLayout from '@/components/MainLayout';
 
@@ -71,6 +72,7 @@ function App() {
             
             {/* AI Assistant */}
             <Route path="ai-assistant" element={<AIAssistant />} />
+            <Route path="client-master" element={<ClientMaster />} />
           </Route>
         </Routes>
       </BrowserRouter>

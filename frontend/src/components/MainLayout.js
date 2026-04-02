@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Clock, Calendar, Star, Bell, FileText, Activity, Receipt, Building2, Briefcase, TrendingUp, Shield, LogOut, Users, Mail, Plus, X, CheckCircle, ChevronDown, ChevronRight, Menu, PanelLeftClose, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, Clock, Calendar, Star, Bell, FileText, Activity, Receipt, Building2, Briefcase, TrendingUp, Shield, LogOut, Users, Mail, Plus, X, CheckCircle, ChevronDown, ChevronRight, Menu, PanelLeftClose, MessageSquare, Database } from 'lucide-react';
 import axios from 'axios';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -63,6 +63,7 @@ const MainLayout = ({ user }) => {
   };
 
   const isPartner = user?.role === 'partner';
+  const isManagingPartner = user?.title === 'Managing Partner';
 
   const loadLists = async () => {
     if (listsLoaded) return;
@@ -135,6 +136,7 @@ const MainLayout = ({ user }) => {
         { path: '/appreciation', label: 'Staff Appreciation', icon: Star, partnerOnly: true },
         { path: '/reminders', label: 'Reminders', icon: Bell, badge: '5' },
         { path: '/ai-assistant', label: 'AI Assistant', icon: MessageSquare },
+        { path: '/client-master', label: 'Client Master', icon: Database, managingPartnerOnly: true },
       ]
     },
     {
@@ -284,6 +286,7 @@ const MainLayout = ({ user }) => {
                 <div style={{ paddingLeft: 6, marginTop: 2 }}>
                   {section.items.map((item) => {
                     if (item.partnerOnly && !isPartner) return null;
+                    if (item.managingPartnerOnly && !isManagingPartner) return null;
                     const Icon = item.icon;
                     const isActive = location.pathname === item.path;
                     return (

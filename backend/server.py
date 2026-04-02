@@ -418,6 +418,36 @@ async def get_client(client_id: str, authorization: str = Header(None), session_
         raise HTTPException(status_code=404, detail="Client not found")
     return client
 
+class UpdateClientRequest(BaseModel):
+    name: Optional[str] = None
+    entity_type: Optional[str] = None
+    jurisdiction: Optional[str] = None
+    trade_licence_no: Optional[str] = None
+    trn: Optional[str] = None
+    ct_registration_no: Optional[str] = None
+    vat_registration_date: Optional[str] = None
+    tax_period: Optional[str] = None
+    aml_risk_rating: Optional[str] = None
+    pep_flag: Optional[bool] = None
+    status: Optional[str] = None
+    active_services: Optional[List[str]] = None
+    relationship_manager_id: Optional[str] = None
+
+@api_router.patch("/clients/{client_id}")
+async def update_client(client_id: str, req: UpdateClientRequest, authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await get_current_user(authorization, session_token)
+    if user.get("title") != "Managing Partner":
+        raise HTTPException(status_code=403, detail="Only the Managing Partner can edit clients")
+    update_data = {k: v for k, v in req.model_dump().items() if v is not None}
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    result = await db.clients.update_one({"client_id": client_id}, {"$set": update_data})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Client not found")
+    updated = await db.clients.find_one({"client_id": client_id}, {"_id": 0})
+    await log_activity("Client updated", f"Updated client: {updated.get('name', client_id)}", user["user_id"], client_id, updated.get("name"))
+    return updated
+
 # ============= TASK ROUTES =============
 
 @api_router.get("/tasks")
