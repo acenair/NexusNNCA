@@ -142,15 +142,18 @@ const CalendarPage = () => {
   const inputStyle = { width: '100%', padding: '9px 12px', borderRadius: 'var(--rs)', border: '1px solid var(--nn-border)', fontSize: 13, fontFamily: 'DM Sans, sans-serif', outline: 'none', background: 'var(--white)', color: 'var(--text)' };
   const labelStyle = { fontSize: 11, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', marginBottom: 4 };
 
+  const [selectedDay, setSelectedDay] = useState(null);
+  const daysOfWeekShort = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
   return (
     <div className="fade-in" data-testid="calendar-view">
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 290px', gap: 16, alignItems: 'start' }}>
+      <div className="cal-layout">
         {/* Calendar Main */}
         <div className="nn-card" style={{ overflow: 'hidden' }}>
-          <div style={{ background: 'linear-gradient(135deg, var(--navy) 0%, var(--navy3) 100%)', padding: '18px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ background: 'linear-gradient(135deg, var(--navy) 0%, var(--navy3) 100%)', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
-              <h2 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 20, marginBottom: 2 }}>{monthName}</h2>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Nair & Nelliyatt Chartered Accountants</div>
+              <h2 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 18, marginBottom: 2 }}>{monthName}</h2>
+              <div className="cal-subtitle" style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Nair & Nelliyatt Chartered Accountants</div>
             </div>
             <div style={{ display: 'flex', gap: 6 }}>
               <button onClick={prevMonth} style={{ width: 32, height: 32, borderRadius: 6, background: 'rgba(255,255,255,0.08)', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} data-testid="cal-prev-btn"><ChevronLeft size={16} /></button>
@@ -158,7 +161,7 @@ const CalendarPage = () => {
             </div>
           </div>
 
-          <div style={{ padding: '8px 16px', background: 'var(--off)', borderBottom: '1px solid var(--nn-border)', display: 'flex', gap: 8 }}>
+          <div className="cal-legend" style={{ padding: '6px 12px', background: 'var(--off)', borderBottom: '1px solid var(--nn-border)', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {eventTypes.map(t => (
               <span key={t.key} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: t.color, fontWeight: 600 }}>
                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: t.color }} /> {t.label}
@@ -166,33 +169,79 @@ const CalendarPage = () => {
             ))}
           </div>
 
+          {/* Day headers - full names on desktop, single letter on mobile */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: 'var(--off)', borderBottom: '1px solid var(--nn-border)' }}>
-            {daysOfWeek.map(d => <div key={d} style={{ padding: '8px 0', textAlign: 'center', fontSize: 10, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>{d}</div>)}
+            {daysOfWeek.map((d, i) => (
+              <div key={d} style={{ padding: '8px 0', textAlign: 'center', fontSize: 10, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                <span className="cal-day-full">{d}</span>
+                <span className="cal-day-short">{daysOfWeekShort[i]}</span>
+              </div>
+            ))}
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
             {calendarDays.map((day, idx) => {
               const dateKey = day ? getDateKey(day) : null;
               const dayEvents = dateKey ? events[dateKey] || [] : [];
+              const isSelected = selectedDay === day;
               return (
-                <div key={idx} style={{ minHeight: 80, padding: '4px 6px', borderRight: (idx + 1) % 7 === 0 ? 'none' : '1px solid var(--nn-border)', borderBottom: '1px solid var(--nn-border)', background: day && isToday(day) ? 'rgba(201,168,76,0.06)' : 'transparent' }}>
+                <div
+                  key={idx}
+                  className="cal-cell"
+                  onClick={() => day && dayEvents.length > 0 && setSelectedDay(isSelected ? null : day)}
+                  style={{
+                    padding: '4px 4px', 
+                    borderRight: (idx + 1) % 7 === 0 ? 'none' : '1px solid var(--nn-border)', 
+                    borderBottom: '1px solid var(--nn-border)', 
+                    background: day && isToday(day) ? 'rgba(201,168,76,0.06)' : isSelected ? 'rgba(201,168,76,0.03)' : 'transparent',
+                    cursor: day && dayEvents.length > 0 ? 'pointer' : 'default',
+                  }}
+                >
                   {day && (
                     <>
-                      <div style={{ fontSize: 12, fontWeight: isToday(day) ? 700 : 400, width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: isToday(day) ? 'var(--gold)' : 'transparent', color: isToday(day) ? '#fff' : 'var(--text)', marginBottom: 3 }}>{day}</div>
-                      {dayEvents.slice(0, 2).map((ev, i) => (
-                        <div key={i} style={{ fontSize: 9, padding: '2px 4px', borderRadius: 3, marginBottom: 2, background: ev.type === 'deadline' ? 'var(--red-bg)' : ev.type === 'meeting' ? 'var(--green-bg)' : ev.type === 'followup' ? 'var(--blue-bg)' : 'var(--purple-bg)', color: ev.color, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ev.title}</div>
-                      ))}
-                      {dayEvents.length > 2 && <div style={{ fontSize: 9, color: 'var(--gold4)', fontWeight: 600 }}>+{dayEvents.length - 2} more</div>}
+                      <div style={{ fontSize: 12, fontWeight: isToday(day) ? 700 : 400, width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: isToday(day) ? 'var(--gold)' : 'transparent', color: isToday(day) ? '#fff' : 'var(--text)', marginBottom: 2 }}>{day}</div>
+                      {/* Desktop: show event titles */}
+                      <div className="cal-events-desktop">
+                        {dayEvents.slice(0, 2).map((ev, i) => (
+                          <div key={i} style={{ fontSize: 9, padding: '2px 4px', borderRadius: 3, marginBottom: 2, background: ev.type === 'deadline' ? 'var(--red-bg)' : ev.type === 'meeting' ? 'var(--green-bg)' : ev.type === 'followup' ? 'var(--blue-bg)' : 'var(--purple-bg)', color: ev.color, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ev.title}</div>
+                        ))}
+                        {dayEvents.length > 2 && <div style={{ fontSize: 9, color: 'var(--gold4)', fontWeight: 600 }}>+{dayEvents.length - 2} more</div>}
+                      </div>
+                      {/* Mobile: show colored dots */}
+                      {dayEvents.length > 0 && (
+                        <div className="cal-events-mobile" style={{ display: 'none', gap: 2, justifyContent: 'center', flexWrap: 'wrap', marginTop: 1 }}>
+                          {dayEvents.slice(0, 3).map((ev, i) => (
+                            <span key={i} style={{ width: 5, height: 5, borderRadius: '50%', background: ev.color }} />
+                          ))}
+                          {dayEvents.length > 3 && <span style={{ fontSize: 7, color: 'var(--muted)', fontWeight: 700 }}>+</span>}
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
               );
             })}
           </div>
+
+          {/* Mobile: selected day event details */}
+          {selectedDay && (
+            <div className="cal-day-detail" style={{ borderTop: '1px solid var(--nn-border)', padding: '10px 14px', background: 'var(--off)' }} data-testid="cal-day-detail">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>{getDateKey(selectedDay)}</span>
+                <button onClick={() => setSelectedDay(null)} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', display: 'flex' }}><X size={14} /></button>
+              </div>
+              {(events[getDateKey(selectedDay)] || []).map((ev, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: i < (events[getDateKey(selectedDay)]?.length || 0) - 1 ? '1px solid var(--nn-border)' : 'none' }}>
+                  <span style={{ width: 4, height: 18, borderRadius: 2, background: ev.color, flexShrink: 0 }} />
+                  <span style={{ fontSize: 12, color: 'var(--text)' }}>{ev.title}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Side Panel */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div className="cal-sidebar" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             <button className="tbtn tbtn-green" style={{ justifyContent: 'center', padding: '10px 0' }} onClick={() => openModal('meeting')} data-testid="cal-new-meeting"><Users size={13} /> Meeting</button>
             <button className="tbtn tbtn-blue" style={{ justifyContent: 'center', padding: '10px 0' }} onClick={() => openModal('followup')} data-testid="cal-new-followup"><Mail size={13} /> Follow-up</button>
@@ -235,6 +284,31 @@ const CalendarPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Responsive Calendar CSS */}
+      <style>{`
+        .cal-layout { display: grid; grid-template-columns: 1fr 290px; gap: 16px; align-items: start; }
+        .cal-cell { min-height: 80px; }
+        .cal-day-short { display: none; }
+        .cal-events-mobile { display: none !important; }
+        .cal-day-detail { display: none; }
+
+        @media (max-width: 900px) {
+          .cal-layout { grid-template-columns: 1fr !important; }
+          .cal-sidebar { order: 2; }
+        }
+        @media (max-width: 640px) {
+          .cal-cell { min-height: 44px !important; padding: 2px 1px !important; }
+          .cal-day-full { display: none; }
+          .cal-day-short { display: inline; }
+          .cal-events-desktop { display: none !important; }
+          .cal-events-mobile { display: flex !important; }
+          .cal-day-detail { display: block !important; }
+          .cal-subtitle { display: none; }
+          .cal-legend { padding: 4px 8px !important; gap: 6px !important; }
+          .cal-legend span { font-size: 9px !important; }
+        }
+      `}</style>
 
       {/* Event Modal */}
       {showEventModal && (
