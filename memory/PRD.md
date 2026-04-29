@@ -19,7 +19,7 @@ Build a comprehensive practice management system for "Nair & Nelliyatt Chartered
 
 ## Completed Features (as of 2026-04-29)
 1. Dashboard with KPI cards (Active Clients, Overdue Tasks, Filings, AML Alerts)
-2. Deadline Tracker page
+2. Deadline Tracker page (data-driven from real engagements)
 3. Calendar page — fully responsive (desktop: full events, mobile: colored dots with tap-to-reveal)
 4. Service module UI pages (Statutory Audit, Internal Audit, Stock Audit, Fraud Audit, VAT Registration/Filing/Amendments, Corporate Registration/Tax/Formation/Liquidation, Advisory Valuation/Due Diligence, AML Review/Filing/Reports)
 5. CRUD: + New Task modal, + Meeting modal, Follow-up modal, Appreciation modal — all connected to backend
@@ -43,23 +43,23 @@ Build a comprehensive practice management system for "Nair & Nelliyatt Chartered
 23. **Client Activity Timeline (360° View)** — Chronological view of all client activity: tasks, events, documents, and engagements. Accessible from Client Master via "Timeline" button. Filter chips per activity type. Stats cards.
 24. **Export/Reporting** — PDF generation for audit reports and VAT returns from any engagement. Uses fpdf2 with firm branding (gold accent line, firm name header). Includes checklist progress, status, phase info.
 25. **Engagement Detail Page** — Dedicated page for viewing/editing a specific engagement. Shows full interactive checklist with group progress bars, edit panel (status/assignee), and Export PDF button. Navigable from Deadline Tracker "Open →" buttons.
-26. **Data-Driven Deadline Tracker** — Now fetches real engagements from DB. Summary stats, workload distribution by staff, tabbed by service type, staff/search filters. Each row has clickable "Open →" that navigates to engagement detail.
+26. **Data-Driven Deadline Tracker** — Fetches real engagements from DB. Summary stats, workload distribution by staff, tabbed by service type, staff/search filters. Each row has clickable "Open →" that navigates to engagement detail.
+27. **Client Onboarding Workflow** — Multi-step wizard (5 steps: Client Details → Services → Risk & Compliance → Team & Notes → Review & Submit). Auto-creates client record (status: "Onboarding"), generates 3-6 onboarding tasks based on services, auto-creates service engagements with workflow checklists, produces document collection checklist. Partner-only access enforced. Duplicate client detection. Success screen shows counts + full document checklist.
 
 ## Testing Status
-- Iteration 1: 100% pass (backend + frontend)
-- Iteration 2: 100% pass (backend + frontend)
-- Iteration 3: 100% pass (18/18 backend, 12/12 frontend) — AI Assistant + Calendar mobile
-- Iteration 4: 100% pass (11/11 backend, 8/8 frontend) — Client Master
-- Iteration 5: 100% pass (18/18 backend, 12/12 frontend) — Settings (RBAC, Storage, Workflows) + Documents
-- Iteration 6: 100% pass (16/16 backend, 9/9 frontend) — Dynamic RBAC, Notifications, Workflow-Linked Engagements
-- Iteration 7: 100% pass (15/15 backend, all UI) — Firm & Users Settings (firm name, user management, role/password/DOJ editing)
+- Iteration 1-2: 100% pass (initial build)
+- Iteration 3: 100% pass — AI Assistant + Calendar mobile
+- Iteration 4: 100% pass — Client Master
+- Iteration 5: 100% pass — Settings (RBAC, Storage, Workflows) + Documents
+- Iteration 6: 100% pass — Dynamic RBAC, Notifications, Workflow-Linked Engagements
+- Iteration 7: 100% pass — Firm & Users Settings
+- Iteration 8: 100% pass — Client Timeline, PDF Export, Engagement Detail, Deadline Tracker
+- Iteration 9: 100% pass — Client Onboarding Workflow (7 backend + 14 frontend checkpoints)
 
 ## Backlog
-- P2: Wire storage integration to actual S3/Drive/OneDrive for file sync
+- P1: Wire storage integration to actual S3/Drive/OneDrive for file sync
 - P2: Browser push notifications (actual Web Push API integration for background notifications)
-- P3: Client activity timeline (360° view)
-- P3: Client onboarding workflow
-- P3: Export/reporting (PDF audit reports, VAT return exports)
+- P3: Backend refactoring — split server.py (2100+ lines) into modular route files
 
 ## Key API Endpoints
 - POST /api/auth/login
@@ -74,6 +74,11 @@ Build a comprehensive practice management system for "Nair & Nelliyatt Chartered
 - GET/PATCH /api/settings/rbac (Partner only)
 - GET/PATCH /api/settings/storage (Partner only)
 - GET/POST/PATCH/DELETE /api/settings/workflows (Partner only)
+- GET /api/notifications, PATCH /api/notifications/{id}/dismiss
+- GET /api/clients/{client_id}/timeline
+- GET /api/export/audit-report/{engagement_id}, GET /api/export/vat-return/{engagement_id}
+- **POST /api/onboarding** (Partner only — creates client + tasks + engagements)
+- **GET /api/onboarding/document-checklist** (Preview checklist by services & risk)
 
 ## DB Collections
-users, clients, tasks, events, activities, appreciations, chat_messages, vat_registrations, vat_filings, audit_engagements, aml_alerts, documents, user_sessions
+users, clients, tasks, events, activities, appreciations, chat_messages, vat_registrations, vat_filings, audit_engagements, aml_alerts, documents, user_sessions, service_engagements, workflows, settings, dismissed_notifications
