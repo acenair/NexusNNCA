@@ -784,6 +784,34 @@ async def upload_file(file: UploadFile = File(...), authorization: str = Header(
     
     return {"file_id": file_id, "filename": file.filename, "path": result["path"]}
 
+@api_router.get("/documents")
+async def list_documents(authorization: str = Header(None), session_token: str = Cookie(None),
+                        client_id: Optional[str] = None, document_type: Optional[str] = None):
+    user = await get_current_user(authorization, session_token)
+    query = {"is_deleted": False}
+    if client_id:
+        query["client_id"] = client_id
+    if document_type:
+        query["document_type"] = document_type
+    docs = await db.documents.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
+    # Enrich with uploader name
+    user_cache = {}
+    for doc in docs:
+        uid = doc.get("uploaded_by")
+        if uid and uid not in user_cache:
+            u = await db.users.find_one({"user_id": uid}, {"_id": 0, "name": 1})
+            user_cache[uid] = u.get("name", "Unknown") if u else "Unknown"
+        doc["uploaded_by_name"] = user_cache.get(uid, "Unknown")
+    return docs
+
+@api_router.delete("/documents/{file_id}")
+async def delete_document(file_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await get_current_user(authorization, session_token)
+    result = await db.documents.update_one({"file_id": file_id, "is_deleted": False}, {"$set": {"is_deleted": True, "deleted_at": datetime.now(timezone.utc).isoformat(), "deleted_by": user["user_id"]}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return {"message": "Document deleted"}
+
 @api_router.get("/files/{file_id}")
 async def download_file(file_id: str, authorization: str = Header(None), session_token: str = Cookie(None), auth: str = Query(None)):
     auth_header = authorization or (f"Bearer {auth}" if auth else None)
@@ -1023,6 +1051,256 @@ async def get_analytics_stats(authorization: str = Header(None), session_token: 
         "aml_alerts": aml_count
     }
 
+# ============= SERVICE ENGAGEMENTS (Unified) =============
+
+CHECKLIST_TEMPLATES = {
+    "statutory_audit": [
+        {"group": "Planning", "items": ["Engagement letter", "Risk assessment", "Audit plan", "Materiality memo", "Team briefing"]},
+        {"group": "Fieldwork", "items": ["Revenue testing", "Expense sampling", "Bank confirmations", "Inventory count", "Related party review"]},
+        {"group": "Review & Reporting", "items": ["Draft report", "Management letter", "Partner review", "Client sign-off", "Filing"]},
+    ],
+    "internal_audit": [
+        {"group": "Scoping", "items": ["Scope definition", "Risk universe update", "Audit program"]},
+        {"group": "Testing", "items": ["Control testing", "Walkthrough", "Sample testing", "Exception analysis"]},
+        {"group": "Reporting", "items": ["Draft findings", "Management response", "Final report"]},
+    ],
+    "vat_filing": [
+        {"group": "Preparation", "items": ["Data collection", "Purchase invoices review", "Sales invoices review", "Reconciliation"]},
+        {"group": "Filing", "items": ["Return preparation", "Box amounts calculation", "Review & approval", "FTA portal submission"]},
+        {"group": "Completion", "items": ["Payment confirmation", "Filing receipt archive", "Client notification"]},
+    ],
+    "vat_registration": [
+        {"group": "Documentation", "items": ["Trade licence copy", "Passport / Emirates ID", "Bank letter", "Turnover evidence"]},
+        {"group": "Submission", "items": ["FTA portal application", "Supporting docs upload", "Application review"]},
+        {"group": "Completion", "items": ["TRN issued", "Certificate archived", "Client notified"]},
+    ],
+    "corporate_tax": [
+        {"group": "Preparation", "items": ["Financial data collection", "Revenue classification", "Exempt income review", "Deduction analysis"]},
+        {"group": "Computation", "items": ["Taxable income calculation", "Tax liability computation", "Small business relief check"]},
+        {"group": "Filing", "items": ["CT return preparation", "Review & approval", "Portal submission", "Payment processing"]},
+    ],
+    "aml_review": [
+        {"group": "Client Due Diligence", "items": ["KYC documentation", "Beneficial ownership check", "PEP screening", "Sanctions screening"]},
+        {"group": "Transaction Monitoring", "items": ["Unusual transaction review", "Threshold analysis", "STR assessment"]},
+        {"group": "Reporting", "items": ["goAML report preparation", "MLRO review", "Filing submission"]},
+    ],
+}
+
+class CreateEngagementRequest(BaseModel):
+    service_type: str
+    client_id: str
+    assigned_to: Optional[str] = None
+    assigned_to_name: Optional[str] = None
+    phase: Optional[str] = None
+    notes: Optional[str] = None
+
+@api_router.post("/service/engagements")
+async def create_service_engagement(req: CreateEngagementRequest, authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await get_current_user(authorization, session_token)
+    client = await db.clients.find_one({"client_id": req.client_id}, {"_id": 0, "name": 1})
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    template = CHECKLIST_TEMPLATES.get(req.service_type, [])
+    checklist = [{"group": g["group"], "items": [{"label": item, "done": False} for item in g["items"]]} for g in template]
+
+    eng_id = f"eng_{uuid.uuid4().hex[:12]}"
+    eng_doc = {
+        "engagement_id": eng_id,
+        "service_type": req.service_type,
+        "client_id": req.client_id,
+        "client_name": client["name"],
+        "assigned_to": req.assigned_to,
+        "assigned_to_name": req.assigned_to_name,
+        "status": "Active",
+        "phase": req.phase or (checklist[0]["group"] if checklist else ""),
+        "notes": req.notes,
+        "checklist": checklist,
+        "created_by": user["user_id"],
+        "created_by_name": user.get("name"),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.service_engagements.insert_one(eng_doc)
+    eng_doc.pop("_id", None)
+    await log_activity("Engagement created", f"{req.service_type.replace('_',' ').title()} for {client['name']}", user["user_id"], req.client_id, client["name"])
+    return eng_doc
+
+@api_router.get("/service/engagements")
+async def list_service_engagements(authorization: str = Header(None), session_token: str = Cookie(None), service_type: Optional[str] = None, client_id: Optional[str] = None):
+    user = await get_current_user(authorization, session_token)
+    query = {"status": {"$ne": "Deleted"}}
+    if service_type:
+        query["service_type"] = service_type
+    if client_id:
+        query["client_id"] = client_id
+    engs = await db.service_engagements.find(query, {"_id": 0}).sort("created_at", -1).to_list(200)
+    return engs
+
+class ToggleChecklistRequest(BaseModel):
+    group_index: int
+    item_index: int
+    done: bool
+
+@api_router.patch("/service/engagements/{engagement_id}/checklist")
+async def toggle_checklist_item(engagement_id: str, req: ToggleChecklistRequest, authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await get_current_user(authorization, session_token)
+    eng = await db.service_engagements.find_one({"engagement_id": engagement_id}, {"_id": 0})
+    if not eng:
+        raise HTTPException(status_code=404, detail="Engagement not found")
+
+    checklist = eng.get("checklist", [])
+    if req.group_index < len(checklist) and req.item_index < len(checklist[req.group_index]["items"]):
+        checklist[req.group_index]["items"][req.item_index]["done"] = req.done
+
+    # Auto-update phase based on checklist progress
+    phase = checklist[0]["group"] if checklist else ""
+    for g in checklist:
+        if any(not item["done"] for item in g["items"]):
+            phase = g["group"]
+            break
+        phase = g["group"]
+
+    total = sum(len(g["items"]) for g in checklist)
+    done_count = sum(1 for g in checklist for item in g["items"] if item["done"])
+    status = "Completed" if done_count == total and total > 0 else "Active"
+
+    await db.service_engagements.update_one(
+        {"engagement_id": engagement_id},
+        {"$set": {"checklist": checklist, "phase": phase, "status": status}}
+    )
+    return {"phase": phase, "status": status, "progress": round(done_count / total * 100) if total > 0 else 0}
+
+@api_router.patch("/service/engagements/{engagement_id}")
+async def update_service_engagement(engagement_id: str, status: Optional[str] = None, phase: Optional[str] = None, assigned_to: Optional[str] = None, assigned_to_name: Optional[str] = None, authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await get_current_user(authorization, session_token)
+    update_data = {}
+    if status:
+        update_data["status"] = status
+    if phase:
+        update_data["phase"] = phase
+    if assigned_to:
+        update_data["assigned_to"] = assigned_to
+    if assigned_to_name:
+        update_data["assigned_to_name"] = assigned_to_name
+    if not update_data:
+        raise HTTPException(status_code=400, detail="Nothing to update")
+    await db.service_engagements.update_one({"engagement_id": engagement_id}, {"$set": update_data})
+    return {"message": "Engagement updated"}
+
+# ============= SETTINGS ROUTES (Partner Only) =============
+
+SECTIONS = ["overview", "audit", "vat", "corporate", "advisory", "aml"]
+
+async def require_partner(authorization, session_token):
+    user = await get_current_user(authorization, session_token)
+    if user.get("role") != "partner":
+        raise HTTPException(status_code=403, detail="Partners only")
+    return user
+
+# --- RBAC ---
+@api_router.get("/settings/rbac")
+async def get_rbac(authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await require_partner(authorization, session_token)
+    doc = await db.settings.find_one({"type": "rbac"}, {"_id": 0})
+    if not doc:
+        default = {"staff": {s: True for s in SECTIONS}, "partner": {s: True for s in SECTIONS}}
+        return {"type": "rbac", "config": default}
+    return doc
+
+class RBACUpdateRequest(BaseModel):
+    config: Dict[str, Dict[str, bool]]
+
+@api_router.patch("/settings/rbac")
+async def update_rbac(req: RBACUpdateRequest, authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await require_partner(authorization, session_token)
+    await db.settings.update_one({"type": "rbac"}, {"$set": {"type": "rbac", "config": req.config, "updated_by": user["user_id"], "updated_at": datetime.now(timezone.utc).isoformat()}}, upsert=True)
+    return {"message": "RBAC updated"}
+
+# --- Storage ---
+@api_router.get("/settings/storage")
+async def get_storage_config(authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await require_partner(authorization, session_token)
+    doc = await db.settings.find_one({"type": "storage"}, {"_id": 0})
+    if not doc:
+        return {"type": "storage", "config": {"provider": "default", "aws_s3": {}, "google_drive": {}, "onedrive": {}}}
+    return doc
+
+class StorageUpdateRequest(BaseModel):
+    config: Dict[str, Any]
+
+@api_router.patch("/settings/storage")
+async def update_storage_config(req: StorageUpdateRequest, authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await require_partner(authorization, session_token)
+    await db.settings.update_one({"type": "storage"}, {"$set": {"type": "storage", "config": req.config, "updated_by": user["user_id"], "updated_at": datetime.now(timezone.utc).isoformat()}}, upsert=True)
+    return {"message": "Storage config updated"}
+
+# --- Workflows ---
+@api_router.get("/settings/workflows")
+async def get_workflows(authorization: str = Header(None), session_token: str = Cookie(None), service_type: Optional[str] = None):
+    user = await require_partner(authorization, session_token)
+    query = {"is_deleted": {"$ne": True}}
+    if service_type:
+        query["service_type"] = service_type
+    wfs = await db.workflows.find(query, {"_id": 0}).sort("created_at", 1).to_list(200)
+    return wfs
+
+class WorkflowStep(BaseModel):
+    name: str
+    description: Optional[str] = ""
+    order: int
+
+class CreateWorkflowRequest(BaseModel):
+    name: str
+    service_type: str
+    steps: List[WorkflowStep]
+    is_preset: bool = False
+
+@api_router.post("/settings/workflows")
+async def create_workflow(req: CreateWorkflowRequest, authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await require_partner(authorization, session_token)
+    wf_id = f"wf_{uuid.uuid4().hex[:12]}"
+    wf_doc = {
+        "workflow_id": wf_id,
+        "name": req.name,
+        "service_type": req.service_type,
+        "steps": [s.model_dump() for s in req.steps],
+        "is_preset": req.is_preset,
+        "created_by": user["user_id"],
+        "created_by_name": user.get("name"),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.workflows.insert_one(wf_doc)
+    wf_doc.pop("_id", None)
+    return wf_doc
+
+class UpdateWorkflowRequest(BaseModel):
+    name: Optional[str] = None
+    steps: Optional[List[WorkflowStep]] = None
+
+@api_router.patch("/settings/workflows/{workflow_id}")
+async def update_workflow(workflow_id: str, req: UpdateWorkflowRequest, authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await require_partner(authorization, session_token)
+    update = {}
+    if req.name:
+        update["name"] = req.name
+    if req.steps is not None:
+        update["steps"] = [s.model_dump() for s in req.steps]
+    if not update:
+        raise HTTPException(status_code=400, detail="Nothing to update")
+    update["updated_at"] = datetime.now(timezone.utc).isoformat()
+    result = await db.workflows.update_one({"workflow_id": workflow_id}, {"$set": update})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+    return {"message": "Workflow updated"}
+
+@api_router.delete("/settings/workflows/{workflow_id}")
+async def delete_workflow(workflow_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await require_partner(authorization, session_token)
+    result = await db.workflows.update_one({"workflow_id": workflow_id}, {"$set": {"is_deleted": True}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+    return {"message": "Workflow deleted"}
+
 # Include router
 app.include_router(api_router)
 
@@ -1093,6 +1371,135 @@ async def seed_nn_clients():
             })
             logger.info(f"Seeded client: {c['name']}")
 
+async def seed_nn_engagements():
+    """Seed sample service engagements if none exist."""
+    existing = await db.service_engagements.count_documents({})
+    if existing > 0:
+        return
+
+    clients = await db.clients.find({}, {"_id": 0, "client_id": 1, "name": 1}).to_list(10)
+    staff = await db.users.find({"role": "staff"}, {"_id": 0, "name": 1, "email": 1}).to_list(10)
+    if not clients or not staff:
+        return
+
+    def make_checklist(svc_type, done_map):
+        template = CHECKLIST_TEMPLATES.get(svc_type, [])
+        cl = []
+        for g in template:
+            items = []
+            for item in g["items"]:
+                items.append({"label": item, "done": done_map.get(item, False)})
+            cl.append({"group": g["group"], "items": items})
+        return cl
+
+    seed_engs = [
+        {"service_type": "statutory_audit", "client_idx": 0, "staff_idx": 0, "phase": "Fieldwork",
+         "done": {"Engagement letter": True, "Risk assessment": True, "Audit plan": True, "Team briefing": True, "Revenue testing": True}},
+        {"service_type": "statutory_audit", "client_idx": 1, "staff_idx": 3, "phase": "Planning",
+         "done": {"Engagement letter": True, "Risk assessment": True}},
+        {"service_type": "statutory_audit", "client_idx": 2, "staff_idx": 4, "phase": "Fieldwork",
+         "done": {"Engagement letter": True, "Risk assessment": True, "Audit plan": True, "Materiality memo": True, "Team briefing": True, "Revenue testing": True, "Expense sampling": True, "Bank confirmations": True}},
+        {"service_type": "statutory_audit", "client_idx": 7, "staff_idx": 6, "phase": "Review & Reporting",
+         "done": {"Engagement letter": True, "Risk assessment": True, "Audit plan": True, "Materiality memo": True, "Team briefing": True, "Revenue testing": True, "Expense sampling": True, "Bank confirmations": True, "Inventory count": True, "Related party review": True, "Draft report": True, "Management letter": True}},
+        {"service_type": "vat_filing", "client_idx": 0, "staff_idx": 3, "phase": "Completion",
+         "done": {"Data collection": True, "Purchase invoices review": True, "Sales invoices review": True, "Reconciliation": True, "Return preparation": True, "Box amounts calculation": True, "Review & approval": True, "FTA portal submission": True, "Payment confirmation": True, "Filing receipt archive": True, "Client notification": True}},
+        {"service_type": "vat_filing", "client_idx": 2, "staff_idx": 4, "phase": "Completion",
+         "done": {"Data collection": True, "Purchase invoices review": True, "Sales invoices review": True, "Reconciliation": True, "Return preparation": True, "Box amounts calculation": True, "Review & approval": True, "FTA portal submission": True, "Payment confirmation": True}},
+        {"service_type": "vat_filing", "client_idx": 1, "staff_idx": 5, "phase": "Filing",
+         "done": {"Data collection": True, "Purchase invoices review": True, "Sales invoices review": True, "Reconciliation": True, "Return preparation": True}},
+        {"service_type": "vat_filing", "client_idx": 5, "staff_idx": 6, "phase": "Completion",
+         "done": {"Data collection": True, "Purchase invoices review": True, "Sales invoices review": True, "Reconciliation": True, "Return preparation": True, "Box amounts calculation": True, "Review & approval": True, "FTA portal submission": True, "Payment confirmation": True, "Filing receipt archive": True}},
+        {"service_type": "aml_review", "client_idx": 0, "staff_idx": 4, "phase": "Transaction Monitoring",
+         "done": {"KYC documentation": True, "Beneficial ownership check": True, "PEP screening": True, "Sanctions screening": True, "Unusual transaction review": True}},
+        {"service_type": "aml_review", "client_idx": 1, "staff_idx": 6, "phase": "Client Due Diligence",
+         "done": {"KYC documentation": True, "Beneficial ownership check": True}},
+        {"service_type": "corporate_tax", "client_idx": 2, "staff_idx": 4, "phase": "Computation",
+         "done": {"Financial data collection": True, "Revenue classification": True, "Exempt income review": True, "Deduction analysis": True, "Taxable income calculation": True}},
+    ]
+
+    for se in seed_engs:
+        ci = min(se["client_idx"], len(clients) - 1)
+        si = min(se["staff_idx"], len(staff) - 1)
+        checklist = make_checklist(se["service_type"], se.get("done", {}))
+        total = sum(len(g["items"]) for g in checklist)
+        done_count = sum(1 for g in checklist for item in g["items"] if item["done"])
+        await db.service_engagements.insert_one({
+            "engagement_id": f"eng_{uuid.uuid4().hex[:12]}",
+            "service_type": se["service_type"],
+            "client_id": clients[ci]["client_id"],
+            "client_name": clients[ci]["name"],
+            "assigned_to": staff[si]["email"],
+            "assigned_to_name": staff[si]["name"],
+            "status": "Completed" if done_count == total else "Active",
+            "phase": se["phase"],
+            "checklist": checklist,
+            "created_by": "system",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+    logger.info(f"Seeded {len(seed_engs)} service engagements")
+
+async def seed_preset_workflows():
+    """Seed preset workflows for each service type if none exist."""
+    existing = await db.workflows.count_documents({})
+    if existing > 0:
+        return
+    presets = [
+        {"name": "Statutory Audit Workflow", "service_type": "statutory_audit", "steps": [
+            {"name": "Engagement Letter", "description": "Issue and sign engagement letter with client", "order": 0},
+            {"name": "Risk Assessment", "description": "Assess inherent and control risks", "order": 1},
+            {"name": "Audit Planning", "description": "Develop audit plan and materiality thresholds", "order": 2},
+            {"name": "Fieldwork Execution", "description": "Perform substantive testing and controls testing", "order": 3},
+            {"name": "Review & Quality Control", "description": "Partner review of working papers", "order": 4},
+            {"name": "Draft Report", "description": "Prepare draft audit report and management letter", "order": 5},
+            {"name": "Client Sign-off", "description": "Obtain client approval and representations", "order": 6},
+            {"name": "Final Report & Filing", "description": "Issue final report and file with authorities", "order": 7},
+        ]},
+        {"name": "VAT Filing Workflow", "service_type": "vat_filing", "steps": [
+            {"name": "Data Collection", "description": "Gather sales and purchase invoices from client", "order": 0},
+            {"name": "Invoice Reconciliation", "description": "Reconcile invoices with accounting records", "order": 1},
+            {"name": "Return Preparation", "description": "Calculate box amounts and prepare VAT return", "order": 2},
+            {"name": "Partner Review", "description": "Review and approve return before submission", "order": 3},
+            {"name": "FTA Submission", "description": "Submit return via FTA portal", "order": 4},
+            {"name": "Payment Processing", "description": "Process VAT payment and confirm receipt", "order": 5},
+        ]},
+        {"name": "AML Review Workflow", "service_type": "aml_review", "steps": [
+            {"name": "KYC Documentation", "description": "Collect and verify identity documents", "order": 0},
+            {"name": "Beneficial Ownership", "description": "Identify and verify beneficial owners", "order": 1},
+            {"name": "PEP & Sanctions Screening", "description": "Screen against PEP lists and sanctions databases", "order": 2},
+            {"name": "Risk Rating", "description": "Assign client risk rating based on due diligence", "order": 3},
+            {"name": "Transaction Monitoring", "description": "Review transactions for unusual patterns", "order": 4},
+            {"name": "MLRO Review & goAML", "description": "MLRO assessment and goAML report if required", "order": 5},
+        ]},
+        {"name": "Corporate Tax Workflow", "service_type": "corporate_tax", "steps": [
+            {"name": "Financial Data Review", "description": "Review financial statements and trial balance", "order": 0},
+            {"name": "Income Classification", "description": "Classify taxable, exempt, and qualifying income", "order": 1},
+            {"name": "Tax Computation", "description": "Calculate taxable income and tax liability", "order": 2},
+            {"name": "Return Preparation", "description": "Prepare CT return with supporting schedules", "order": 3},
+            {"name": "Partner Approval", "description": "Review and sign-off by engagement partner", "order": 4},
+            {"name": "Filing & Payment", "description": "Submit via portal and process payment", "order": 5},
+        ]},
+        {"name": "Internal Audit Workflow", "service_type": "internal_audit", "steps": [
+            {"name": "Scope Definition", "description": "Define audit scope and objectives", "order": 0},
+            {"name": "Risk Assessment", "description": "Update risk universe and prioritize areas", "order": 1},
+            {"name": "Audit Program", "description": "Develop detailed testing procedures", "order": 2},
+            {"name": "Control Testing", "description": "Test operating effectiveness of controls", "order": 3},
+            {"name": "Findings & Recommendations", "description": "Document findings and propose improvements", "order": 4},
+            {"name": "Management Response", "description": "Obtain management responses to findings", "order": 5},
+            {"name": "Final Report", "description": "Issue final internal audit report", "order": 6},
+        ]},
+    ]
+    for p in presets:
+        await db.workflows.insert_one({
+            "workflow_id": f"wf_{uuid.uuid4().hex[:12]}",
+            "name": p["name"],
+            "service_type": p["service_type"],
+            "steps": p["steps"],
+            "is_preset": True,
+            "created_by": "system",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+    logger.info(f"Seeded {len(presets)} preset workflows")
+
 @app.on_event("startup")
 async def startup():
     try:
@@ -1102,6 +1509,8 @@ async def startup():
         logger.error(f"Storage init failed: {e}")
     await seed_nn_users()
     await seed_nn_clients()
+    await seed_nn_engagements()
+    await seed_preset_workflows()
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
