@@ -33,6 +33,14 @@ const MainLayout = ({ user }) => {
   const [staffList, setStaffList] = useState([]);
   const [listsLoaded, setListsLoaded] = useState(false);
 
+  // RBAC
+  const [rbacConfig, setRbacConfig] = useState(null);
+
+  // Notifications
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifPanel, setShowNotifPanel] = useState(false);
+  const [notifPermission, setNotifPermission] = useState(Notification?.permission || 'default');
+
   // Forms
   const [taskForm, setTaskForm] = useState({ title: '', service_module: '', client_id: '', client_name: '', assigned_to: '', assigned_to_name: '', due_date: '', priority: 'Medium', description: '' });
   const [eventForm, setEventForm] = useState({ title: '', date: '', time: '', client_name: '', client_id: '', assigned_to: '', assigned_to_name: '', notes: '' });
@@ -64,6 +72,51 @@ const MainLayout = ({ user }) => {
 
   const isPartner = user?.role === 'partner';
   const isManagingPartner = user?.title === 'Managing Partner';
+
+  // Fetch RBAC config + notifications on mount
+  useEffect(() => {
+    const fetchRbac = async () => {
+      try {
+        const res = await axios.get(`${API}/settings/rbac-public`, { withCredentials: true });
+        setRbacConfig(res.data.config || null);
+      } catch (e) { /* RBAC not set — show all */ }
+    };
+    const fetchNotifications = async () => {
+      try {
+        const res = await axios.get(`${API}/notifications`, { withCredentials: true });
+        setNotifications(res.data);
+      } catch (e) { /* ignore */ }
+    };
+    fetchRbac();
+    fetchNotifications();
+    // Poll notifications every 60s
+    const interval = setInterval(fetchNotifications, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const requestNotifPermission = async () => {
+    if ('Notification' in window) {
+      const perm = await Notification.requestPermission();
+      setNotifPermission(perm);
+    }
+  };
+
+  const dismissNotification = async (notifId) => {
+    try {
+      await axios.patch(`${API}/notifications/${notifId}/dismiss`, {}, { withCredentials: true });
+      setNotifications(prev => prev.filter(n => n.notification_id !== notifId));
+    } catch (e) { /* ignore */ }
+  };
+
+  // Check section access based on RBAC
+  const isSectionAllowed = (sectionTitle) => {
+    if (!rbacConfig) return true; // No RBAC set = all access
+    const role = user?.role || 'staff';
+    const sectionKey = sectionTitle.toLowerCase();
+    const roleConfig = rbacConfig[role];
+    if (!roleConfig) return true;
+    return roleConfig[sectionKey] !== false;
+  };
 
   const loadLists = async () => {
     if (listsLoaded) return;
@@ -235,7 +288,7 @@ const MainLayout = ({ user }) => {
 
       {/* Navigation */}
       <nav style={{ flex: 1, padding: collapsed && !isMobile ? '8px 6px' : '8px 10px', overflowY: 'auto' }}>
-        {menuSections.map((section) => {
+        {menuSections.filter(section => isSectionAllowed(section.title)).map((section) => {
           const SectionIcon = sectionIcons[section.title] || FileText;
           const isExpanded = expandedSections[section.title];
           const hasActiveItem = section.items.some(i => i.path === location.pathname);
@@ -394,6 +447,43 @@ const MainLayout = ({ user }) => {
                 <button className="tbtn topbar-action-btn" style={{ background: 'var(--gold5)', color: 'var(--gold4)' }} onClick={() => navigate('/appreciation')} data-testid="topbar-appreciate-btn"><Star size={13} /> <span className="btn-label">Appreciate</span></button>
               </>
             )}
+            {/* Notification Bell */}
+            <div style={{ position: 'relative' }}>
+              <button onClick={() => { setShowNotifPanel(!showNotifPanel); if (notifPermission === 'default') requestNotifPermission(); }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, display: 'flex', alignItems: 'center', position: 'relative' }} data-testid="notif-bell-btn">
+                <Bell size={18} color="var(--muted)" />
+                {notifications.length > 0 && (
+                  <span style={{ position: 'absolute', top: 2, right: 2, width: 16, height: 16, borderRadius: '50%', background: 'var(--red, #ef4444)', color: '#fff', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }} data-testid="notif-badge">{notifications.length}</span>
+                )}
+              </button>
+              {showNotifPanel && (
+                <div style={{ position: 'absolute', top: '100%', right: 0, width: 320, maxHeight: 400, background: 'var(--white)', border: '1px solid var(--nn-border)', borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.12)', zIndex: 100, overflow: 'hidden' }} data-testid="notif-panel">
+                  <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--nn-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', fontFamily: 'DM Serif Display' }}>Notifications</span>
+                    <span style={{ fontSize: 10, color: 'var(--muted)' }}>{notifications.length} pending</span>
+                  </div>
+                  <div style={{ maxHeight: 320, overflowY: 'auto' }}>
+                    {notifications.length === 0 ? (
+                      <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--muted)', fontSize: 12 }}>No pending notifications</div>
+                    ) : notifications.map(n => (
+                      <div key={n.notification_id} style={{ padding: '10px 16px', borderBottom: '1px solid var(--nn-border)', display: 'flex', alignItems: 'flex-start', gap: 10 }} data-testid={`notif-${n.notification_id}`}>
+                        <div style={{ width: 4, height: 28, borderRadius: 2, background: n.severity === 'urgent' ? 'var(--red, #ef4444)' : n.severity === 'warning' ? 'var(--gold)' : 'var(--blue, #3b82f6)', flexShrink: 0, marginTop: 2 }} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>{n.title}</div>
+                          <div style={{ fontSize: 11, color: 'var(--muted)' }}>{n.message}</div>
+                          {n.due_date && <div style={{ fontSize: 10, color: n.severity === 'urgent' ? 'var(--red, #ef4444)' : 'var(--muted)', fontWeight: 600, marginTop: 3 }}>Due: {n.due_date}</div>}
+                        </div>
+                        <button onClick={() => dismissNotification(n.notification_id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--light)', padding: 2 }} data-testid={`dismiss-${n.notification_id}`}><X size={12} /></button>
+                      </div>
+                    ))}
+                  </div>
+                  {notifPermission !== 'granted' && (
+                    <div style={{ padding: '10px 16px', borderTop: '1px solid var(--nn-border)', background: 'var(--off)' }}>
+                      <button onClick={requestNotifPermission} style={{ width: '100%', padding: '8px', borderRadius: 'var(--rs)', border: '1px solid var(--gold)', background: 'rgba(201,168,76,0.06)', color: 'var(--gold4)', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans' }} data-testid="enable-push-btn">Enable Push Notifications</button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
             <button className="tbtn tbtn-gold" onClick={openTaskModal} data-testid="topbar-newtask-btn"><Plus size={13} /> <span className="btn-label">New Task</span></button>
           </div>
         </header>
