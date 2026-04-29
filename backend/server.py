@@ -1241,6 +1241,59 @@ async def get_rbac_public(authorization: str = Header(None), session_token: str 
         return {"type": "rbac", "config": default}
     return doc
 
+# --- Firm ---
+@api_router.get("/settings/firm")
+async def get_firm_settings(authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await require_partner(authorization, session_token)
+    doc = await db.settings.find_one({"type": "firm"}, {"_id": 0})
+    if not doc:
+        return {"type": "firm", "firm_name": "Nair & Nelliyatt Chartered Accountants"}
+    return doc
+
+class FirmUpdateRequest(BaseModel):
+    firm_name: str
+
+@api_router.patch("/settings/firm")
+async def update_firm_settings(req: FirmUpdateRequest, authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await require_partner(authorization, session_token)
+    await db.settings.update_one({"type": "firm"}, {"$set": {"type": "firm", "firm_name": req.firm_name, "updated_by": user["user_id"], "updated_at": datetime.now(timezone.utc).isoformat()}}, upsert=True)
+    return {"message": "Firm name updated"}
+
+# --- User Management ---
+@api_router.get("/settings/users")
+async def get_all_users(authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await require_partner(authorization, session_token)
+    users = await db.users.find({}, {"_id": 0, "password_hash": 0, "password": 0}).to_list(100)
+    return users
+
+class UpdateUserRequest(BaseModel):
+    role: Optional[str] = None
+    title: Optional[str] = None
+    new_password: Optional[str] = None
+    date_of_joining: Optional[str] = None
+
+@api_router.patch("/settings/users/{user_id}")
+async def update_user(user_id: str, req: UpdateUserRequest, authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await require_partner(authorization, session_token)
+    target = await db.users.find_one({"user_id": user_id})
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+    update_data = {}
+    if req.role and req.role in ("staff", "partner"):
+        update_data["role"] = req.role
+    if req.title is not None:
+        update_data["title"] = req.title
+    if req.date_of_joining is not None:
+        update_data["date_of_joining"] = req.date_of_joining
+    if req.new_password and len(req.new_password) >= 6:
+        import bcrypt
+        update_data["password"] = bcrypt.hashpw(req.new_password.encode(), bcrypt.gensalt()).decode()
+    if not update_data:
+        raise HTTPException(status_code=400, detail="Nothing to update")
+    await db.users.update_one({"user_id": user_id}, {"$set": update_data})
+    await log_activity("User updated", f"Updated {target.get('name', user_id)}: {', '.join(update_data.keys())}", user["user_id"])
+    return {"message": f"User {target.get('name')} updated"}
+
 # --- Storage ---
 @api_router.get("/settings/storage")
 async def get_storage_config(authorization: str = Header(None), session_token: str = Cookie(None)):

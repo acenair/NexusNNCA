@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { Settings as SettingsIcon, Shield, HardDrive, GitBranch, Save, Plus, Trash2, GripVertical, ChevronDown, ChevronUp, X, CheckCircle, Cloud, Edit2 } from 'lucide-react';
+import { Settings as SettingsIcon, Shield, HardDrive, GitBranch, Save, Plus, Trash2, GripVertical, ChevronDown, ChevronUp, X, CheckCircle, Cloud, Edit2, Building, Users } from 'lucide-react';
 import axios from 'axios';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -48,7 +48,7 @@ const STORAGE_PROVIDERS = [
 
 const Settings = () => {
   const { user } = useOutletContext();
-  const [tab, setTab] = useState('rbac');
+  const [tab, setTab] = useState('firm');
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
 
@@ -64,18 +64,28 @@ const Settings = () => {
   const [wfForm, setWfForm] = useState({ name: '', service_type: '', steps: [] });
   const [dragIdx, setDragIdx] = useState(null);
 
+  // Firm
+  const [firmName, setFirmName] = useState('Nair & Nelliyatt Chartered Accountants');
+  const [users, setUsers] = useState([]);
+  const [editUser, setEditUser] = useState(null);
+  const [userForm, setUserForm] = useState({ role: '', title: '', new_password: '', date_of_joining: '' });
+
   useEffect(() => { loadSettings(); }, []);
 
   const loadSettings = async () => {
     try {
-      const [rbacRes, storageRes, wfRes] = await Promise.all([
+      const [rbacRes, storageRes, wfRes, firmRes, usersRes] = await Promise.all([
         axios.get(`${API}/settings/rbac`, { withCredentials: true }),
         axios.get(`${API}/settings/storage`, { withCredentials: true }),
         axios.get(`${API}/settings/workflows`, { withCredentials: true }),
+        axios.get(`${API}/settings/firm`, { withCredentials: true }),
+        axios.get(`${API}/settings/users`, { withCredentials: true }),
       ]);
       setRbac(rbacRes.data.config || { staff: {}, partner: {} });
       setStorage(storageRes.data.config || { provider: 'default', aws_s3: {}, google_drive: {}, onedrive: {} });
       setWorkflows(wfRes.data);
+      setFirmName(firmRes.data.firm_name || 'Nair & Nelliyatt Chartered Accountants');
+      setUsers(usersRes.data);
     } catch (err) { console.error(err); }
   };
 
@@ -171,6 +181,34 @@ const Settings = () => {
     } catch (err) { alert('Failed to delete'); }
   };
 
+  // --- Firm ---
+  const saveFirmName = async () => {
+    setSaving(true);
+    try {
+      await axios.patch(`${API}/settings/firm`, { firm_name: firmName }, { withCredentials: true });
+      showSave('Firm name updated');
+    } catch (err) { alert('Failed to save'); }
+    finally { setSaving(false); }
+  };
+
+  const openUserEdit = (u) => {
+    setEditUser(u);
+    setUserForm({ role: u.role, title: u.title || '', new_password: '', date_of_joining: u.date_of_joining || '' });
+  };
+
+  const saveUser = async () => {
+    setSaving(true);
+    try {
+      const payload = { role: userForm.role, title: userForm.title, date_of_joining: userForm.date_of_joining };
+      if (userForm.new_password) payload.new_password = userForm.new_password;
+      await axios.patch(`${API}/settings/users/${editUser.user_id}`, payload, { withCredentials: true });
+      showSave(`${editUser.name} updated`);
+      setEditUser(null);
+      loadSettings();
+    } catch (err) { alert(err.response?.data?.detail || 'Failed'); }
+    finally { setSaving(false); }
+  };
+
   if (user?.role !== 'partner') {
     return <div className="fade-in" style={{ padding: 40, textAlign: 'center' }} data-testid="settings-denied"><h2 style={{ fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Access Restricted</h2><p style={{ fontSize: 13, color: 'var(--muted)' }}>Settings are available to Partners only.</p></div>;
   }
@@ -179,6 +217,7 @@ const Settings = () => {
   const labelStyle = { fontSize: 10, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', marginBottom: 3 };
 
   const tabs = [
+    { key: 'firm', label: 'Firm & Users', icon: Building },
     { key: 'rbac', label: 'Access Control', icon: Shield },
     { key: 'storage', label: 'Storage', icon: HardDrive },
     { key: 'workflows', label: 'Workflows', icon: GitBranch },
@@ -213,6 +252,95 @@ const Settings = () => {
           );
         })}
       </div>
+
+      {/* === FIRM TAB === */}
+      {tab === 'firm' && (
+        <div>
+          {/* Firm Name */}
+          <div className="nn-card" style={{ overflow: 'hidden', marginBottom: 16 }}>
+            <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--nn-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div><h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Firm Identity</h3><p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>Change the parent firm name displayed across the application</p></div>
+              <button className="tbtn tbtn-gold" onClick={saveFirmName} disabled={saving} data-testid="save-firm-name"><Save size={13} /> Save</button>
+            </div>
+            <div style={{ padding: '16px 20px' }}>
+              <label style={labelStyle}>Firm Name</label>
+              <input value={firmName} onChange={(e) => setFirmName(e.target.value)} style={{ ...inputStyle, maxWidth: 420 }} data-testid="firm-name-input" />
+            </div>
+          </div>
+
+          {/* Users Table */}
+          <div className="nn-card" style={{ overflow: 'hidden' }}>
+            <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--nn-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div><h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Team Members</h3><p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{users.length} members &middot; Manage roles, credentials & joining dates</p></div>
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
+                <thead>
+                  <tr style={{ background: 'var(--off)' }}>
+                    <th style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', textAlign: 'left', letterSpacing: 0.5 }}>Name</th>
+                    <th style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', textAlign: 'left', letterSpacing: 0.5 }}>Email</th>
+                    <th style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', textAlign: 'left', letterSpacing: 0.5 }}>Role</th>
+                    <th style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', textAlign: 'left', letterSpacing: 0.5 }}>Title</th>
+                    <th style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', textAlign: 'left', letterSpacing: 0.5 }}>Joined</th>
+                    <th style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', textAlign: 'center', letterSpacing: 0.5 }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map(u => (
+                    <tr key={u.user_id} style={{ borderBottom: '1px solid var(--nn-border)' }} data-testid={`user-row-${u.user_id}`}>
+                      <td style={{ padding: '10px 16px', fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>{u.name}</td>
+                      <td style={{ padding: '10px 16px', fontSize: 11, color: 'var(--muted)', fontFamily: 'monospace' }}>{u.email}</td>
+                      <td style={{ padding: '10px 16px' }}><span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 10, background: u.role === 'partner' ? 'rgba(201,168,76,0.1)' : 'var(--blue-bg)', color: u.role === 'partner' ? 'var(--gold4)' : 'var(--blue, #3b82f6)' }}>{u.role}</span></td>
+                      <td style={{ padding: '10px 16px', fontSize: 12, color: 'var(--text)' }}>{u.title || '—'}</td>
+                      <td style={{ padding: '10px 16px', fontSize: 11, color: 'var(--muted)' }}>{u.date_of_joining || '—'}</td>
+                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>
+                        <button onClick={() => openUserEdit(u)} className="tbtn" style={{ padding: '5px 10px', fontSize: 11, background: 'rgba(201,168,76,0.08)', color: 'var(--gold4)', border: 'none' }} data-testid={`edit-user-${u.user_id}`}><Edit2 size={11} /> Edit</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Edit User Modal */}
+          {editUser && (
+            <div className="modal-overlay" onClick={() => !saving && setEditUser(null)} data-testid="edit-user-modal">
+              <div className="modal-box" style={{ maxWidth: 440 }} onClick={(e) => e.stopPropagation()}>
+                <div className="modal-hdr">
+                  <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 16 }}>Edit: {editUser.name}</h3>
+                  <button onClick={() => setEditUser(null)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex' }}><X size={18} /></button>
+                </div>
+                <div className="modal-body">
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={labelStyle}>Role *</label>
+                    <select value={userForm.role} onChange={(e) => setUserForm(p => ({ ...p, role: e.target.value }))} style={inputStyle} data-testid="user-role-select">
+                      <option value="staff">Staff</option>
+                      <option value="partner">Partner</option>
+                    </select>
+                  </div>
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={labelStyle}>Title / Designation</label>
+                    <input value={userForm.title} onChange={(e) => setUserForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Senior Associate, Manager..." style={inputStyle} data-testid="user-title-input" />
+                  </div>
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={labelStyle}>Date of Joining</label>
+                    <input type="date" value={userForm.date_of_joining} onChange={(e) => setUserForm(p => ({ ...p, date_of_joining: e.target.value }))} style={inputStyle} data-testid="user-doj-input" />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>New Password (leave blank to keep current)</label>
+                    <input type="password" value={userForm.new_password} onChange={(e) => setUserForm(p => ({ ...p, new_password: e.target.value }))} placeholder="Enter new password..." style={inputStyle} data-testid="user-password-input" />
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button className="tbtn tbtn-outline" onClick={() => setEditUser(null)}>Cancel</button>
+                  <button className="tbtn tbtn-gold" onClick={saveUser} disabled={saving} data-testid="save-user-btn">{saving ? 'Saving...' : 'Save Changes'}</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* === RBAC TAB === */}
       {tab === 'rbac' && (
