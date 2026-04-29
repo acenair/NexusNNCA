@@ -28,6 +28,7 @@ import AIAssistant from '@/pages/AIAssistant';
 import ClientMaster from '@/pages/ClientMaster';
 import Documents from '@/pages/Documents';
 import Settings from '@/pages/Settings';
+import MyTasks from '@/pages/MyTasks';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import MainLayout from '@/components/MainLayout';
 
@@ -41,6 +42,7 @@ function App() {
           <Route path="/" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
+            <Route path="tasks" element={<MyTasks />} />
             <Route path="deadlines" element={<DeadlineTracker />} />
             <Route path="calendar" element={<Calendar />} />
             <Route path="appreciation" element={<StaffAppreciation />} />

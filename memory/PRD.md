@@ -39,6 +39,7 @@ Build a comprehensive practice management system for "Nair & Nelliyatt Chartered
 19. **Workflow-Linked Engagements** — When creating an engagement, users can select a workflow template. Workflow steps become the engagement checklist phases.
 20. **Push Notifications & Deadline Reminders** — Notification bell in topbar with unread badge. Shows overdue tasks, tasks due within 3 days, and upcoming events. Dismiss functionality. Browser push notification permission prompt.
 21. **Settings: Firm & Users** — Firm name editing (change parent firm name). Team members table showing all users. Edit modal to change role (staff/partner), title/designation, date of joining, and reset password. Partner-only access.
+22. **Tasks Page** — Staff see only their own assigned tasks (title: "My Tasks"). Partners see all tasks grouped by staff member (title: "All Tasks") with staff filter. Toggleable completion checkboxes, overdue indicators, priority dots, status badges. Positioned below Dashboard in sidebar Overview section.
 
 ## Testing Status
 - Iteration 1: 100% pass (backend + frontend)
