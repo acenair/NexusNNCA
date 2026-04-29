@@ -29,6 +29,7 @@ import ClientMaster from '@/pages/ClientMaster';
 import Documents from '@/pages/Documents';
 import Settings from '@/pages/Settings';
 import MyTasks from '@/pages/MyTasks';
+import ClientTimeline from '@/pages/ClientTimeline';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import MainLayout from '@/components/MainLayout';
 
@@ -79,6 +80,7 @@ function App() {
             <Route path="client-master" element={<ClientMaster />} />
             <Route path="documents" element={<Documents />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="clients/:clientId/timeline" element={<ClientTimeline />} />
           </Route>
         </Routes>
       </BrowserRouter>

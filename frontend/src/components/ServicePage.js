@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
-import { ChevronDown, ChevronRight, Plus, X, CheckCircle, GitBranch } from 'lucide-react';
+import { useOutletContext, useNavigate } from 'react-router-dom';
+import { ChevronDown, ChevronRight, Plus, X, CheckCircle, GitBranch, Download } from 'lucide-react';
 import axios from 'axios';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const ServicePage = ({ title, subtitle, serviceType, stats }) => {
   const { user } = useOutletContext();
+  const navigate = useNavigate();
   const [engagements, setEngagements] = useState([]);
   const [expandedGroups, setExpandedGroups] = useState({});
   const [loading, setLoading] = useState(true);
@@ -141,7 +142,13 @@ const ServicePage = ({ title, subtitle, serviceType, stats }) => {
                 <div style={{ padding: '8px 14px 6px', borderBottom: '1px solid var(--nn-border)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
                     <span style={{ fontSize: 10, color: 'var(--muted)' }}>Phase: {eng.phase}</span>
-                    <span style={{ fontSize: 10, fontWeight: 600, color: progress === 100 ? 'var(--green)' : 'var(--text)' }}>{progress}%</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: 10, fontWeight: 600, color: progress === 100 ? 'var(--green)' : 'var(--text)' }}>{progress}%</span>
+                      <button onClick={() => {
+                        const exportType = serviceType.includes('vat') ? 'vat-return' : 'audit-report';
+                        window.open(`${API}/export/${exportType}/${eng.engagement_id}`, '_blank');
+                      }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 2, display: 'flex' }} title="Export PDF" data-testid={`export-${eng.engagement_id}`}><Download size={12} /></button>
+                    </div>
                   </div>
                   <div className="nn-progress"><div className="nn-progress-bar" style={{ width: `${progress}%`, background: progress >= 80 ? 'var(--green)' : progress >= 50 ? 'var(--blue, #3b82f6)' : 'var(--gold)' }} /></div>
                   {eng.workflow_name && <div style={{ fontSize: 9, color: 'var(--muted)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 3 }}><GitBranch size={9} /> {eng.workflow_name}</div>}

@@ -1476,6 +1476,245 @@ async def get_workflows_for_service(service_type: str, authorization: str = Head
     wfs = await db.workflows.find({"service_type": service_type, "is_deleted": {"$ne": True}}, {"_id": 0}).to_list(20)
     return wfs
 
+# ============= CLIENT ACTIVITY TIMELINE =============
+
+@api_router.get("/clients/{client_id}/timeline")
+async def get_client_timeline(client_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await get_current_user(authorization, session_token)
+    client = await db.clients.find_one({"client_id": client_id}, {"_id": 0})
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    timeline = []
+
+    # Tasks
+    tasks = await db.tasks.find({"client_id": client_id}, {"_id": 0}).to_list(100)
+    for t in tasks:
+        timeline.append({
+            "type": "task", "title": t.get("title", "Task"),
+            "status": t.get("status"), "date": t.get("due_date") or t.get("created_at", ""),
+            "detail": f"Assigned to {t.get('assigned_to_name', t.get('assigned_to', '—'))} | Priority: {t.get('priority', '—')}",
+            "ref_id": t.get("task_id"),
+        })
+
+    # Events
+    events = await db.events.find({"client_id": client_id}, {"_id": 0}).to_list(100)
+    for e in events:
+        timeline.append({
+            "type": e.get("event_type", "event"), "title": e.get("title", "Event"),
+            "status": "Scheduled", "date": e.get("date", ""),
+            "detail": e.get("description", ""),
+            "ref_id": e.get("event_id"),
+        })
+
+    # Documents
+    docs = await db.documents.find({"client_id": client_id, "is_deleted": False}, {"_id": 0}).to_list(100)
+    for d in docs:
+        timeline.append({
+            "type": "document", "title": d.get("original_filename", "Document"),
+            "status": d.get("document_type", ""), "date": d.get("created_at", ""),
+            "detail": f"Uploaded by {d.get('uploaded_by_name', '—')}",
+            "ref_id": d.get("file_id"),
+        })
+
+    # Engagements
+    engs = await db.service_engagements.find({"client_id": client_id, "status": {"$ne": "Deleted"}}, {"_id": 0}).to_list(50)
+    for eng in engs:
+        total = sum(len(g.get("items", [])) for g in eng.get("checklist", []))
+        done = sum(1 for g in eng.get("checklist", []) for item in g.get("items", []) if item.get("done"))
+        progress = round(done / total * 100) if total > 0 else 0
+        timeline.append({
+            "type": "engagement", "title": eng.get("service_type", "").replace("_", " ").title(),
+            "status": eng.get("status"), "date": eng.get("created_at", ""),
+            "detail": f"Phase: {eng.get('phase', '—')} | Progress: {progress}% | {eng.get('assigned_to_name', '—')}",
+            "ref_id": eng.get("engagement_id"),
+        })
+
+    # Activities
+    activities = await db.activities.find({"client_id": client_id}, {"_id": 0}).sort("timestamp", -1).to_list(50)
+    for a in activities:
+        timeline.append({
+            "type": "activity", "title": a.get("action", "Activity"),
+            "status": "", "date": a.get("timestamp", ""),
+            "detail": a.get("description", ""),
+            "ref_id": None,
+        })
+
+    # Sort by date descending
+    def parse_date(item):
+        d = item.get("date", "")
+        if not d:
+            return ""
+        return d
+
+    timeline.sort(key=parse_date, reverse=True)
+    return {"client": client, "timeline": timeline}
+
+# ============= EXPORT / REPORTING =============
+
+@api_router.get("/export/audit-report/{engagement_id}")
+async def export_audit_report(engagement_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
+    from fpdf import FPDF
+    import io
+
+    user = await get_current_user(authorization, session_token)
+    eng = await db.service_engagements.find_one({"engagement_id": engagement_id}, {"_id": 0})
+    if not eng:
+        raise HTTPException(status_code=404, detail="Engagement not found")
+
+    # Get firm name
+    firm_doc = await db.settings.find_one({"type": "firm"}, {"_id": 0})
+    firm_name = firm_doc.get("firm_name", "Nair & Nelliyatt Chartered Accountants") if firm_doc else "Nair & Nelliyatt Chartered Accountants"
+
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=20)
+
+    # Header
+    pdf.set_font("Helvetica", "B", 18)
+    pdf.set_text_color(10, 17, 40)
+    pdf.cell(0, 12, firm_name, new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.set_font("Helvetica", "", 10)
+    pdf.set_text_color(120, 120, 120)
+    pdf.cell(0, 6, "Engagement Report", new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.ln(8)
+
+    # Engagement Info
+    pdf.set_draw_color(212, 175, 55)
+    pdf.set_line_width(0.5)
+    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+    pdf.ln(6)
+
+    pdf.set_font("Helvetica", "B", 12)
+    pdf.set_text_color(10, 17, 40)
+    pdf.cell(0, 8, eng.get("service_type", "").replace("_", " ").title(), new_x="LMARGIN", new_y="NEXT")
+
+    info_lines = [
+        f"Client: {eng.get('client_name', '—')}",
+        f"Assigned To: {eng.get('assigned_to_name', '—')}",
+        f"Status: {eng.get('status', '—')}",
+        f"Current Phase: {eng.get('phase', '—')}",
+        f"Created: {eng.get('created_at', '—')[:10]}",
+    ]
+    if eng.get("workflow_name"):
+        info_lines.append(f"Workflow: {eng.get('workflow_name')}")
+
+    pdf.set_font("Helvetica", "", 10)
+    pdf.set_text_color(60, 60, 60)
+    for line in info_lines:
+        pdf.cell(0, 6, line, new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(6)
+
+    # Checklist Progress
+    total = sum(len(g.get("items", [])) for g in eng.get("checklist", []))
+    done = sum(1 for g in eng.get("checklist", []) for item in g.get("items", []) if item.get("done"))
+    progress = round(done / total * 100) if total > 0 else 0
+
+    pdf.set_font("Helvetica", "B", 11)
+    pdf.set_text_color(10, 17, 40)
+    pdf.cell(0, 8, f"Checklist Progress: {done}/{total} ({progress}%)", new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(2)
+
+    for group in eng.get("checklist", []):
+        pdf.set_font("Helvetica", "B", 10)
+        pdf.set_text_color(212, 175, 55)
+        pdf.cell(0, 7, group.get("group", ""), new_x="LMARGIN", new_y="NEXT")
+        pdf.set_font("Helvetica", "", 9)
+        pdf.set_text_color(60, 60, 60)
+        for item in group.get("items", []):
+            mark = "[x]" if item.get("done") else "[ ]"
+            pdf.cell(0, 5, f"  {mark} {item.get('label', '')}", new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(2)
+
+    # Footer
+    pdf.ln(10)
+    pdf.set_font("Helvetica", "I", 8)
+    pdf.set_text_color(150, 150, 150)
+    pdf.cell(0, 5, f"Generated on {datetime.now(timezone.utc).strftime('%d %b %Y at %H:%M UTC')} by {user.get('name', '—')}", new_x="LMARGIN", new_y="NEXT", align="C")
+
+    buffer = io.BytesIO()
+    pdf.output(buffer)
+    buffer.seek(0)
+
+    filename = f"Audit_Report_{eng.get('client_name', 'client').replace(' ', '_')}_{engagement_id[-6:]}.pdf"
+    return StreamingResponse(buffer, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename={filename}"})
+
+@api_router.get("/export/vat-return/{engagement_id}")
+async def export_vat_return(engagement_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
+    from fpdf import FPDF
+    import io
+
+    user = await get_current_user(authorization, session_token)
+    eng = await db.service_engagements.find_one({"engagement_id": engagement_id}, {"_id": 0})
+    if not eng:
+        raise HTTPException(status_code=404, detail="Engagement not found")
+
+    firm_doc = await db.settings.find_one({"type": "firm"}, {"_id": 0})
+    firm_name = firm_doc.get("firm_name", "Nair & Nelliyatt Chartered Accountants") if firm_doc else "Nair & Nelliyatt Chartered Accountants"
+
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=20)
+
+    # Header
+    pdf.set_font("Helvetica", "B", 18)
+    pdf.set_text_color(10, 17, 40)
+    pdf.cell(0, 12, firm_name, new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.set_font("Helvetica", "", 10)
+    pdf.set_text_color(120, 120, 120)
+    pdf.cell(0, 6, "VAT Return Summary", new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.ln(8)
+
+    pdf.set_draw_color(212, 175, 55)
+    pdf.set_line_width(0.5)
+    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+    pdf.ln(6)
+
+    # Client info
+    pdf.set_font("Helvetica", "B", 12)
+    pdf.set_text_color(10, 17, 40)
+    pdf.cell(0, 8, f"Client: {eng.get('client_name', '—')}", new_x="LMARGIN", new_y="NEXT")
+
+    pdf.set_font("Helvetica", "", 10)
+    pdf.set_text_color(60, 60, 60)
+    pdf.cell(0, 6, f"Filing Status: {eng.get('status', '—')}", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 6, f"Current Phase: {eng.get('phase', '—')}", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 6, f"Prepared By: {eng.get('assigned_to_name', '—')}", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 6, f"Period: {eng.get('created_at', '—')[:10]}", new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(6)
+
+    # Checklist as filing steps
+    pdf.set_font("Helvetica", "B", 11)
+    pdf.set_text_color(10, 17, 40)
+    total = sum(len(g.get("items", [])) for g in eng.get("checklist", []))
+    done = sum(1 for g in eng.get("checklist", []) for item in g.get("items", []) if item.get("done"))
+    pdf.cell(0, 8, f"Filing Checklist: {done}/{total} steps completed", new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(2)
+
+    for group in eng.get("checklist", []):
+        pdf.set_font("Helvetica", "B", 10)
+        pdf.set_text_color(212, 175, 55)
+        pdf.cell(0, 7, group.get("group", ""), new_x="LMARGIN", new_y="NEXT")
+        pdf.set_font("Helvetica", "", 9)
+        pdf.set_text_color(60, 60, 60)
+        for item in group.get("items", []):
+            status = "Completed" if item.get("done") else "Pending"
+            pdf.cell(0, 5, f"  [{status}] {item.get('label', '')}", new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(2)
+
+    # Footer
+    pdf.ln(10)
+    pdf.set_font("Helvetica", "I", 8)
+    pdf.set_text_color(150, 150, 150)
+    pdf.cell(0, 5, f"Generated on {datetime.now(timezone.utc).strftime('%d %b %Y at %H:%M UTC')} by {user.get('name', '—')}", new_x="LMARGIN", new_y="NEXT", align="C")
+
+    buffer = io.BytesIO()
+    pdf.output(buffer)
+    buffer.seek(0)
+
+    filename = f"VAT_Return_{eng.get('client_name', 'client').replace(' ', '_')}_{engagement_id[-6:]}.pdf"
+    return StreamingResponse(buffer, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename={filename}"})
+
 # Include router
 app.include_router(api_router)
 
