@@ -33,23 +33,26 @@ Build a comprehensive practice management system for "Nair & Nelliyatt Chartered
 13. **Client Master** — Managing Partner-only section with full client table, search/filter/sort, edit modal with all fields + 16 service toggles. RBAC enforced on both frontend (sidebar + page) and backend (PATCH 403).
 14. **Document Checklist** — Upload files linked to clients with document type categorization. View/download/delete. Grouped by client, search & filter. Drag-and-drop upload zone.
 15. **Service Engagements** — Unified backend for audit, VAT, AML, corporate_tax engagements with interactive checklists. Auto-phase and progress tracking. Seeded with 11 sample engagements.
-16. **Settings: Access Control (RBAC)** — Section-level toggle per role (staff/partner). 6 sections: Overview, Audit, VAT, Corporate, Advisory, AML.
+16. **Settings: Access Control (RBAC)** — Section-level toggle per role (staff/partner). 6 sections. **LIVE**: dynamically filters sidebar visibility based on saved config.
 17. **Settings: Storage Integration** — Config UI for AWS S3, Google Drive, OneDrive. Saves credentials. Actual sync as future follow-up.
-18. **Settings: Workflows** — Visual step builder with drag-to-reorder. 5 preset workflows for Audit, VAT, AML, Corporate Tax, Internal Audit. Custom workflow creation and editing. Assigned per service type.
+18. **Settings: Workflows** — Visual step builder with drag-to-reorder. 5 preset workflows. Custom workflow creation. Assigned per service type.
+19. **Workflow-Linked Engagements** — When creating an engagement, users can select a workflow template. Workflow steps become the engagement checklist phases.
+20. **Push Notifications & Deadline Reminders** — Notification bell in topbar with unread badge. Shows overdue tasks, tasks due within 3 days, and upcoming events. Dismiss functionality. Browser push notification permission prompt.
 
 ## Testing Status
 - Iteration 1: 100% pass (backend + frontend)
 - Iteration 2: 100% pass (backend + frontend)
 - Iteration 3: 100% pass (18/18 backend, 12/12 frontend) — AI Assistant + Calendar mobile
 - Iteration 4: 100% pass (11/11 backend, 8/8 frontend) — Client Master
-- Iteration 5: 100% pass (18/18 backend, 12/12 frontend) — Settings (RBAC, Storage, Workflows) + Documents + Regressions
+- Iteration 5: 100% pass (18/18 backend, 12/12 frontend) — Settings (RBAC, Storage, Workflows) + Documents
+- Iteration 6: 100% pass (16/16 backend, 9/9 frontend) — Dynamic RBAC, Notifications, Workflow-Linked Engagements
 
 ## Backlog
-- P1: Wire RBAC settings to actually control sidebar visibility dynamically (currently config-only, sidebar is role-hardcoded)
-- P2: Push notifications for deadline reminders
 - P2: Wire storage integration to actual S3/Drive/OneDrive for file sync
-- P2: Link workflows to service engagements (enforce workflow steps during engagement creation)
+- P2: Browser push notifications (actual Web Push API integration for background notifications)
 - P3: Client activity timeline (360° view)
+- P3: Client onboarding workflow
+- P3: Export/reporting (PDF audit reports, VAT return exports)
 
 ## Key API Endpoints
 - POST /api/auth/login
