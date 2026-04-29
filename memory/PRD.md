@@ -38,6 +38,7 @@ Build a comprehensive practice management system for "Nair & Nelliyatt Chartered
 18. **Settings: Workflows** — Visual step builder with drag-to-reorder. 5 preset workflows. Custom workflow creation. Assigned per service type.
 19. **Workflow-Linked Engagements** — When creating an engagement, users can select a workflow template. Workflow steps become the engagement checklist phases.
 20. **Push Notifications & Deadline Reminders** — Notification bell in topbar with unread badge. Shows overdue tasks, tasks due within 3 days, and upcoming events. Dismiss functionality. Browser push notification permission prompt.
+21. **Settings: Firm & Users** — Firm name editing (change parent firm name). Team members table showing all users. Edit modal to change role (staff/partner), title/designation, date of joining, and reset password. Partner-only access.
 
 ## Testing Status
 - Iteration 1: 100% pass (backend + frontend)
@@ -46,6 +47,7 @@ Build a comprehensive practice management system for "Nair & Nelliyatt Chartered
 - Iteration 4: 100% pass (11/11 backend, 8/8 frontend) — Client Master
 - Iteration 5: 100% pass (18/18 backend, 12/12 frontend) — Settings (RBAC, Storage, Workflows) + Documents
 - Iteration 6: 100% pass (16/16 backend, 9/9 frontend) — Dynamic RBAC, Notifications, Workflow-Linked Engagements
+- Iteration 7: 100% pass (15/15 backend, all UI) — Firm & Users Settings (firm name, user management, role/password/DOJ editing)
 
 ## Backlog
 - P2: Wire storage integration to actual S3/Drive/OneDrive for file sync
