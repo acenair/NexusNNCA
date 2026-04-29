@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Clock, Calendar, Star, Bell, FileText, Activity, Receipt, Building2, Briefcase, TrendingUp, Shield, LogOut, Users, Mail, Plus, X, CheckCircle, ChevronDown, ChevronRight, Menu, PanelLeftClose, MessageSquare, Database, FolderOpen, Settings, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, Clock, Calendar, Star, Bell, FileText, Activity, Receipt, Building2, Briefcase, TrendingUp, Shield, LogOut, Users, Mail, Plus, X, CheckCircle, ChevronDown, ChevronRight, Menu, PanelLeftClose, MessageSquare, Database, FolderOpen, Settings, ClipboardList, UserPlus } from 'lucide-react';
 import axios from 'axios';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -191,6 +191,7 @@ const MainLayout = ({ user }) => {
         { path: '/reminders', label: 'Reminders', icon: Bell, badge: '5' },
         { path: '/ai-assistant', label: 'AI Assistant', icon: MessageSquare },
         { path: '/client-master', label: 'Client Master', icon: Database, managingPartnerOnly: true },
+        { path: '/onboarding', label: 'Client Onboarding', icon: UserPlus, partnerOnly: true },
         { path: '/documents', label: 'Documents', icon: FolderOpen },
         { path: '/settings', label: 'Settings', icon: Settings, partnerOnly: true },
       ]

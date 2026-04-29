@@ -1550,6 +1550,214 @@ async def get_client_timeline(client_id: str, authorization: str = Header(None),
     timeline.sort(key=parse_date, reverse=True)
     return {"client": client, "timeline": timeline}
 
+# ============= CLIENT ONBOARDING =============
+
+ONBOARDING_DOCUMENT_CHECKLIST = {
+    "general": ["Trade Licence Copy", "Memorandum of Association", "Emirates ID (Partners/Directors)", "Passport Copies (Partners/Directors)", "Power of Attorney (if applicable)"],
+    "vat": ["Bank Letter / IBAN Certificate", "Turnover Evidence (12 months)", "Previous VAT Returns (if any)"],
+    "corporate_tax": ["Financial Statements (Latest)", "Trial Balance", "Tax Registration Certificate (if any)"],
+    "aml": ["Source of Funds Declaration", "Beneficial Ownership Structure", "Sanctions Self-Declaration"],
+}
+
+SERVICE_TO_ENGAGEMENT_TYPE = {
+    "Statutory Audit": "statutory_audit",
+    "Internal Audit": "internal_audit",
+    "Stock Audit": "stock_audit",
+    "Fraud Audit": "fraud_audit",
+    "VAT Registration": "vat_registration",
+    "VAT Filing": "vat_filing",
+    "VAT Amendments": "vat_filing",
+    "Corporate Registration": "corporate_tax",
+    "Corporate Tax": "corporate_tax",
+    "Company Formation": "corporate_tax",
+    "Liquidation": "corporate_tax",
+    "Valuation": "corporate_tax",
+    "Due Diligence": "corporate_tax",
+    "AML Review": "aml_review",
+    "AML Filing": "aml_review",
+    "AML Report": "aml_review",
+}
+
+class OnboardingRequest(BaseModel):
+    name: str
+    entity_type: str
+    jurisdiction: Optional[str] = None
+    trade_licence_no: Optional[str] = None
+    trn: Optional[str] = None
+    ct_registration_no: Optional[str] = None
+    aml_risk_rating: str = "Low"
+    pep_flag: bool = False
+    active_services: List[str] = []
+    relationship_manager: Optional[str] = None
+    relationship_manager_name: Optional[str] = None
+    contact_person: Optional[str] = None
+    contact_email: Optional[str] = None
+    contact_phone: Optional[str] = None
+    notes: Optional[str] = None
+    auto_create_engagements: bool = True
+
+@api_router.post("/onboarding")
+async def onboard_client(req: OnboardingRequest, authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await get_current_user(authorization, session_token)
+    if user.get("role") != "partner":
+        raise HTTPException(status_code=403, detail="Only partners can onboard clients")
+
+    # Check if client already exists
+    existing = await db.clients.find_one({"name": req.name})
+    if existing:
+        raise HTTPException(status_code=400, detail=f"Client '{req.name}' already exists")
+
+    # 1. Create Client
+    client_id = f"client_{uuid.uuid4().hex[:12]}"
+    client_doc = {
+        "client_id": client_id,
+        "name": req.name,
+        "entity_type": req.entity_type,
+        "jurisdiction": req.jurisdiction,
+        "trade_licence_no": req.trade_licence_no,
+        "trn": req.trn,
+        "ct_registration_no": req.ct_registration_no,
+        "aml_risk_rating": req.aml_risk_rating,
+        "pep_flag": req.pep_flag,
+        "status": "Onboarding",
+        "active_services": req.active_services,
+        "relationship_manager_id": req.relationship_manager,
+        "contact_person": req.contact_person,
+        "contact_email": req.contact_email,
+        "contact_phone": req.contact_phone,
+        "notes": req.notes,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "onboarded_by": user["user_id"],
+        "onboarded_by_name": user.get("name"),
+    }
+    await db.clients.insert_one(client_doc)
+
+    # 2. Generate onboarding tasks
+    tasks_created = []
+    assignee = req.relationship_manager or user.get("email")
+    assignee_name = req.relationship_manager_name or user.get("name")
+    due_base = datetime.now(timezone.utc) + timedelta(days=3)
+
+    # General KYC tasks
+    onboarding_tasks = [
+        {"title": f"Collect KYC Documents - {req.name}", "service_module": "Onboarding", "priority": "High", "days_offset": 3},
+        {"title": f"Verify Entity Details - {req.name}", "service_module": "Onboarding", "priority": "Medium", "days_offset": 5},
+        {"title": f"Complete AML Risk Assessment - {req.name}", "service_module": "AML", "priority": "High", "days_offset": 5},
+    ]
+
+    # Service-specific tasks
+    has_vat = any(s for s in req.active_services if "VAT" in s)
+    has_audit = any(s for s in req.active_services if "Audit" in s)
+    has_ct = any(s for s in req.active_services if "Corporate" in s or "Tax" in s)
+
+    if has_vat:
+        onboarding_tasks.append({"title": f"VAT Registration Check - {req.name}", "service_module": "VAT", "priority": "Medium", "days_offset": 7})
+    if has_audit:
+        onboarding_tasks.append({"title": f"Schedule Audit Kickoff Meeting - {req.name}", "service_module": "Audit", "priority": "Medium", "days_offset": 10})
+    if has_ct:
+        onboarding_tasks.append({"title": f"Corporate Tax Registration Review - {req.name}", "service_module": "Corporate Tax", "priority": "Medium", "days_offset": 7})
+
+    for t in onboarding_tasks:
+        task_id = f"task_{uuid.uuid4().hex[:12]}"
+        task_doc = {
+            "task_id": task_id,
+            "title": t["title"],
+            "description": f"Auto-generated onboarding task for {req.name}",
+            "service_module": t["service_module"],
+            "client_id": client_id,
+            "client_name": req.name,
+            "due_date": (datetime.now(timezone.utc) + timedelta(days=t["days_offset"])).strftime("%Y-%m-%d"),
+            "priority": t["priority"],
+            "assigned_to": assignee,
+            "assigned_to_name": assignee_name,
+            "status": "Pending",
+            "created_by": user["user_id"],
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+        await db.tasks.insert_one(task_doc)
+        tasks_created.append(task_id)
+
+    # 3. Auto-create engagements for selected services (if enabled)
+    engagements_created = []
+    if req.auto_create_engagements and req.active_services:
+        # Deduplicate engagement types
+        engagement_types_done = set()
+        for svc in req.active_services:
+            eng_type = SERVICE_TO_ENGAGEMENT_TYPE.get(svc)
+            if eng_type and eng_type not in engagement_types_done:
+                engagement_types_done.add(eng_type)
+
+                # Check for a workflow template for this service type
+                wf = await db.workflows.find_one({"service_type": eng_type, "is_deleted": {"$ne": True}}, {"_id": 0})
+                checklist = []
+                workflow_name = None
+                if wf:
+                    workflow_name = wf.get("name")
+                    checklist = [{"group": step["name"], "items": [{"label": step.get("description") or step["name"], "done": False}]} for step in wf.get("steps", [])]
+                if not checklist:
+                    template = CHECKLIST_TEMPLATES.get(eng_type, [])
+                    checklist = [{"group": g["group"], "items": [{"label": item, "done": False} for item in g["items"]]} for g in template]
+
+                eng_id = f"eng_{uuid.uuid4().hex[:12]}"
+                eng_doc = {
+                    "engagement_id": eng_id,
+                    "service_type": eng_type,
+                    "client_id": client_id,
+                    "client_name": req.name,
+                    "assigned_to": assignee,
+                    "assigned_to_name": assignee_name,
+                    "status": "Active",
+                    "phase": checklist[0]["group"] if checklist else "",
+                    "checklist": checklist,
+                    "workflow_id": wf.get("workflow_id") if wf else None,
+                    "workflow_name": workflow_name,
+                    "created_by": user["user_id"],
+                    "created_by_name": user.get("name"),
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                }
+                await db.service_engagements.insert_one(eng_doc)
+                engagements_created.append(eng_id)
+
+    # 4. Generate document checklist items
+    doc_checklist = list(ONBOARDING_DOCUMENT_CHECKLIST["general"])
+    if has_vat:
+        doc_checklist.extend(ONBOARDING_DOCUMENT_CHECKLIST["vat"])
+    if has_ct:
+        doc_checklist.extend(ONBOARDING_DOCUMENT_CHECKLIST["corporate_tax"])
+    if req.aml_risk_rating in ("Medium", "High"):
+        doc_checklist.extend(ONBOARDING_DOCUMENT_CHECKLIST["aml"])
+
+    # 5. Log activity
+    await log_activity("Client onboarded", f"Onboarded new client: {req.name} ({req.entity_type})", user["user_id"], client_id, req.name)
+
+    return {
+        "client_id": client_id,
+        "client_name": req.name,
+        "status": "Onboarding",
+        "tasks_created": len(tasks_created),
+        "engagements_created": len(engagements_created),
+        "document_checklist": doc_checklist,
+        "message": f"Client '{req.name}' onboarded successfully",
+    }
+
+@api_router.get("/onboarding/document-checklist")
+async def get_onboarding_doc_checklist(services: str = "", risk: str = "Low", authorization: str = Header(None), session_token: str = Cookie(None)):
+    """Preview document checklist based on selected services and risk."""
+    user = await get_current_user(authorization, session_token)
+    svc_list = [s.strip() for s in services.split(",") if s.strip()] if services else []
+
+    checklist = list(ONBOARDING_DOCUMENT_CHECKLIST["general"])
+    has_vat = any(s for s in svc_list if "VAT" in s)
+    has_ct = any(s for s in svc_list if "Corporate" in s or "Tax" in s)
+    if has_vat:
+        checklist.extend(ONBOARDING_DOCUMENT_CHECKLIST["vat"])
+    if has_ct:
+        checklist.extend(ONBOARDING_DOCUMENT_CHECKLIST["corporate_tax"])
+    if risk in ("Medium", "High"):
+        checklist.extend(ONBOARDING_DOCUMENT_CHECKLIST["aml"])
+
+    return {"checklist": checklist}
+
 # ============= EXPORT / REPORTING =============
 
 @api_router.get("/export/audit-report/{engagement_id}")

@@ -40,6 +40,10 @@ Build a comprehensive practice management system for "Nair & Nelliyatt Chartered
 20. **Push Notifications & Deadline Reminders** — Notification bell in topbar with unread badge. Shows overdue tasks, tasks due within 3 days, and upcoming events. Dismiss functionality. Browser push notification permission prompt.
 21. **Settings: Firm & Users** — Firm name editing (change parent firm name). Team members table showing all users. Edit modal to change role (staff/partner), title/designation, date of joining, and reset password. Partner-only access.
 22. **Tasks Page** — Staff see only their own assigned tasks (title: "My Tasks"). Partners see all tasks grouped by staff member (title: "All Tasks") with staff filter. Toggleable completion checkboxes, overdue indicators, priority dots, status badges. Positioned below Dashboard in sidebar Overview section.
+23. **Client Activity Timeline (360° View)** — Chronological view of all client activity: tasks, events, documents, and engagements. Accessible from Client Master via "Timeline" button. Filter chips per activity type. Stats cards.
+24. **Export/Reporting** — PDF generation for audit reports and VAT returns from any engagement. Uses fpdf2 with firm branding (gold accent line, firm name header). Includes checklist progress, status, phase info.
+25. **Engagement Detail Page** — Dedicated page for viewing/editing a specific engagement. Shows full interactive checklist with group progress bars, edit panel (status/assignee), and Export PDF button. Navigable from Deadline Tracker "Open →" buttons.
+26. **Data-Driven Deadline Tracker** — Now fetches real engagements from DB. Summary stats, workload distribution by staff, tabbed by service type, staff/search filters. Each row has clickable "Open →" that navigates to engagement detail.
 
 ## Testing Status
 - Iteration 1: 100% pass (backend + frontend)

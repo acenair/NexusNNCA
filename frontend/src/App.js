@@ -30,6 +30,8 @@ import Documents from '@/pages/Documents';
 import Settings from '@/pages/Settings';
 import MyTasks from '@/pages/MyTasks';
 import ClientTimeline from '@/pages/ClientTimeline';
+import EngagementDetail from '@/pages/EngagementDetail';
+import ClientOnboarding from '@/pages/ClientOnboarding';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import MainLayout from '@/components/MainLayout';
 
@@ -81,6 +83,8 @@ function App() {
             <Route path="documents" element={<Documents />} />
             <Route path="settings" element={<Settings />} />
             <Route path="clients/:clientId/timeline" element={<ClientTimeline />} />
+            <Route path="engagements/:engagementId" element={<EngagementDetail />} />
+            <Route path="onboarding" element={<ClientOnboarding />} />
           </Route>
         </Routes>
       </BrowserRouter>

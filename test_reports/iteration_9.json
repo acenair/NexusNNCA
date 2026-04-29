@@ -1,0 +1,37 @@
+{
+  "summary": "Iteration 9: Tested Client Onboarding workflow end-to-end. Backend POST /api/onboarding correctly creates client + tasks + engagements + document checklist; staff role gets 403; duplicate names return 400; high-risk and VAT services correctly extend the document checklist. GET /api/onboarding/document-checklist preview matches services & risk. Frontend multi-step wizard works for partner Arjun: stepper, validation gates (name required on step 1, >=1 service on step 2), service toggle, prev/next nav, submit produces success view with task/engagement/document counts. Staff Fazil correctly sees Access Restricted on /onboarding and the sidebar item is hidden. All 7 backend pytest cases and all 14 Playwright UI checkpoints passed.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Step 4 Relationship Manager dropdown (ClientOnboarding.js line 282)", "issues": ["React hydration warning logged in console: '<span> cannot be a child of <option>'. The Emergent dev tracking wrapper injects a <span> inside <option> for the dynamic staff list. Functionality is unaffected, but the console error appears on every step-4 render. Consider rendering option label as plain string children only (already a string) — the wrapper is auto-injected at build, so it may need a build-config or plain-text marker; otherwise this is benign noise."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration9_onboarding.py",
+    "/app/test_reports/pytest/pytest_results_iter9.xml"
+  ],
+  "action_items": [
+    "Optional: investigate React 'span cannot be child of option' hydration warning in ClientOnboarding.js step-4 staff dropdown (cosmetic console error only)."
+  ],
+  "critical_code_review_comments": [
+    "server.py is now 2140 lines — exceeds the 700-line guideline. Recommend splitting into routers (auth, clients, tasks, engagements, onboarding, exports). Already flagged in earlier iterations; growing.",
+    "Onboarding endpoint correctly excludes Mongo _id from all returned docs (uses {_id: 0} or builds new dict).",
+    "RBAC check (role=='partner') is enforced on POST /onboarding — good. GET /onboarding/document-checklist intentionally does not gate by role (any authenticated user can preview); acceptable.",
+    "Duplicate detection only matches exact name (case-sensitive). Consider case-insensitive match to prevent 'Acme LLC' vs 'acme llc' duplicates.",
+    "Onboarding is not transactional: if engagement insert fails after client + tasks already inserted, partial state remains. Acceptable for MVP, but worth noting for future hardening (e.g., wrap in a session/transaction or implement compensation)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration9_onboarding.py"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "Partner: arjun@nnadvisory.ae / nn123456; Staff: fazil@nnadvisory.ae / nn123456",
+  "seed_data_creation": "Created several TEST_-prefixed clients via onboarding endpoint (TEST_Onboard_*, TEST_Dup_*, TEST_HighRisk_*, TEST_UI_Onboard_*). They live in db.clients with status 'Onboarding'. Names are unique per run (uuid suffix), so no duplicate-name collision on reruns.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Onboarding workflow is fully verified. Backend tests live at /app/backend/tests/test_iteration9_onboarding.py and run cleanly in ~1.5s. The hydration warning on ClientOnboarding step 4 staff dropdown is a known Emergent dev wrapper artifact, not a functional bug. Generated test data uses TEST_ prefix for easy DB cleanup if needed."
+}
