@@ -1,31 +1,151 @@
-import React from 'react';
-import { useOutletContext, Link } from 'react-router-dom';
-import { Bell, Clock, AlertTriangle, FileText, Shield } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useOutletContext, Link, useNavigate } from 'react-router-dom';
+import { Bell, Clock, AlertTriangle, FileText, Shield, X, ChevronRight, Calendar, Users, Briefcase, ArrowLeft } from 'lucide-react';
+import axios from 'axios';
+
+const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const Reminders = () => {
   const { user } = useOutletContext();
+  const navigate = useNavigate();
+  const [reminders, setReminders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedReminder, setSelectedReminder] = useState(null);
+  const [filterType, setFilterType] = useState('all');
 
-  const reminders = [
-    { title: 'VAT Returns — all 5 clients', desc: 'Due 28 Apr 2026', daysLeft: '32 days', priority: 'high', icon: FileText, color: 'var(--red)', bg: 'var(--red-bg)', count: 5 },
-    { title: 'AML Monthly Reviews — 3 clients', desc: 'Due 10 Apr 2026', daysLeft: '14 days', priority: 'high', icon: Shield, color: 'var(--amber)', bg: 'var(--amber-bg)', count: 3 },
-    { title: 'Internal Audit Reports — 3 reports', desc: 'Due 10 Apr 2026', daysLeft: '14 days', priority: 'high', icon: FileText, color: 'var(--amber)', bg: 'var(--amber-bg)', count: 3 },
-    { title: 'CT Return — Gulf Pharma Group', desc: 'Due 30 Apr 2026', daysLeft: '34 days', priority: 'medium', icon: FileText, color: 'var(--blue)', bg: 'var(--blue-bg)', count: 1 },
-    { title: 'Sunrise Holdings — DED approval expected', desc: 'Company formation in process', daysLeft: 'Ongoing', priority: 'low', icon: Clock, color: 'var(--purple)', bg: 'var(--purple-bg)', count: 1 },
-  ];
+  useEffect(() => {
+    loadReminders();
+  }, []);
 
-  const quickLinks = [
-    { label: 'Deadline Tracker', path: '/deadlines', icon: Clock, desc: '21 items tracked' },
-    { label: 'AML Compliance', path: '/aml/review', icon: Shield, desc: '3 reports due' },
-    { label: 'VAT Filing', path: '/vat/filing', icon: FileText, desc: '5 returns pending' },
-  ];
+  const loadReminders = async () => {
+    try {
+      const res = await axios.get(`${API}/reminders`, { withCredentials: true });
+      setReminders(res.data);
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
+  };
 
-  const monthlyChecklist = [
-    { label: 'VAT returns filed', done: false, total: 5, completed: 0 },
-    { label: 'AML reviews completed', done: false, total: 3, completed: 0 },
-    { label: 'Internal audit reports', done: false, total: 3, completed: 0 },
-    { label: 'Staff appreciation done', done: false, total: 9, completed: 0 },
-    { label: 'CT returns reviewed', done: false, total: 1, completed: 0 },
-  ];
+  const filtered = filterType === 'all' ? reminders : reminders.filter(r => r.type === filterType);
+  const urgentCount = reminders.filter(r => r.severity === 'urgent').length;
+  const warningCount = reminders.filter(r => r.severity === 'warning').length;
+
+  const typeIcon = (type) => {
+    switch (type) {
+      case 'task': return FileText;
+      case 'event': return Calendar;
+      case 'engagement': return Briefcase;
+      default: return Bell;
+    }
+  };
+
+  const severityStyle = (severity) => {
+    switch (severity) {
+      case 'urgent': return { bg: 'var(--red-bg)', color: 'var(--red)', border: 'rgba(239,68,68,0.2)' };
+      case 'warning': return { bg: 'rgba(245,158,11,0.06)', color: '#d97706', border: 'rgba(245,158,11,0.2)' };
+      default: return { bg: 'var(--blue-bg)', color: 'var(--blue, #3b82f6)', border: 'rgba(59,130,246,0.15)' };
+    }
+  };
+
+  const daysLabel = (days) => {
+    if (days === null || days === undefined) return 'Ongoing';
+    if (days < 0) return `${Math.abs(days)} day${Math.abs(days) !== 1 ? 's' : ''} overdue`;
+    if (days === 0) return 'Due today';
+    return `${days} day${days !== 1 ? 's' : ''} left`;
+  };
+
+  const handleNavigate = (reminder) => {
+    if (reminder.type === 'engagement' && reminder.ref_id) {
+      navigate(`/engagements/${reminder.ref_id}`);
+    } else if (reminder.type === 'task') {
+      navigate('/tasks');
+    } else if (reminder.type === 'event') {
+      navigate('/calendar');
+    }
+  };
+
+  // Detail View
+  if (selectedReminder) {
+    const r = selectedReminder;
+    const Icon = typeIcon(r.type);
+    const sev = severityStyle(r.severity);
+    return (
+      <div className="fade-in" data-testid="reminder-detail-view">
+        <button onClick={() => setSelectedReminder(null)} className="tbtn tbtn-outline" style={{ marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }} data-testid="reminder-back-btn">
+          <ArrowLeft size={14} /> Back to Reminders
+        </button>
+
+        <div className="nn-card" style={{ overflow: 'hidden' }}>
+          {/* Header */}
+          <div style={{ background: 'linear-gradient(135deg, var(--navy) 0%, var(--navy3) 100%)', padding: '20px 24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(212,175,55,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Icon size={20} style={{ color: 'var(--gold)' }} />
+              </div>
+              <div>
+                <h2 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 18, margin: 0 }}>{r.title}</h2>
+                <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                  <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 10px', borderRadius: 10, background: sev.bg, color: sev.color, textTransform: 'uppercase' }}>
+                    {r.type}
+                  </span>
+                  <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 10px', borderRadius: 10, background: sev.bg, color: sev.color }}>
+                    {daysLabel(r.days_until)}
+                  </span>
+                  <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 10px', borderRadius: 10, background: r.priority === 'High' ? 'var(--red-bg)' : r.priority === 'Medium' ? 'rgba(245,158,11,0.1)' : 'var(--blue-bg)', color: r.priority === 'High' ? 'var(--red)' : r.priority === 'Medium' ? '#d97706' : 'var(--blue, #3b82f6)' }}>
+                    {r.priority} Priority
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Details Grid */}
+          <div style={{ padding: '20px 24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4 }}>Type</div>
+                <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500 }}>{r.type === 'task' ? 'Task Reminder' : r.type === 'event' ? 'Event / Client Notification' : 'Engagement Reminder'}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4 }}>Status</div>
+                <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500 }}>{r.status}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4 }}>Due Date</div>
+                <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500 }}>{r.due_date || '—'}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4 }}>Assigned To</div>
+                <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500 }}>{r.assigned_to || '—'}</div>
+              </div>
+              {r.client_name && (
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4 }}>Client</div>
+                  <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500 }}>{r.client_name}</div>
+                </div>
+              )}
+              {r.service_module && (
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4 }}>Service / Module</div>
+                  <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500 }}>{r.service_module}</div>
+                </div>
+              )}
+            </div>
+
+            {r.description && (
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4 }}>Description</div>
+                <div style={{ fontSize: 13, color: 'var(--text)', lineHeight: 1.5, padding: '10px 14px', background: 'var(--off)', borderRadius: 'var(--rs)', border: '1px solid var(--nn-border)' }}>{r.description}</div>
+              </div>
+            )}
+
+            <button onClick={() => handleNavigate(r)} className="tbtn tbtn-gold" data-testid="reminder-navigate-btn">
+              {r.type === 'engagement' ? 'Open Engagement' : r.type === 'task' ? 'View Tasks' : 'View Calendar'} <ChevronRight size={14} />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fade-in" data-testid="reminders-view">
@@ -33,110 +153,127 @@ const Reminders = () => {
         {/* Main Reminders */}
         <div>
           {/* Summary Banner */}
-          <div className="nn-card" style={{ padding: '16px 20px', marginBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div className="nn-card" style={{ padding: '16px 20px', marginBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--amber-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Bell size={18} color="var(--amber)" />
               </div>
               <div>
-                <h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Monthly Compliance Reminders</h3>
-                <p style={{ fontSize: 11, color: 'var(--muted)' }}>March 2026 · {reminders.length} active alerts</p>
+                <h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Compliance Reminders</h3>
+                <p style={{ fontSize: 11, color: 'var(--muted)' }}>{reminders.length} active alerts &middot; {urgentCount} overdue</p>
               </div>
             </div>
-            <span className="pill pill-amber">{reminders.filter(r => r.priority === 'high').length} urgent</span>
+            <div style={{ display: 'flex', gap: 4 }}>
+              {[{ key: 'all', label: 'All' }, { key: 'task', label: 'Tasks' }, { key: 'event', label: 'Events' }, { key: 'engagement', label: 'Engagements' }].map(f => (
+                <button key={f.key} onClick={() => setFilterType(f.key)} style={{
+                  padding: '5px 12px', borderRadius: 14, fontSize: 10, fontWeight: 600, cursor: 'pointer',
+                  border: filterType === f.key ? '1px solid var(--gold)' : '1px solid var(--nn-border)',
+                  background: filterType === f.key ? 'rgba(212,175,55,0.08)' : 'transparent',
+                  color: filterType === f.key ? 'var(--gold4)' : 'var(--muted)', fontFamily: 'DM Sans',
+                }} data-testid={`filter-${f.key}`}>{f.label}</button>
+              ))}
+            </div>
           </div>
 
           {/* Reminder Items */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {reminders.map((r, idx) => {
-              const Icon = r.icon;
-              return (
-                <div key={idx} className="nn-card" style={{ padding: '14px 18px', display: 'flex', alignItems: 'flex-start', gap: 14 }} data-testid={`reminder-item-${idx}`}>
-                  <div style={{ width: 36, height: 36, borderRadius: 8, background: r.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Icon size={16} color={r.color} />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                      <h4 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{r.title}</h4>
-                      <span className={`pill ${r.priority === 'high' ? 'pill-red' : r.priority === 'medium' ? 'pill-blue' : 'pill-navy'}`} style={{ fontSize: 10 }}>
-                        {r.daysLeft}
-                      </span>
+          {loading ? (
+            <div className="nn-card" style={{ padding: 40, textAlign: 'center', color: 'var(--muted)' }}>Loading reminders...</div>
+          ) : filtered.length === 0 ? (
+            <div className="nn-card" style={{ padding: 40, textAlign: 'center', color: 'var(--muted)' }}>No reminders to show.</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {filtered.map((r, idx) => {
+                const Icon = typeIcon(r.type);
+                const sev = severityStyle(r.severity);
+                return (
+                  <div
+                    key={r.reminder_id}
+                    className="nn-card"
+                    style={{ padding: '14px 18px', display: 'flex', alignItems: 'flex-start', gap: 14, cursor: 'pointer', transition: 'border-color 0.15s', borderLeft: `3px solid ${sev.color}` }}
+                    onClick={() => setSelectedReminder(r)}
+                    data-testid={`reminder-item-${idx}`}
+                  >
+                    <div style={{ width: 36, height: 36, borderRadius: 8, background: sev.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Icon size={16} color={sev.color} />
                     </div>
-                    <p style={{ fontSize: 11, color: 'var(--muted)' }}>{r.desc}</p>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4, gap: 8 }}>
+                        <h4 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.title}</h4>
+                        <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                          <span style={{ fontSize: 9, fontWeight: 600, padding: '2px 6px', borderRadius: 6, background: sev.bg, color: sev.color, textTransform: 'uppercase' }}>{r.type}</span>
+                          <span style={{ fontSize: 9, fontWeight: 600, padding: '2px 6px', borderRadius: 6, background: sev.bg, color: sev.color }}>
+                            {daysLabel(r.days_until)}
+                          </span>
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--muted)', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                        {r.client_name && <span>{r.client_name}</span>}
+                        {r.assigned_to && <span>Assigned: {r.assigned_to}</span>}
+                        {r.service_module && <span>{r.service_module}</span>}
+                      </div>
+                    </div>
+                    <ChevronRight size={16} style={{ color: 'var(--light)', flexShrink: 0, marginTop: 8 }} />
                   </div>
-                  <div style={{ background: 'var(--off)', borderRadius: 6, padding: '4px 10px', textAlign: 'center', flexShrink: 0 }}>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>{r.count}</div>
-                    <div style={{ fontSize: 9, color: 'var(--muted)', textTransform: 'uppercase' }}>items</div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Right Sidebar */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {/* Stats */}
+          <div className="nn-card" style={{ padding: '14px 16px' }}>
+            <h3 style={{ fontSize: 13, fontFamily: 'DM Serif Display', color: 'var(--text)', marginBottom: 10 }}>Summary</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 12, color: 'var(--red)', fontWeight: 500 }}>Overdue</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--red)' }}>{urgentCount}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 12, color: '#d97706', fontWeight: 500 }}>Due Soon</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: '#d97706' }}>{warningCount}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 12, color: 'var(--text)', fontWeight: 500 }}>Total</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{reminders.length}</span>
+              </div>
+            </div>
+          </div>
+
           {/* Quick Links */}
           <div className="nn-card">
             <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--nn-border)' }}>
               <h3 style={{ fontSize: 13, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Quick Links</h3>
             </div>
-            {quickLinks.map((ql, idx) => {
-              const Icon = ql.icon;
+            {[
+              { label: 'Deadline Tracker', path: '/deadlines', icon: Clock },
+              { label: 'Tasks', path: '/tasks', icon: FileText },
+              { label: 'Calendar', path: '/calendar', icon: Calendar },
+            ].map((ql, idx) => {
+              const QIcon = ql.icon;
               return (
-                <Link key={idx} to={ql.path} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderBottom: idx < quickLinks.length - 1 ? '1px solid var(--nn-border)' : 'none', textDecoration: 'none', transition: 'background 0.12s' }}>
-                  <Icon size={14} color="var(--gold4)" />
-                  <div>
-                    <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text)' }}>{ql.label}</div>
-                    <div style={{ fontSize: 10, color: 'var(--muted)' }}>{ql.desc}</div>
-                  </div>
+                <Link key={idx} to={ql.path} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderBottom: idx < 2 ? '1px solid var(--nn-border)' : 'none', textDecoration: 'none', transition: 'background 0.12s' }}>
+                  <QIcon size={14} color="var(--gold4)" />
+                  <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text)' }}>{ql.label}</div>
                 </Link>
               );
             })}
           </div>
 
-          {/* Monthly Checklist */}
-          <div className="nn-card">
-            <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--nn-border)' }}>
-              <h3 style={{ fontSize: 13, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Monthly Checklist</h3>
-            </div>
-            <div style={{ padding: '8px 0' }}>
-              {monthlyChecklist.map((item, idx) => (
-                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px' }}>
-                  <div style={{
-                    width: 16, height: 16, borderRadius: 4,
-                    border: `1.5px solid ${item.done ? 'var(--green)' : 'var(--nn-border)'}`,
-                    background: item.done ? 'var(--green-bg)' : 'transparent',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                  }}>
-                    {item.done && <span style={{ fontSize: 10, color: 'var(--green)' }}>✓</span>}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 11, color: item.done ? 'var(--muted)' : 'var(--text)' }}>{item.label}</div>
-                  </div>
-                  <span style={{ fontSize: 10, color: 'var(--muted)' }}>{item.completed}/{item.total}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Key Dates */}
+          {/* Type Breakdown */}
           <div className="nn-card" style={{ padding: '14px 16px' }}>
-            <h3 style={{ fontSize: 13, fontFamily: 'DM Serif Display', color: 'var(--text)', marginBottom: 10 }}>Key Dates</h3>
+            <h3 style={{ fontSize: 13, fontFamily: 'DM Serif Display', color: 'var(--text)', marginBottom: 10 }}>By Type</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {[
-                { date: '10 Apr', label: 'AML + Internal Audit', color: 'var(--red)' },
-                { date: '28 Apr', label: 'VAT Returns Deadline', color: 'var(--amber)' },
-                { date: '30 Apr', label: 'CT Return — Gulf Pharma', color: 'var(--blue)' },
-              ].map((d, idx) => (
-                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ width: 4, height: 20, borderRadius: 2, background: d.color }} />
-                  <div>
-                    <div style={{ fontSize: 10, fontWeight: 600, color: d.color }}>{d.date}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text)' }}>{d.label}</div>
+              {['task', 'event', 'engagement'].map(type => {
+                const count = reminders.filter(r => r.type === type).length;
+                return (
+                  <div key={type} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 12, color: 'var(--text)', textTransform: 'capitalize' }}>{type}s</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: count > 0 ? 'var(--gold4)' : 'var(--muted)' }}>{count}</span>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

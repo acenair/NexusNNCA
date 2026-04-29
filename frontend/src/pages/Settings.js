@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { Settings as SettingsIcon, Shield, HardDrive, GitBranch, Save, Plus, Trash2, GripVertical, ChevronDown, ChevronUp, X, CheckCircle, Cloud, Edit2, Building, Users } from 'lucide-react';
+import { Settings as SettingsIcon, Shield, HardDrive, GitBranch, Save, Plus, Trash2, GripVertical, ChevronDown, ChevronUp, X, CheckCircle, Cloud, Edit2, Building, Users, Timer, Download } from 'lucide-react';
 import axios from 'axios';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -68,7 +68,17 @@ const Settings = () => {
   const [firmName, setFirmName] = useState('Nair & Nelliyatt Chartered Accountants');
   const [users, setUsers] = useState([]);
   const [editUser, setEditUser] = useState(null);
-  const [userForm, setUserForm] = useState({ role: '', title: '', new_password: '', date_of_joining: '' });
+  const [userForm, setUserForm] = useState({ role: '', title: '', email: '', new_password: '', date_of_joining: '' });
+
+  // Billable Hours
+  const [bhEntries, setBhEntries] = useState([]);
+  const [bhSummary, setBhSummary] = useState(null);
+  const [bhFilter, setBhFilter] = useState({ staff_email: '', client_id: '', date_from: '', date_to: '' });
+  const [bhClients, setBhClients] = useState([]);
+  const [bhStaffList, setBhStaffList] = useState([]);
+  const [showLogHours, setShowLogHours] = useState(false);
+  const [bhForm, setBhForm] = useState({ client_id: '', task_id: '', hours: '', date: '', description: '' });
+  const [bhView, setBhView] = useState('entries');
 
   useEffect(() => { loadSettings(); }, []);
 
@@ -90,6 +100,65 @@ const Settings = () => {
   };
 
   const showSave = (msg) => { setSaveMsg(msg); setTimeout(() => setSaveMsg(''), 2000); };
+
+  // Load billable hours data
+  const loadBillableHours = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (bhFilter.staff_email) params.append('staff_email', bhFilter.staff_email);
+      if (bhFilter.client_id) params.append('client_id', bhFilter.client_id);
+      if (bhFilter.date_from) params.append('date_from', bhFilter.date_from);
+      if (bhFilter.date_to) params.append('date_to', bhFilter.date_to);
+      const [entriesRes, summaryRes, clientsRes, staffRes] = await Promise.all([
+        axios.get(`${API}/billable-hours?${params}`, { withCredentials: true }),
+        axios.get(`${API}/billable-hours/summary?${params}`, { withCredentials: true }).catch(() => ({ data: null })),
+        axios.get(`${API}/clients`, { withCredentials: true }),
+        axios.get(`${API}/auth/users-list`),
+      ]);
+      setBhEntries(entriesRes.data);
+      if (summaryRes.data) setBhSummary(summaryRes.data);
+      setBhClients(clientsRes.data);
+      setBhStaffList(staffRes.data);
+    } catch (err) { console.error(err); }
+  };
+
+  useEffect(() => { if (tab === 'billable') loadBillableHours(); }, [tab, bhFilter]);
+
+  const submitLogHours = async () => {
+    if (!bhForm.client_id || !bhForm.hours || !bhForm.date) return;
+    setSaving(true);
+    try {
+      const client = bhClients.find(c => c.client_id === bhForm.client_id);
+      await axios.post(`${API}/billable-hours`, {
+        client_id: bhForm.client_id,
+        client_name: client?.name,
+        hours: parseFloat(bhForm.hours),
+        date: bhForm.date,
+        description: bhForm.description,
+      }, { withCredentials: true });
+      setShowLogHours(false);
+      setBhForm({ client_id: '', task_id: '', hours: '', date: '', description: '' });
+      loadBillableHours();
+      showSave('Hours logged');
+    } catch (err) { alert(err.response?.data?.detail || 'Failed'); }
+    finally { setSaving(false); }
+  };
+
+  const deleteBhEntry = async (entryId) => {
+    if (!window.confirm('Delete this time entry?')) return;
+    try {
+      await axios.delete(`${API}/billable-hours/${entryId}`, { withCredentials: true });
+      loadBillableHours();
+    } catch (err) { alert('Failed to delete'); }
+  };
+
+  const downloadBhReport = (staffEmail) => {
+    const params = new URLSearchParams();
+    if (staffEmail) params.append('staff_email', staffEmail);
+    if (bhFilter.date_from) params.append('date_from', bhFilter.date_from);
+    if (bhFilter.date_to) params.append('date_to', bhFilter.date_to);
+    window.open(`${API}/billable-hours/export?${params}`, '_blank');
+  };
 
   // --- RBAC ---
   const toggleRbac = (role, section) => {
@@ -193,13 +262,14 @@ const Settings = () => {
 
   const openUserEdit = (u) => {
     setEditUser(u);
-    setUserForm({ role: u.role, title: u.title || '', new_password: '', date_of_joining: u.date_of_joining || '' });
+    setUserForm({ role: u.role, title: u.title || '', email: u.email || '', new_password: '', date_of_joining: u.date_of_joining || '' });
   };
 
   const saveUser = async () => {
     setSaving(true);
     try {
       const payload = { role: userForm.role, title: userForm.title, date_of_joining: userForm.date_of_joining };
+      if (userForm.email && userForm.email !== editUser.email) payload.email = userForm.email;
       if (userForm.new_password) payload.new_password = userForm.new_password;
       await axios.patch(`${API}/settings/users/${editUser.user_id}`, payload, { withCredentials: true });
       showSave(`${editUser.name} updated`);
@@ -221,6 +291,7 @@ const Settings = () => {
     { key: 'rbac', label: 'Access Control', icon: Shield },
     { key: 'storage', label: 'Storage', icon: HardDrive },
     { key: 'workflows', label: 'Workflows', icon: GitBranch },
+    { key: 'billable', label: 'Billable Hours', icon: Timer },
   ];
 
   return (
@@ -312,6 +383,10 @@ const Settings = () => {
                   <button onClick={() => setEditUser(null)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex' }}><X size={18} /></button>
                 </div>
                 <div className="modal-body">
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={labelStyle}>Email Address</label>
+                    <input type="email" value={userForm.email} onChange={(e) => setUserForm(p => ({ ...p, email: e.target.value }))} placeholder="user@nnadvisory.ae" style={inputStyle} data-testid="user-email-input" />
+                  </div>
                   <div style={{ marginBottom: 12 }}>
                     <label style={labelStyle}>Role *</label>
                     <select value={userForm.role} onChange={(e) => setUserForm(p => ({ ...p, role: e.target.value }))} style={inputStyle} data-testid="user-role-select">
@@ -550,6 +625,195 @@ const Settings = () => {
               <button className="tbtn tbtn-gold" onClick={saveWorkflow} disabled={saving || !wfForm.name || !wfForm.service_type || wfForm.steps.filter(s => s.name.trim()).length === 0} data-testid="save-workflow-btn"><Save size={13} /> {saving ? 'Saving...' : 'Save Workflow'}</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* === BILLABLE HOURS TAB === */}
+      {tab === 'billable' && (
+        <div data-testid="billable-hours-tab">
+          {/* Filters & Actions */}
+          <div className="nn-card" style={{ padding: '14px 20px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <select value={bhFilter.staff_email} onChange={(e) => setBhFilter(p => ({ ...p, staff_email: e.target.value }))} style={{ ...inputStyle, width: 160 }} data-testid="bh-filter-staff">
+                <option value="">All Staff</option>
+                {bhStaffList.filter(s => s.role === 'staff').map(s => <option key={s.email} value={s.email}>{s.name}</option>)}
+              </select>
+              <select value={bhFilter.client_id} onChange={(e) => setBhFilter(p => ({ ...p, client_id: e.target.value }))} style={{ ...inputStyle, width: 160 }} data-testid="bh-filter-client">
+                <option value="">All Clients</option>
+                {bhClients.map(c => <option key={c.client_id} value={c.client_id}>{c.name}</option>)}
+              </select>
+              <input type="date" value={bhFilter.date_from} onChange={(e) => setBhFilter(p => ({ ...p, date_from: e.target.value }))} style={{ ...inputStyle, width: 140 }} data-testid="bh-filter-from" placeholder="From" />
+              <input type="date" value={bhFilter.date_to} onChange={(e) => setBhFilter(p => ({ ...p, date_to: e.target.value }))} style={{ ...inputStyle, width: 140 }} data-testid="bh-filter-to" placeholder="To" />
+            </div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button className="tbtn tbtn-outline" onClick={() => downloadBhReport(bhFilter.staff_email)} data-testid="bh-export-btn"><Download size={13} /> Export CSV</button>
+              <button className="tbtn tbtn-gold" onClick={() => setShowLogHours(true)} data-testid="bh-log-hours-btn"><Plus size={13} /> Log Hours</button>
+            </div>
+          </div>
+
+          {/* Summary Cards */}
+          {bhSummary && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 14 }}>
+              <div className="nn-card" style={{ padding: '14px 18px' }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase' }}>Total Hours</div>
+                <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--gold4)', marginTop: 4 }}>{bhSummary.total_hours.toFixed(1)}</div>
+              </div>
+              <div className="nn-card" style={{ padding: '14px 18px' }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase' }}>Total Entries</div>
+                <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', marginTop: 4 }}>{bhSummary.total_entries}</div>
+              </div>
+              <div className="nn-card" style={{ padding: '14px 18px' }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase' }}>Active Staff</div>
+                <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', marginTop: 4 }}>{bhSummary.by_staff?.length || 0}</div>
+              </div>
+            </div>
+          )}
+
+          {/* View Toggle */}
+          <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
+            {[{ key: 'entries', label: 'Time Entries' }, { key: 'by_staff', label: 'By Staff' }, { key: 'by_client', label: 'By Client' }].map(v => (
+              <button key={v.key} onClick={() => setBhView(v.key)} style={{
+                padding: '6px 14px', borderRadius: 'var(--rs)', fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                border: bhView === v.key ? '1px solid var(--gold)' : '1px solid var(--nn-border)',
+                background: bhView === v.key ? 'rgba(212,175,55,0.08)' : 'var(--white)',
+                color: bhView === v.key ? 'var(--gold4)' : 'var(--muted)', fontFamily: 'DM Sans',
+              }} data-testid={`bh-view-${v.key}`}>{v.label}</button>
+            ))}
+          </div>
+
+          {/* Time Entries Table */}
+          {bhView === 'entries' && (
+            <div className="nn-card" style={{ overflow: 'hidden' }}>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
+                  <thead>
+                    <tr style={{ background: 'var(--off)' }}>
+                      {['Date', 'Staff', 'Client', 'Hours', 'Description', 'Actions'].map(h => (
+                        <th key={h} style={{ padding: '10px 14px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', textAlign: 'left', letterSpacing: 0.5 }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bhEntries.length === 0 ? (
+                      <tr><td colSpan={6} style={{ padding: 30, textAlign: 'center', color: 'var(--muted)', fontSize: 12 }}>No billable hours logged yet. Click "Log Hours" to add your first entry.</td></tr>
+                    ) : bhEntries.map(e => (
+                      <tr key={e.entry_id} style={{ borderBottom: '1px solid var(--nn-border)' }} data-testid={`bh-row-${e.entry_id}`}>
+                        <td style={{ padding: '10px 14px', fontSize: 12, color: 'var(--text)' }}>{e.date}</td>
+                        <td style={{ padding: '10px 14px', fontSize: 12, fontWeight: 500, color: 'var(--text)' }}>{e.staff_name}</td>
+                        <td style={{ padding: '10px 14px', fontSize: 12, color: 'var(--muted)' }}>{e.client_name}</td>
+                        <td style={{ padding: '10px 14px', fontSize: 13, fontWeight: 700, color: 'var(--gold4)' }}>{e.hours}h</td>
+                        <td style={{ padding: '10px 14px', fontSize: 11, color: 'var(--muted)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.description || '—'}</td>
+                        <td style={{ padding: '10px 14px' }}>
+                          <button onClick={() => deleteBhEntry(e.entry_id)} className="tbtn" style={{ padding: '4px 8px', fontSize: 10, background: 'var(--red-bg)', color: 'var(--red)', border: 'none' }} data-testid={`bh-delete-${e.entry_id}`}><Trash2 size={10} /></button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* By Staff View */}
+          {bhView === 'by_staff' && bhSummary && (
+            <div style={{ display: 'grid', gap: 12 }}>
+              {(bhSummary.by_staff || []).map((s, idx) => (
+                <div key={idx} className="nn-card" style={{ overflow: 'hidden' }} data-testid={`bh-staff-${s.staff_email}`}>
+                  <div style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--nn-border)' }}>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{s.staff_name}</div>
+                      <div style={{ fontSize: 11, color: 'var(--muted)' }}>{s.staff_email}</div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--gold4)' }}>{s.total_hours.toFixed(1)}h</div>
+                        <div style={{ fontSize: 10, color: 'var(--muted)' }}>{s.clients.length} client{s.clients.length !== 1 ? 's' : ''}</div>
+                      </div>
+                      <button className="tbtn tbtn-outline" style={{ padding: '4px 8px', fontSize: 10 }} onClick={() => downloadBhReport(s.staff_email)} data-testid={`bh-export-staff-${s.staff_email}`}><Download size={11} /></button>
+                    </div>
+                  </div>
+                  <div style={{ padding: '8px 18px' }}>
+                    {s.clients.map((c, ci) => (
+                      <div key={ci} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: ci < s.clients.length - 1 ? '1px solid var(--nn-border)' : 'none' }}>
+                        <span style={{ fontSize: 12, color: 'var(--text)' }}>{c.client_name}</span>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--gold4)' }}>{c.hours.toFixed(1)}h</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              {(!bhSummary.by_staff || bhSummary.by_staff.length === 0) && (
+                <div className="nn-card" style={{ padding: 30, textAlign: 'center', color: 'var(--muted)', fontSize: 12 }}>No data. Log some hours first.</div>
+              )}
+            </div>
+          )}
+
+          {/* By Client View */}
+          {bhView === 'by_client' && bhSummary && (
+            <div style={{ display: 'grid', gap: 12 }}>
+              {(bhSummary.by_client || []).map((c, idx) => (
+                <div key={idx} className="nn-card" style={{ overflow: 'hidden' }} data-testid={`bh-client-card-${idx}`}>
+                  <div style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--nn-border)' }}>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{c.client_name}</div>
+                      <div style={{ fontSize: 11, color: 'var(--muted)' }}>{c.staff.length} staff member{c.staff.length !== 1 ? 's' : ''}</div>
+                    </div>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--gold4)' }}>{c.total_hours.toFixed(1)}h</div>
+                  </div>
+                  <div style={{ padding: '8px 18px' }}>
+                    {c.staff.map((s, si) => (
+                      <div key={si} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: si < c.staff.length - 1 ? '1px solid var(--nn-border)' : 'none' }}>
+                        <span style={{ fontSize: 12, color: 'var(--text)' }}>{s.staff_name}</span>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--gold4)' }}>{s.hours.toFixed(1)}h</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              {(!bhSummary.by_client || bhSummary.by_client.length === 0) && (
+                <div className="nn-card" style={{ padding: 30, textAlign: 'center', color: 'var(--muted)', fontSize: 12 }}>No data. Log some hours first.</div>
+              )}
+            </div>
+          )}
+
+          {/* Log Hours Modal */}
+          {showLogHours && (
+            <div className="modal-overlay" onClick={() => !saving && setShowLogHours(false)} data-testid="log-hours-modal">
+              <div className="modal-box" style={{ maxWidth: 440 }} onClick={(e) => e.stopPropagation()}>
+                <div className="modal-hdr">
+                  <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 16 }}>Log Billable Hours</h3>
+                  <button onClick={() => setShowLogHours(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex' }}><X size={18} /></button>
+                </div>
+                <div className="modal-body">
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={labelStyle}>Client *</label>
+                    <select value={bhForm.client_id} onChange={(e) => setBhForm(p => ({ ...p, client_id: e.target.value }))} style={inputStyle} data-testid="bh-form-client">
+                      <option value="">Select client...</option>
+                      {bhClients.map(c => <option key={c.client_id} value={c.client_id}>{c.name}</option>)}
+                    </select>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+                    <div>
+                      <label style={labelStyle}>Hours *</label>
+                      <input type="number" step="0.25" min="0.25" value={bhForm.hours} onChange={(e) => setBhForm(p => ({ ...p, hours: e.target.value }))} placeholder="e.g. 2.5" style={inputStyle} data-testid="bh-form-hours" />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Date *</label>
+                      <input type="date" value={bhForm.date} onChange={(e) => setBhForm(p => ({ ...p, date: e.target.value }))} style={inputStyle} data-testid="bh-form-date" />
+                    </div>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Description</label>
+                    <textarea value={bhForm.description} onChange={(e) => setBhForm(p => ({ ...p, description: e.target.value }))} rows={2} placeholder="What was worked on..." style={{ ...inputStyle, resize: 'vertical' }} data-testid="bh-form-desc" />
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button className="tbtn tbtn-outline" onClick={() => setShowLogHours(false)}>Cancel</button>
+                  <button className="tbtn tbtn-gold" onClick={submitLogHours} disabled={saving || !bhForm.client_id || !bhForm.hours || !bhForm.date} data-testid="bh-form-submit">{saving ? 'Saving...' : 'Log Hours'}</button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
