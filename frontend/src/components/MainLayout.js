@@ -39,7 +39,7 @@ const MainLayout = ({ user }) => {
   // Notifications
   const [notifications, setNotifications] = useState([]);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
-  const [notifPermission, setNotifPermission] = useState(Notification?.permission || 'default');
+  const [notifPermission, setNotifPermission] = useState(typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'default');
 
   // Forms
   const [taskForm, setTaskForm] = useState({ title: '', service_module: '', client_id: '', client_name: '', assigned_to: '', assigned_to_name: '', due_date: '', priority: 'Medium', description: '' });
