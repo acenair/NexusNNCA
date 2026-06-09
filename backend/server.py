@@ -2268,7 +2268,8 @@ async def send_push_to_user(user_id: str, title: str, body: str, url: str = "/",
             logger.warning(f"Push failed for {sub_doc.get('user_email')}: {e}")
             # If subscription is expired/invalid (410 Gone), remove it
             if hasattr(e, 'response') and e.response is not None and e.response.status_code in (404, 410):
-                await db.push_subscriptions.delete_one({"_id": sub_doc.get("_id")})
+                endpoint = sub_info.get("endpoint", "")
+                await db.push_subscriptions.delete_one({"user_id": user_id, "endpoint": endpoint})
         except Exception as e:
             logger.warning(f"Push error: {e}")
 
