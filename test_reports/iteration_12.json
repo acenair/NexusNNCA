@@ -1,0 +1,43 @@
+{
+  "summary": "Iteration 12 - Bulk Task Upload (CSV/XLSX) tested end-to-end. Backend: 7/7 pytest cases passed covering POST /api/tasks/bulk-preview (CSV header auto-mapping + preview rows + 400 on unsupported format), POST /api/tasks/bulk-upload (CSV + XLSX file creation, flexible header aliases 'Task Title'->title, 'Company'->client_name, 'Assigned To'->assigned_to_name, 'Due Date'/'Deadline'->due_date, 'Service'->service_module, 'Priority'/'Status' normalization, source='bulk_upload' tag), staff name -> email resolution (Fazil -> fazil@nnadvisory.ae, Anju -> anju@nnadvisory.ae), client name -> client_id resolution (Al Baraka Trading LLC, Falcon Logistics Co.), DD/MM/YYYY date parsing, unknown staff fallback to partner email, RBAC 403 for staff, 400 for unsupported file format (PDF/TXT), 400 when no 'Title' column found. Frontend (Playwright): bulk-upload-btn visible for partner Arjun and hidden for staff Fazil, modal opens with Download Template + File Input, CSV selection triggers preview step with all 6 mapped-{field} chips (title/description/client_name/assigned_to_name/due_date/priority) plus preview table, Import button creates tasks and shows result step with 'Successfully imported 2 task(s)' + 2 Total Rows / 2 Created / 0 Errors. All flows working as expected.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/tasks/bulk-upload", "issue": "When two headers both alias to the same field (e.g. 'Task Title' + 'Subject' both -> title), the LAST column silently overwrites the first because column_map is a dict keyed by index and rows are zipped by field. No warning is surfaced to the partner — the 'real' title column may be silently dropped. Recommend either de-duplicating mapped fields with a first-wins rule + warning, or returning conflicting columns in mapped_columns response."},
+      {"endpoint": "POST /api/tasks/bulk-upload", "issue": "When 'Assigned To' name does not resolve, assignee silently falls back to the uploading partner's email but the original (unresolved) name is kept in assigned_to_name. This produces a mismatch (e.g. assigned_to='arjun@nnadvisory.ae' but assigned_to_name='GhostUser'). Consider either rejecting the row, returning it in error_details, or aligning the name to the fallback user."},
+      {"endpoint": "DELETE /api/tasks/{task_id}", "issue": "No DELETE endpoint exists, so test-data cleanup (and presumably any 'delete task' UI action) is not possible. Returns 403/405. Not a regression of iter12, but worth flagging - bulk-uploaded tasks cannot be removed via API."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration12_bulk_upload.py",
+    "/app/test_reports/pytest/pytest_results_iter12.xml"
+  ],
+  "action_items": [
+    "(Optional) Surface header-alias conflicts in /api/tasks/bulk-preview so partners can see when two columns map to the same field.",
+    "(Optional) When assignee name cannot be resolved, either reject the row or align assigned_to_name with the fallback user; current state stores an inconsistent name/email pair.",
+    "(Optional) Add a DELETE /api/tasks/{task_id} endpoint so test data and mis-uploaded tasks can be removed by partners.",
+    "(Tech debt - flagged across iter 9/10/11/12) /app/backend/server.py is now ~2780 lines. Bulk upload adds another ~230 lines to the monolith. Split into routers (tasks/bulk, clients, push, etc.)."
+  ],
+  "critical_code_review_comments": [
+    "TASK_HEADER_MAP includes 'description_title' -> 'title' which is a synthetic key that real spreadsheets will never contain - dead entry, safe to remove.",
+    "parse_date_flexible() falls back to returning the raw string if no format matches, which then gets stored as due_date. Combined with the auto-fallback to (now+7d) ONLY when the parsed value is falsy, an unparseable but non-empty date like 'next Monday' would persist verbatim and break date filters/sorts. Recommend returning None on full failure and letting the +7d fallback kick in.",
+    "bulk_upload_tasks loads all users via db.users.find({}, {...}).to_list(100) and all clients via .to_list(500) on every upload - fine today but the magic numbers are silent caps; large firms may hit them. Move to a proper pagination/aggregation or at least use a known-large limit.",
+    "Both bulk-preview and bulk-upload re-import openpyxl/csv/io inside the function body on every request. Move imports to module top for cold-start + readability.",
+    "In bulk_upload_tasks, the row index error_details payload could leak full row data via str(e) in some openpyxl/pydantic failures. Consider sanitising error strings before returning them in the API response."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration12_bulk_upload.py"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "Partner: arjun@nnadvisory.ae / nn123456; Staff: fazil@nnadvisory.ae / nn123456 (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "Several TEST_ prefixed tasks (TEST_BU_*, TEST_BUX_*, TEST_FE_BU_*) were created in db.tasks via bulk upload during testing. Cleanup fixture attempts DELETE /api/tasks/{id} but that endpoint is missing (returns 403/405), so ~10 TEST_-prefixed tasks remain in the tasks collection. They are clearly labelled and source='bulk_upload', easy to identify with db.tasks.find({source:'bulk_upload', title: {$regex: '^TEST_'}}). Recommend a manual mongo cleanup or adding DELETE endpoint for proper teardown.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Bulk Task Upload feature verified working end-to-end. Backend tests at /app/backend/tests/test_iteration12_bulk_upload.py (7 tests, all passing). Known minor gaps: (1) duplicate header-alias conflicts silently overwrite (last-wins), (2) unresolved assignee leaves name/email inconsistent, (3) no DELETE /api/tasks/{id} so bulk-uploaded test tasks accumulate. None are blockers. If the next iteration touches tasks or bulk-upload, run iter12 first as regression baseline.",
+  "rca of the issue": "No bugs found. The bulk-upload feature (both endpoints + Tasks page modal flow) works as documented in the problem statement: CSV/XLSX parsing, ~40 header alias auto-mapping, staff/client name resolution, partner-only RBAC, file-format and missing-title 400s, source='bulk_upload' tagging, and a 4-step UI (select -> preview -> importing -> done) with download template are all functional."
+}

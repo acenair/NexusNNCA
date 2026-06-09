@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { CheckCircle, Clock, AlertTriangle, Filter, ChevronDown } from 'lucide-react';
+import { CheckCircle, Clock, AlertTriangle, Filter, ChevronDown, Upload, X, FileSpreadsheet, Loader2, Download } from 'lucide-react';
 import axios from 'axios';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -17,6 +17,16 @@ const MyTasks = () => {
   const [filterStaff, setFilterStaff] = useState('');
   const [staffList, setStaffList] = useState([]);
 
+  // Bulk upload state
+  const [showUpload, setShowUpload] = useState(false);
+  const [uploadStep, setUploadStep] = useState('select'); // select, preview, importing, done
+  const [uploadFile, setUploadFile] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [uploadResult, setUploadResult] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const fileInputRef = useRef(null);
+
   const isPartner = user?.role === 'partner';
 
   useEffect(() => { loadTasks(); }, []);
@@ -31,6 +41,75 @@ const MyTasks = () => {
       }
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
+  };
+
+  // Bulk Upload Functions
+  const openUploadModal = () => {
+    setShowUpload(true);
+    setUploadStep('select');
+    setUploadFile(null);
+    setPreview(null);
+    setUploadResult(null);
+    setUploadError('');
+  };
+
+  const handleFileSelect = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploadFile(file);
+    setUploadError('');
+    setUploading(true);
+
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const res = await axios.post(`${API}/tasks/bulk-preview`, formData, {
+        withCredentials: true,
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setPreview(res.data);
+      setUploadStep('preview');
+    } catch (err) {
+      setUploadError(err.response?.data?.detail || 'Failed to parse file');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleImport = async () => {
+    if (!uploadFile) return;
+    setUploading(true);
+    setUploadStep('importing');
+    setUploadError('');
+
+    const formData = new FormData();
+    formData.append('file', uploadFile);
+    try {
+      const res = await axios.post(`${API}/tasks/bulk-upload`, formData, {
+        withCredentials: true,
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setUploadResult(res.data);
+      setUploadStep('done');
+      loadTasks(); // Refresh task list
+    } catch (err) {
+      setUploadError(err.response?.data?.detail || 'Import failed');
+      setUploadStep('preview');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const downloadTemplate = () => {
+    const headers = 'Title,Description,Service Module,Client,Assigned To,Due Date,Priority,Status\n';
+    const sample = 'Prepare VAT Return Q1,Review and file VAT return,VAT Filing,Al Baraka Trading LLC,Fazil,2026-06-30,High,Pending\n';
+    const blob = new Blob([headers + sample], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'task_upload_template.csv';
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const filtered = useMemo(() => {
@@ -121,6 +200,11 @@ const MyTasks = () => {
               <h2 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 18 }}>{isPartner ? 'All Tasks' : 'My Tasks'}</h2>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>{isPartner ? 'View and manage tasks across all team members' : 'Your assigned tasks and deadlines'}</div>
             </div>
+            {isPartner && (
+              <button onClick={openUploadModal} className="tbtn" style={{ background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', fontSize: 12 }} data-testid="bulk-upload-btn">
+                <Upload size={14} /> Bulk Upload
+              </button>
+            )}
             <div style={{ display: 'flex', gap: 14 }}>
               {[
                 { label: 'Total', value: stats.total, color: 'var(--gold)' },
@@ -187,6 +271,180 @@ const MyTasks = () => {
           {filtered.map(task => (
             <TaskRow key={task.task_id} task={task} isOverdue={isOverdue(task)} onToggle={toggleStatus} statusBadge={statusBadge} priorityDot={priorityDot} showClient showAssignee={isPartner} />
           ))}
+        </div>
+      )}
+
+      {/* Bulk Upload Modal */}
+      {showUpload && (
+        <div className="modal-overlay" onClick={() => !uploading && setShowUpload(false)} data-testid="bulk-upload-modal">
+          <div className="modal-box" style={{ maxWidth: 600, maxHeight: '85vh' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-hdr">
+              <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 16 }}>Bulk Task Upload</h3>
+              <button onClick={() => !uploading && setShowUpload(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex' }} data-testid="close-upload-modal"><X size={18} /></button>
+            </div>
+
+            {/* Step: Select File */}
+            {uploadStep === 'select' && (
+              <div className="modal-body" style={{ textAlign: 'center', padding: '30px 24px' }}>
+                <FileSpreadsheet size={40} style={{ color: 'var(--gold)', marginBottom: 12 }} />
+                <h4 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>Upload Task List</h4>
+                <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 20, lineHeight: 1.5 }}>
+                  Upload a CSV or Excel file with your tasks. The system will automatically map columns to task fields.
+                </p>
+
+                <input type="file" ref={fileInputRef} accept=".csv,.xlsx,.xls" onChange={handleFileSelect} style={{ display: 'none' }} data-testid="file-input" />
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+                  <button onClick={() => fileInputRef.current?.click()} className="tbtn tbtn-gold" disabled={uploading} data-testid="select-file-btn">
+                    {uploading ? <><Loader2 size={14} className="spin" /> Parsing...</> : <><Upload size={14} /> Choose File</>}
+                  </button>
+                  <button onClick={downloadTemplate} className="tbtn tbtn-outline" data-testid="download-template-btn">
+                    <Download size={14} /> Download Template
+                  </button>
+                </div>
+
+                {uploadError && <div style={{ marginTop: 12, padding: '8px 12px', background: 'var(--red-bg)', borderRadius: 'var(--rs)', color: 'var(--red)', fontSize: 12 }} data-testid="upload-error">{uploadError}</div>}
+
+                <div style={{ marginTop: 20, textAlign: 'left', padding: '12px 16px', background: 'var(--off)', borderRadius: 'var(--rs)', border: '1px solid var(--nn-border)' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--gold4)', textTransform: 'uppercase', marginBottom: 6 }}>Supported Headers</div>
+                  <div style={{ fontSize: 11, color: 'var(--muted)', lineHeight: 1.7 }}>
+                    <strong>Title</strong> (required) — Task Title, Task Name, Subject<br />
+                    <strong>Due Date</strong> — Deadline, Due, Target Date<br />
+                    <strong>Priority</strong> — High / Medium / Low<br />
+                    <strong>Assigned To</strong> — Staff name (auto-matched)<br />
+                    <strong>Client</strong> — Client name (auto-matched)<br />
+                    <strong>Service Module</strong> — Category, Department<br />
+                    <strong>Description</strong> — Details, Notes<br />
+                    <strong>Status</strong> — Pending / In Progress / Completed
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step: Preview */}
+            {uploadStep === 'preview' && preview && (
+              <div className="modal-body" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{preview.filename}</div>
+                      <div style={{ fontSize: 11, color: 'var(--muted)' }}>{preview.total_rows} row{preview.total_rows !== 1 ? 's' : ''} found</div>
+                    </div>
+                    <button onClick={() => { setUploadStep('select'); setUploadFile(null); setPreview(null); }} className="tbtn tbtn-outline" style={{ fontSize: 10, padding: '4px 10px' }}>Change File</button>
+                  </div>
+
+                  {/* Column Mapping */}
+                  <div style={{ padding: '10px 14px', background: 'var(--off)', borderRadius: 'var(--rs)', border: '1px solid var(--nn-border)', marginBottom: 14 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--gold4)', textTransform: 'uppercase', marginBottom: 6 }}>Column Mapping</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {Object.entries(preview.mapped_columns).map(([header, field]) => (
+                        <span key={header} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 6, background: 'rgba(34,197,94,0.08)', color: 'var(--green)', fontWeight: 500 }} data-testid={`mapped-${field}`}>
+                          {header} → {field}
+                        </span>
+                      ))}
+                      {preview.unmapped_columns?.map(h => (
+                        <span key={h} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 6, background: 'var(--off)', color: 'var(--muted)', border: '1px solid var(--nn-border)' }}>
+                          {h} (skipped)
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Preview Table */}
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4 }}>Preview (first {preview.preview_rows?.length || 0} rows)</div>
+                  <div style={{ overflowX: 'auto', border: '1px solid var(--nn-border)', borderRadius: 'var(--rs)' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+                      <thead>
+                        <tr style={{ background: 'var(--off)' }}>
+                          {preview.headers.map((h, i) => (
+                            <th key={i} style={{ padding: '6px 10px', fontWeight: 600, color: preview.mapped_columns[h] ? 'var(--gold4)' : 'var(--muted)', textAlign: 'left', whiteSpace: 'nowrap', borderBottom: '1px solid var(--nn-border)', fontSize: 10 }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(preview.preview_rows || []).map((row, ri) => (
+                          <tr key={ri}>
+                            {row.map((cell, ci) => (
+                              <td key={ci} style={{ padding: '5px 10px', color: 'var(--text)', borderBottom: '1px solid var(--nn-border)', whiteSpace: 'nowrap', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis' }}>{cell}</td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {uploadError && <div style={{ padding: '8px 12px', background: 'var(--red-bg)', borderRadius: 'var(--rs)', color: 'var(--red)', fontSize: 12, marginBottom: 10 }}>{uploadError}</div>}
+              </div>
+            )}
+
+            {/* Step: Importing */}
+            {uploadStep === 'importing' && (
+              <div className="modal-body" style={{ textAlign: 'center', padding: '40px 24px' }}>
+                <Loader2 size={36} className="spin" style={{ color: 'var(--gold)', marginBottom: 12 }} />
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>Importing tasks...</div>
+                <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>Parsing and creating tasks from your file</div>
+              </div>
+            )}
+
+            {/* Step: Done */}
+            {uploadStep === 'done' && uploadResult && (
+              <div className="modal-body" style={{ textAlign: 'center', padding: '30px 24px' }} data-testid="upload-result">
+                <CheckCircle size={40} style={{ color: 'var(--green)', marginBottom: 12 }} />
+                <h4 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>Import Complete</h4>
+                <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16 }}>{uploadResult.message}</p>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, maxWidth: 300, margin: '0 auto 16px' }}>
+                  <div style={{ padding: '10px', background: 'var(--off)', borderRadius: 'var(--rs)', border: '1px solid var(--nn-border)' }}>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>{uploadResult.total_rows}</div>
+                    <div style={{ fontSize: 9, color: 'var(--muted)', textTransform: 'uppercase' }}>Total Rows</div>
+                  </div>
+                  <div style={{ padding: '10px', background: 'var(--green-bg)', borderRadius: 'var(--rs)', border: '1px solid rgba(34,197,94,0.15)' }}>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--green)' }}>{uploadResult.created}</div>
+                    <div style={{ fontSize: 9, color: 'var(--green)', textTransform: 'uppercase' }}>Created</div>
+                  </div>
+                  <div style={{ padding: '10px', background: uploadResult.errors > 0 ? 'var(--red-bg)' : 'var(--off)', borderRadius: 'var(--rs)', border: '1px solid var(--nn-border)' }}>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: uploadResult.errors > 0 ? 'var(--red)' : 'var(--muted)' }}>{uploadResult.errors}</div>
+                    <div style={{ fontSize: 9, color: 'var(--muted)', textTransform: 'uppercase' }}>Errors</div>
+                  </div>
+                </div>
+
+                {uploadResult.mapped_columns && (
+                  <div style={{ textAlign: 'left', padding: '8px 12px', background: 'var(--off)', borderRadius: 'var(--rs)', marginBottom: 12, border: '1px solid var(--nn-border)' }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4 }}>Columns Mapped</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                      {Object.entries(uploadResult.mapped_columns).map(([h, f]) => (
+                        <span key={h} style={{ fontSize: 9, padding: '2px 6px', borderRadius: 4, background: 'rgba(34,197,94,0.06)', color: 'var(--green)' }}>{h}→{f}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {uploadResult.error_details?.length > 0 && (
+                  <div style={{ textAlign: 'left', padding: '8px 12px', background: 'var(--red-bg)', borderRadius: 'var(--rs)', marginBottom: 12 }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--red)', textTransform: 'uppercase', marginBottom: 4 }}>Errors</div>
+                    {uploadResult.error_details.map((e, i) => (
+                      <div key={i} style={{ fontSize: 10, color: 'var(--red)' }}>Row {e.row}: {e.error}</div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Footer */}
+            {uploadStep === 'preview' && (
+              <div className="modal-footer">
+                <button className="tbtn tbtn-outline" onClick={() => { setUploadStep('select'); setUploadFile(null); setPreview(null); }}>Back</button>
+                <button className="tbtn tbtn-gold" onClick={handleImport} disabled={uploading} data-testid="import-btn">
+                  {uploading ? <><Loader2 size={14} className="spin" /> Importing...</> : <><Upload size={14} /> Import {preview?.total_rows} Task{preview?.total_rows !== 1 ? 's' : ''}</>}
+                </button>
+              </div>
+            )}
+            {uploadStep === 'done' && (
+              <div className="modal-footer">
+                <button className="tbtn tbtn-gold" onClick={() => setShowUpload(false)} data-testid="close-result-btn">Done</button>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
