@@ -98,8 +98,43 @@ const MainLayout = ({ user }) => {
     if ('Notification' in window) {
       const perm = await Notification.requestPermission();
       setNotifPermission(perm);
+      if (perm === 'granted') {
+        subscribeToPush();
+      }
     }
   };
+
+  const subscribeToPush = async () => {
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const vapidKey = process.env.REACT_APP_VAPID_PUBLIC_KEY;
+      if (!vapidKey) return;
+
+      // Convert VAPID key to Uint8Array
+      const padding = '='.repeat((4 - vapidKey.length % 4) % 4);
+      const base64 = (vapidKey + padding).replace(/-/g, '+').replace(/_/g, '/');
+      const rawData = window.atob(base64);
+      const applicationServerKey = new Uint8Array(rawData.length);
+      for (let i = 0; i < rawData.length; i++) applicationServerKey[i] = rawData.charCodeAt(i);
+
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: applicationServerKey,
+      });
+
+      // Send subscription to backend
+      await axios.post(`${API}/push/subscribe`, { subscription: subscription.toJSON() }, { withCredentials: true });
+    } catch (err) {
+      console.error('Push subscription failed:', err);
+    }
+  };
+
+  // Auto-subscribe if already granted
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted' && 'serviceWorker' in navigator) {
+      subscribeToPush();
+    }
+  }, []);
 
   const dismissNotification = async (notifId) => {
     try {
@@ -481,6 +516,12 @@ const MainLayout = ({ user }) => {
                   {notifPermission !== 'granted' && (
                     <div style={{ padding: '10px 16px', borderTop: '1px solid var(--nn-border)', background: 'var(--off)' }}>
                       <button onClick={requestNotifPermission} style={{ width: '100%', padding: '8px', borderRadius: 'var(--rs)', border: '1px solid var(--gold)', background: 'rgba(201,168,76,0.06)', color: 'var(--gold4)', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans' }} data-testid="enable-push-btn">Enable Push Notifications</button>
+                    </div>
+                  )}
+                  {notifPermission === 'granted' && (
+                    <div style={{ padding: '10px 16px', borderTop: '1px solid var(--nn-border)', background: 'var(--off)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: 10, color: 'var(--green)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}><CheckCircle size={11} /> Push enabled</span>
+                      <button onClick={async () => { try { await axios.post(`${API}/push/test`, {}, { withCredentials: true }); } catch(e) { console.error(e); } }} style={{ background: 'none', border: '1px solid var(--nn-border)', borderRadius: 'var(--rs)', padding: '4px 10px', fontSize: 10, color: 'var(--muted)', cursor: 'pointer', fontFamily: 'DM Sans' }} data-testid="test-push-btn">Test Push</button>
                     </div>
                   )}
                 </div>

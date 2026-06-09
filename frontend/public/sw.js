@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nn-practice-v1';
+const CACHE_NAME = 'nn-practice-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -34,5 +34,61 @@ self.addEventListener('fetch', (event) => {
         return response;
       })
       .catch(() => caches.match(event.request).then((r) => r || caches.match('/')))
+  );
+});
+
+// ============= WEB PUSH NOTIFICATIONS =============
+
+self.addEventListener('push', (event) => {
+  let data = { title: 'Nair & Nelliyatt', body: 'You have a new notification' };
+
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch (e) {
+      data.body = event.data.text();
+    }
+  }
+
+  const options = {
+    body: data.body || 'New notification',
+    icon: data.icon || '/nn-icon-192.png',
+    badge: data.badge || '/nn-icon-192.png',
+    tag: data.tag || 'nn-notification',
+    renotify: true,
+    data: {
+      url: data.url || '/',
+    },
+    actions: [
+      { action: 'open', title: 'Open' },
+      { action: 'dismiss', title: 'Dismiss' },
+    ],
+    vibrate: [100, 50, 100],
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'Nair & Nelliyatt', options)
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  if (event.action === 'dismiss') return;
+
+  const url = event.notification.data?.url || '/';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // Focus existing window if open
+      for (const client of clientList) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          client.navigate(url);
+          return client.focus();
+        }
+      }
+      // Open new window
+      return clients.openWindow(url);
+    })
   );
 });
