@@ -64,7 +64,8 @@ const Login = () => {
       if (res.data.session_token) {
         document.cookie = `session_token=${res.data.session_token}; path=/; max-age=86400`;
       }
-      navigate('/app/dashboard');
+      const role = res.data.role || 'staff';
+      navigate(role === 'client' ? '/client/documents' : '/app/dashboard');
     } catch (err) {
       setError(err.response?.data?.detail || 'Login failed');
     } finally {

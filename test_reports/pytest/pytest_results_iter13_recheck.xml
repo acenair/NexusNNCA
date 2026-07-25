@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="6" time="2.105" timestamp="2026-07-25T11:12:46.124149+00:00" hostname="agent-env-2eaa5739-b0e5-45db-8758-cc10546926a0"><testcase classname="backend.tests.test_iteration13_landing_auth_approval.TestAuthAndUserStatuses" name="test_partner_login_and_me" time="0.459" /><testcase classname="backend.tests.test_iteration13_landing_auth_approval.TestAuthAndUserStatuses" name="test_settings_users_exposes_status_without_secrets" time="0.156" /><testcase classname="backend.tests.test_iteration13_landing_auth_approval.TestAuthAndUserStatuses" name="test_staff_cannot_approve_or_reject" time="0.571" /><testcase classname="backend.tests.test_iteration13_landing_auth_approval.TestAuthAndUserStatuses" name="test_partner_gets_404_for_unknown_approval_targets" time="0.200" /><testcase classname="backend.tests.test_iteration13_landing_auth_approval.TestAuthAndUserStatuses" name="test_partner_approve_persists_and_reject_removes" time="0.321"><failure message="KeyError: 'email'">backend/tests/test_iteration13_landing_auth_approval.py:115: in test_partner_approve_persists_and_reject_removes
+    approve_user = register_test_user("approve")
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_iteration13_landing_auth_approval.py:67: in register_test_user
+    assert body["email"] == email
+           ^^^^^^^^^^^^^
+E   KeyError: 'email'</failure></testcase><testcase classname="backend.tests.test_iteration13_landing_auth_approval.TestAuthAndUserStatuses" name="test_public_register_issues_immediately_usable_session" time="0.315"><failure message="KeyError: 'email'">backend/tests/test_iteration13_landing_auth_approval.py:160: in test_public_register_issues_immediately_usable_session
+    created = register_test_user("approval_bypass")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_iteration13_landing_auth_approval.py:67: in register_test_user
+    assert body["email"] == email
+           ^^^^^^^^^^^^^
+E   KeyError: 'email'</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,102 @@
+{
+  "summary": "Iteration 14 tested all requested client-portal APIs, partner invoice CRUD/RBAC, Settings client linking, landing/login redirects, client navigation, and desktop/mobile UI. Backend pytest: 10 passed, 6 failed (62.5%). Core checklist/workflow/invoice reads and partner CRUD work, but uploaded files cannot be downloaded, unknown checklist items accept uploads, invoice status validation/404 semantics are missing, client data isolation is broken through GET /api/clients, and client links persist after changing role. Desktop routes/nav passed; client users cannot use the picker-only login UI, and the client portal overflows horizontally on mobile.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "GET /api/clients",
+        "issue": "A client-role user receives the complete firm-wide client list (16 records in this run), including contact, licence, TRN, risk, PEP, services, and notes fields. Expected 403 or own linked record only.",
+        "priority": "CRITICAL"
+      },
+      {
+        "endpoint": "GET /api/files/{file_id}",
+        "issue": "A file successfully uploaded by POST /api/client-portal/documents/{item_id}/upload immediately returns 404 File not found when downloaded. Client document upload is therefore not usable end to end.",
+        "priority": "HIGH"
+      },
+      {
+        "endpoint": "PATCH /api/settings/users/{id}",
+        "issue": "Changing a linked client user back to role=staff leaves client_id persisted. Client-portal APIs authorize from client_id without requiring role=client, so stale links preserve access to that client's portal data.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "POST /api/client-portal/documents/{item_id}/upload",
+        "issue": "Unknown checklist item IDs return 200, store an orphan document, and claim success instead of 404. The checklist update result is ignored."
+      },
+      {
+        "endpoint": "POST /api/invoices",
+        "issue": "Invoice status is unconstrained: status=Overdue is accepted even though the supported domain is Paid or Unpaid."
+      },
+      {
+        "endpoint": "DELETE /api/invoices/{id}",
+        "issue": "Deleting a nonexistent invoice returns 200 Invoice deleted instead of 404."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Login user picker",
+        "issue": "Approved client-role users are omitted because the page renders only users filtered as partner or staff. Since there is no free-form email field, assigned clients cannot sign in through the email/password UI.",
+        "selector": "[data-testid^='user-']",
+        "priority": "HIGH"
+      },
+      {
+        "component": "ClientLayout / ClientDashboard mobile",
+        "issue": "At 390px viewport the document portal has 585px scroll width. Top navigation and inner tab row extend off-screen; Invoices/Logout are clipped, creating horizontal scrolling.",
+        "selector": "[data-testid='client-layout']",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Client document upload then View",
+        "issue": "Upload marks the checklist item uploaded, but the resulting /api/files/{file_id} request returns 404, so the View action is broken.",
+        "affected_selectors": ["[data-testid^='doc-item-']"]
+      }
+    ],
+    "design_issues": [
+      {
+        "screen": "Client portal at 390x844",
+        "issues": [
+          "Desktop-only top nav and three-column/tab layouts are not responsive and cause 195px horizontal overflow."
+        ]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration14_client_portal.py",
+    "/app/test_reports/pytest/pytest_results_iter14.xml"
+  ],
+  "action_items": [
+    "Restrict firm-wide /api/clients and other staff/admin endpoints by role; client users must only access data tied to their client_id.",
+    "Store portal uploads using the same document/storage schema consumed by GET /api/files, including is_deleted and storage_path, or implement a compatible download path.",
+    "Verify checklist item ownership before reading/storing the file; return 404 when the item does not belong to the authenticated client's checklist.",
+    "Clear client_id whenever role changes away from client, and require role=client plus client_id in every client-portal endpoint.",
+    "Constrain invoice status to Paid/Unpaid and return 404 for missing update/delete targets.",
+    "Add a client login path (client picker section or free-form email input).",
+    "Make ClientLayout and ClientDashboard responsive at mobile widths."
+  ],
+  "critical_code_review_comments": [
+    "Portal upload writes raw bytes and fields filename/uploader_id/uploaded_at directly into MongoDB, while GET /files requires is_deleted=false and storage_path for object storage. These incompatible schemas directly cause the 404/download failure.",
+    "Client-portal authorization checks only client_id, not role=client; combined with update_user retaining client_id on role changes, authorization is not role-safe.",
+    "GET /clients authenticates but performs no role authorization or client scoping, exposing all client records to client portal accounts.",
+    "InvoiceRequest uses plain strings/floats with no status enum, nonnegative amount constraint, date validation, or required existing-client validation.",
+    "get_current_user prioritizes the session_token cookie over an explicit Authorization header. A partner Bearer token sent from a browser holding a client cookie is evaluated as the client, which caused cleanup to return 403 and can produce confused-deputy behavior.",
+    "server.py is 3060 lines and Settings.js is 859 lines, above the 700-line maintainability threshold; split routers/services and Settings tabs into focused modules."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration14_client_portal.py",
+    "/app/test_reports/iteration_14.json"
+  ],
+  "success_rate": {
+    "backend": "62.5% (10/16)",
+    "frontend": "75% of exercised UI checks; desktop routes/nav/settings passed, client login and mobile responsiveness failed"
+  },
+  "seed_data_creation": "Created temporary TEST_client_portal and TEST_ui client users, one TEST service engagement, invoice records, and upload records. The pytest fixture restored the selected client's prior checklist and removed its test user/engagement/invoices/files. Stranded browser-created TEST_ui users were removed directly from MongoDB after Authorization cleanup was overridden by the client cookie.",
+  "should_call_test_agent_after_fix": true,
+  "should_main_agent_self_test": false,
+  "test_credentials": "Partner and staff credentials were loaded from /app/memory/test_credentials.md; temporary client credentials were generated during tests.",
+  "context_for_next_testing_agent": "Re-run test_iteration14_client_portal.py after fixes. Current expected failures are stale client_id on role change, client access to /api/clients, portal upload download 404, unknown item upload accepted, invalid invoice status accepted, and missing-invoice delete returning 200. Desktop landing, partner redirect, Settings Client/Linked Client controls, client /app redirect, and three client nav routes passed. Client UI was reached by injecting a session cookie because the login picker omits clients.",
+  "rca_of_the_issue": "Upload/download mismatch: the portal upload inserts MongoDB byte data without is_deleted/storage_path, but /api/files queries is_deleted=false and reads object storage. Invalid item acceptance: file insertion occurs before an unchecked positional checklist update. Data isolation: authenticated general endpoints lack role checks, while portal endpoints trust client_id alone and role changes never unset it. Login: Login.js filters only partner and staff arrays. Mobile: fixed single-row nav plus repeat(3,1fr) summary/tabs have no responsive breakpoint. Invoice validation: unconstrained Pydantic fields and delete result ignored."
+}

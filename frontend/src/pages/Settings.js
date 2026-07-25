@@ -80,6 +80,9 @@ const Settings = () => {
   const [bhForm, setBhForm] = useState({ client_id: '', task_id: '', hours: '', date: '', description: '' });
   const [bhView, setBhView] = useState('entries');
 
+  // Clients for linking
+  const [clientsForLinking, setClientsForLinking] = useState([]);
+
   useEffect(() => { loadSettings(); }, []);
 
   const loadSettings = async () => {
@@ -96,6 +99,11 @@ const Settings = () => {
       setWorkflows(wfRes.data);
       setFirmName(firmRes.data.firm_name || 'Nair & Nelliyatt Chartered Accountants');
       setUsers(usersRes.data);
+      // Load clients for linking
+      try {
+        const clientsRes = await axios.get(`${API}/clients`, { withCredentials: true });
+        setClientsForLinking(clientsRes.data);
+      } catch {}
     } catch (err) { console.error(err); }
   };
 
@@ -262,7 +270,7 @@ const Settings = () => {
 
   const openUserEdit = (u) => {
     setEditUser(u);
-    setUserForm({ role: u.role, title: u.title || '', email: u.email || '', new_password: '', date_of_joining: u.date_of_joining || '' });
+    setUserForm({ role: u.role, title: u.title || '', email: u.email || '', new_password: '', date_of_joining: u.date_of_joining || '', client_id: u.client_id || '' });
   };
 
   const saveUser = async () => {
@@ -271,6 +279,7 @@ const Settings = () => {
       const payload = { role: userForm.role, title: userForm.title, date_of_joining: userForm.date_of_joining };
       if (userForm.email && userForm.email !== editUser.email) payload.email = userForm.email;
       if (userForm.new_password) payload.new_password = userForm.new_password;
+      if (userForm.role === 'client' && userForm.client_id) payload.client_id = userForm.client_id;
       await axios.patch(`${API}/settings/users/${editUser.user_id}`, payload, { withCredentials: true });
       showSave(`${editUser.name} updated`);
       setEditUser(null);
@@ -408,8 +417,18 @@ const Settings = () => {
                     <select value={userForm.role} onChange={(e) => setUserForm(p => ({ ...p, role: e.target.value }))} style={inputStyle} data-testid="user-role-select">
                       <option value="staff">Staff</option>
                       <option value="partner">Partner</option>
+                      <option value="client">Client</option>
                     </select>
                   </div>
+                  {userForm.role === 'client' && (
+                    <div style={{ marginBottom: 12 }}>
+                      <label style={labelStyle}>Linked Client Record</label>
+                      <select value={userForm.client_id || ''} onChange={(e) => setUserForm(p => ({ ...p, client_id: e.target.value }))} style={inputStyle} data-testid="user-client-select">
+                        <option value="">— Select Client —</option>
+                        {(clientsForLinking || []).map(c => <option key={c.client_id} value={c.client_id}>{c.name}</option>)}
+                      </select>
+                    </div>
+                  )}
                   <div style={{ marginBottom: 12 }}>
                     <label style={labelStyle}>Title / Designation</label>
                     <input value={userForm.title} onChange={(e) => setUserForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Senior Associate, Manager..." style={inputStyle} data-testid="user-title-input" />

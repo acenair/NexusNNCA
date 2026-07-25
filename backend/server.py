@@ -1511,6 +1511,7 @@ class UpdateUserRequest(BaseModel):
     email: Optional[str] = None
     new_password: Optional[str] = None
     date_of_joining: Optional[str] = None
+    client_id: Optional[str] = None
 
 @api_router.patch("/settings/users/{user_id}")
 async def update_user(user_id: str, req: UpdateUserRequest, authorization: str = Header(None), session_token: str = Cookie(None)):
@@ -1519,8 +1520,10 @@ async def update_user(user_id: str, req: UpdateUserRequest, authorization: str =
     if not target:
         raise HTTPException(status_code=404, detail="User not found")
     update_data = {}
-    if req.role and req.role in ("staff", "partner"):
+    if req.role and req.role in ("staff", "partner", "client"):
         update_data["role"] = req.role
+    if req.client_id is not None:
+        update_data["client_id"] = req.client_id
     if req.title is not None:
         update_data["title"] = req.title
     if req.email is not None and req.email != target.get("email"):
@@ -2451,6 +2454,256 @@ async def get_reminders(authorization: str = Header(None), session_token: str = 
     severity_order = {"urgent": 0, "warning": 1, "info": 2}
     reminders.sort(key=lambda x: (severity_order.get(x["severity"], 2), x.get("due_date") or "9999"))
     return reminders
+
+# ============= CLIENT PORTAL =============
+
+# Predefined document checklists per service type
+CLIENT_DOC_CHECKLISTS = {
+    "aml": [
+        {"label": "Emirates ID (Front & Back)", "required": True},
+        {"label": "Passport Copy", "required": True},
+        {"label": "Source of Funds Declaration", "required": True},
+        {"label": "Beneficial Ownership Structure", "required": True},
+        {"label": "Bank Statements (6 months)", "required": True},
+        {"label": "Sanctions Self-Declaration", "required": True},
+    ],
+    "company_formation": [
+        {"label": "Trade Licence Application Form", "required": True},
+        {"label": "Passport Copies (All Shareholders)", "required": True},
+        {"label": "Emirates ID Copies", "required": True},
+        {"label": "Memorandum of Association (Draft)", "required": True},
+        {"label": "NOC from Current Sponsor (if applicable)", "required": False},
+        {"label": "Proof of Address", "required": True},
+        {"label": "Business Plan", "required": False},
+    ],
+    "vat_registration": [
+        {"label": "Trade Licence Copy", "required": True},
+        {"label": "Passport / Emirates ID of Authorized Signatory", "required": True},
+        {"label": "Bank Letter / IBAN Certificate", "required": True},
+        {"label": "Turnover Evidence (12 months)", "required": True},
+        {"label": "Import/Export Documentation (if applicable)", "required": False},
+        {"label": "Lease Agreement / Ejari", "required": False},
+    ],
+    "audit": [
+        {"label": "Trial Balance (Year End)", "required": True},
+        {"label": "Financial Statements (Draft)", "required": True},
+        {"label": "Bank Reconciliation Statements", "required": True},
+        {"label": "Accounts Receivable Aging", "required": True},
+        {"label": "Accounts Payable Aging", "required": True},
+        {"label": "Fixed Asset Register", "required": True},
+        {"label": "Inventory Listing", "required": False},
+        {"label": "Payroll Summary", "required": False},
+        {"label": "Related Party Transactions Detail", "required": False},
+    ],
+}
+
+@api_router.get("/client-portal/documents")
+async def get_client_documents(authorization: str = Header(None), session_token: str = Cookie(None)):
+    """Get document checklist for the logged-in client user."""
+    user = await get_current_user(authorization, session_token)
+    client_id = user.get("client_id")
+    if not client_id:
+        return {"checklist": [], "client_name": ""}
+
+    client = await db.clients.find_one({"client_id": client_id}, {"_id": 0})
+    client_name = client.get("name", "") if client else ""
+
+    # Get or create document checklist for this client
+    doc_checklist = await db.client_doc_checklists.find_one({"client_id": client_id}, {"_id": 0})
+    if not doc_checklist:
+        # Determine service type from client's active services or engagements
+        service_type = None
+        services = client.get("active_services", []) if client else []
+        if any("AML" in s for s in services):
+            service_type = "aml"
+        elif any("Formation" in s for s in services):
+            service_type = "company_formation"
+        elif any("VAT Registration" in s for s in services):
+            service_type = "vat_registration"
+        elif any("Audit" in s for s in services):
+            service_type = "audit"
+        else:
+            service_type = "audit"  # default
+
+        template = CLIENT_DOC_CHECKLISTS.get(service_type, CLIENT_DOC_CHECKLISTS["audit"])
+        items = [{"item_id": f"dci_{uuid.uuid4().hex[:8]}", "label": t["label"], "required": t["required"], "uploaded": False, "file_id": None, "filename": None, "uploaded_at": None} for t in template]
+
+        doc_checklist = {
+            "client_id": client_id,
+            "service_type": service_type,
+            "items": items,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+        await db.client_doc_checklists.insert_one(doc_checklist)
+        doc_checklist.pop("_id", None)
+
+    return {"checklist": doc_checklist.get("items", []), "service_type": doc_checklist.get("service_type"), "client_name": client_name}
+
+@api_router.post("/client-portal/documents/{item_id}/upload")
+async def upload_client_document(item_id: str, file: UploadFile = File(...), authorization: str = Header(None), session_token: str = Cookie(None)):
+    """Client uploads a file for a specific checklist item."""
+    user = await get_current_user(authorization, session_token)
+    client_id = user.get("client_id")
+    if not client_id:
+        raise HTTPException(status_code=403, detail="No client linked")
+
+    content = await file.read()
+    file_id = f"file_{uuid.uuid4().hex[:12]}"
+
+    # Store file in documents collection
+    doc_entry = {
+        "file_id": file_id,
+        "filename": file.filename,
+        "content_type": file.content_type,
+        "size": len(content),
+        "data": content,
+        "client_id": client_id,
+        "uploader_id": user["user_id"],
+        "uploader_name": user.get("name"),
+        "uploaded_at": datetime.now(timezone.utc).isoformat(),
+        "source": "client_portal",
+    }
+    await db.documents.insert_one(doc_entry)
+
+    # Update checklist item
+    await db.client_doc_checklists.update_one(
+        {"client_id": client_id, "items.item_id": item_id},
+        {"$set": {
+            "items.$.uploaded": True,
+            "items.$.file_id": file_id,
+            "items.$.filename": file.filename,
+            "items.$.uploaded_at": datetime.now(timezone.utc).isoformat(),
+        }}
+    )
+
+    return {"file_id": file_id, "filename": file.filename, "message": "Document uploaded"}
+
+@api_router.get("/client-portal/workflow")
+async def get_client_workflow(authorization: str = Header(None), session_token: str = Cookie(None)):
+    """Get workflow stages visible to client."""
+    user = await get_current_user(authorization, session_token)
+    client_id = user.get("client_id")
+    if not client_id:
+        return {"engagements": []}
+
+    engs = await db.service_engagements.find({"client_id": client_id}, {"_id": 0}).to_list(20)
+    result = []
+    for eng in engs:
+        stages = []
+        for group in eng.get("checklist", []):
+            items = group.get("items", [])
+            total = len(items)
+            done = sum(1 for i in items if i.get("done"))
+            status = "Completed" if done == total and total > 0 else "In Progress" if done > 0 else "Pending"
+            stages.append({"name": group.get("group", ""), "status": status})
+
+        result.append({
+            "engagement_id": eng.get("engagement_id"),
+            "service_type": eng.get("service_type", "").replace("_", " ").title(),
+            "status": eng.get("status", "Active"),
+            "phase": eng.get("phase", ""),
+            "stages": stages,
+        })
+
+    return {"engagements": result}
+
+@api_router.get("/client-portal/invoices")
+async def get_client_invoices(authorization: str = Header(None), session_token: str = Cookie(None)):
+    """Get invoice history for the logged-in client."""
+    user = await get_current_user(authorization, session_token)
+    client_id = user.get("client_id")
+    if not client_id:
+        return []
+    invoices = await db.invoices.find({"client_id": client_id}, {"_id": 0}).sort("date", -1).to_list(100)
+    return invoices
+
+# ============= INVOICES (ADMIN) =============
+
+class InvoiceRequest(BaseModel):
+    client_id: str
+    client_name: Optional[str] = None
+    service_name: str
+    amount: float
+    date: str
+    status: str = "Unpaid"
+    notes: Optional[str] = None
+
+@api_router.post("/invoices")
+async def create_invoice(req: InvoiceRequest, authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await require_partner(authorization, session_token)
+    invoice_id = f"inv_{uuid.uuid4().hex[:12]}"
+    client_name = req.client_name
+    if not client_name:
+        c = await db.clients.find_one({"client_id": req.client_id}, {"_id": 0, "name": 1})
+        client_name = c["name"] if c else "Unknown"
+
+    doc = {
+        "invoice_id": invoice_id,
+        "client_id": req.client_id,
+        "client_name": client_name,
+        "service_name": req.service_name,
+        "amount": req.amount,
+        "date": req.date,
+        "status": req.status,
+        "notes": req.notes,
+        "created_by": user["user_id"],
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.invoices.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+@api_router.get("/invoices")
+async def get_all_invoices(authorization: str = Header(None), session_token: str = Cookie(None), client_id: Optional[str] = None):
+    user = await require_partner(authorization, session_token)
+    query = {}
+    if client_id:
+        query["client_id"] = client_id
+    invoices = await db.invoices.find(query, {"_id": 0}).sort("date", -1).to_list(500)
+    return invoices
+
+@api_router.patch("/invoices/{invoice_id}")
+async def update_invoice(invoice_id: str, authorization: str = Header(None), session_token: str = Cookie(None), status: Optional[str] = None, amount: Optional[float] = None, notes: Optional[str] = None):
+    user = await require_partner(authorization, session_token)
+    inv = await db.invoices.find_one({"invoice_id": invoice_id})
+    if not inv:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    update = {}
+    if status:
+        update["status"] = status
+    if amount is not None:
+        update["amount"] = amount
+    if notes is not None:
+        update["notes"] = notes
+    if update:
+        await db.invoices.update_one({"invoice_id": invoice_id}, {"$set": update})
+    return {"message": "Invoice updated"}
+
+@api_router.delete("/invoices/{invoice_id}")
+async def delete_invoice(invoice_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await require_partner(authorization, session_token)
+    await db.invoices.delete_one({"invoice_id": invoice_id})
+    return {"message": "Invoice deleted"}
+
+# Admin: edit client document checklist
+@api_router.get("/admin/client-checklists/{client_id}")
+async def get_client_checklist(client_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await require_partner(authorization, session_token)
+    doc = await db.client_doc_checklists.find_one({"client_id": client_id}, {"_id": 0})
+    return doc or {"client_id": client_id, "items": []}
+
+class ChecklistUpdateRequest(BaseModel):
+    items: List[Dict[str, Any]]
+
+@api_router.patch("/admin/client-checklists/{client_id}")
+async def update_client_checklist(client_id: str, req: ChecklistUpdateRequest, authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await require_partner(authorization, session_token)
+    await db.client_doc_checklists.update_one(
+        {"client_id": client_id},
+        {"$set": {"items": req.items, "updated_by": user["user_id"], "updated_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True
+    )
+    return {"message": "Checklist updated"}
 
 # ============= WEB PUSH NOTIFICATIONS =============
 

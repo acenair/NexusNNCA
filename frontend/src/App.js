@@ -33,6 +33,10 @@ import MyTasks from '@/pages/MyTasks';
 import ClientTimeline from '@/pages/ClientTimeline';
 import EngagementDetail from '@/pages/EngagementDetail';
 import ClientOnboarding from '@/pages/ClientOnboarding';
+import ClientLayout from '@/components/ClientLayout';
+import ClientDocuments from '@/pages/ClientDocuments';
+import ClientWorkflow from '@/pages/ClientWorkflow';
+import ClientInvoices from '@/pages/ClientInvoices';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import MainLayout from '@/components/MainLayout';
 
@@ -91,6 +95,13 @@ function AppRouter() {
         <Route path="clients/:clientId/timeline" element={<ClientTimeline />} />
         <Route path="engagements/:engagementId" element={<EngagementDetail />} />
         <Route path="onboarding" element={<ClientOnboarding />} />
+      </Route>
+      {/* Client Portal Routes */}
+      <Route path="/client" element={<ProtectedRoute allowedRoles={['client']}><ClientLayout /></ProtectedRoute>}>
+        <Route index element={<Navigate to="/client/documents" replace />} />
+        <Route path="documents" element={<ClientDocuments />} />
+        <Route path="workflow" element={<ClientWorkflow />} />
+        <Route path="invoices" element={<ClientInvoices />} />
       </Route>
       {/* Legacy routes redirect to /app/* */}
       <Route path="/dashboard" element={<Navigate to="/app/dashboard" replace />} />

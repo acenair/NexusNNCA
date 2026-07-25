@@ -5,7 +5,7 @@ import axios from 'axios';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ children, allowedRoles }) => {
   const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState(location.state?.user ? true : null);
   const [user, setUser] = useState(location.state?.user || null);
@@ -38,6 +38,20 @@ const ProtectedRoute = ({ children }) => {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Role-based redirect: client users go to /client, staff/partner go to /app
+  const userRole = user?.role || 'staff';
+  if (allowedRoles && !allowedRoles.includes(userRole)) {
+    if (userRole === 'client') {
+      return <Navigate to="/client/documents" replace />;
+    }
+    return <Navigate to="/app/dashboard" replace />;
+  }
+
+  // Auto-redirect: if client tries to access /app, send to /client
+  if (userRole === 'client' && location.pathname.startsWith('/app')) {
+    return <Navigate to="/client/documents" replace />;
   }
 
   return React.cloneElement(children, { user });
