@@ -342,7 +342,7 @@ const Settings = () => {
           {/* Users Table */}
           <div className="nn-card" style={{ overflow: 'hidden' }}>
             <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--nn-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div><h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Team Members</h3><p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{users.length} members &middot; Manage roles, credentials & joining dates</p></div>
+              <div><h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Team Members</h3><p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{users.length} members &middot; Manage roles, credentials & approvals</p></div>
             </div>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
@@ -351,24 +351,40 @@ const Settings = () => {
                     <th style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', textAlign: 'left', letterSpacing: 0.5 }}>Name</th>
                     <th style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', textAlign: 'left', letterSpacing: 0.5 }}>Email</th>
                     <th style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', textAlign: 'left', letterSpacing: 0.5 }}>Role</th>
+                    <th style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', textAlign: 'left', letterSpacing: 0.5 }}>Status</th>
                     <th style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', textAlign: 'left', letterSpacing: 0.5 }}>Title</th>
-                    <th style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', textAlign: 'left', letterSpacing: 0.5 }}>Joined</th>
                     <th style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', textAlign: 'center', letterSpacing: 0.5 }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map(u => (
-                    <tr key={u.user_id} style={{ borderBottom: '1px solid var(--nn-border)' }} data-testid={`user-row-${u.user_id}`}>
+                  {users.map(u => {
+                    const isPending = u.status === 'pending_approval';
+                    return (
+                    <tr key={u.user_id} style={{ borderBottom: '1px solid var(--nn-border)', background: isPending ? 'rgba(245,158,11,0.03)' : 'transparent' }} data-testid={`user-row-${u.user_id}`}>
                       <td style={{ padding: '10px 16px', fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>{u.name}</td>
                       <td style={{ padding: '10px 16px', fontSize: 11, color: 'var(--muted)', fontFamily: 'monospace' }}>{u.email}</td>
                       <td style={{ padding: '10px 16px' }}><span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 10, background: u.role === 'partner' ? 'rgba(201,168,76,0.1)' : 'var(--blue-bg)', color: u.role === 'partner' ? 'var(--gold4)' : 'var(--blue, #3b82f6)' }}>{u.role}</span></td>
+                      <td style={{ padding: '10px 16px' }}>
+                        {isPending ? (
+                          <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 10, background: 'rgba(245,158,11,0.1)', color: '#d97706' }}>Pending Approval</span>
+                        ) : (
+                          <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 10, background: 'var(--green-bg)', color: 'var(--green)' }}>Active</span>
+                        )}
+                      </td>
                       <td style={{ padding: '10px 16px', fontSize: 12, color: 'var(--text)' }}>{u.title || '—'}</td>
-                      <td style={{ padding: '10px 16px', fontSize: 11, color: 'var(--muted)' }}>{u.date_of_joining || '—'}</td>
                       <td style={{ padding: '10px 16px', textAlign: 'center' }}>
-                        <button onClick={() => openUserEdit(u)} className="tbtn" style={{ padding: '5px 10px', fontSize: 11, background: 'rgba(201,168,76,0.08)', color: 'var(--gold4)', border: 'none' }} data-testid={`edit-user-${u.user_id}`}><Edit2 size={11} /> Edit</button>
+                        {isPending ? (
+                          <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
+                            <button onClick={async () => { await axios.patch(`${API}/settings/users/${u.user_id}/approve`, {}, { withCredentials: true }); loadSettings(); showSave('User approved'); }} className="tbtn" style={{ padding: '5px 10px', fontSize: 10, background: 'var(--green-bg)', color: 'var(--green)', border: 'none' }} data-testid={`approve-user-${u.user_id}`}>Approve</button>
+                            <button onClick={async () => { if (window.confirm(`Reject and remove ${u.name}?`)) { await axios.patch(`${API}/settings/users/${u.user_id}/reject`, {}, { withCredentials: true }); loadSettings(); showSave('User rejected'); } }} className="tbtn" style={{ padding: '5px 10px', fontSize: 10, background: 'var(--red-bg)', color: 'var(--red)', border: 'none' }} data-testid={`reject-user-${u.user_id}`}>Reject</button>
+                          </div>
+                        ) : (
+                          <button onClick={() => openUserEdit(u)} className="tbtn" style={{ padding: '5px 10px', fontSize: 11, background: 'rgba(201,168,76,0.08)', color: 'var(--gold4)', border: 'none' }} data-testid={`edit-user-${u.user_id}`}><Edit2 size={11} /> Edit</button>
+                        )}
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

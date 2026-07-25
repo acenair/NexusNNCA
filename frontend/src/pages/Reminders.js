@@ -55,11 +55,11 @@ const Reminders = () => {
 
   const handleNavigate = (reminder) => {
     if (reminder.type === 'engagement' && reminder.ref_id) {
-      navigate(`/engagements/${reminder.ref_id}`);
+      navigate(`/app/engagements/${reminder.ref_id}`);
     } else if (reminder.type === 'task') {
-      navigate('/tasks');
+      navigate('/app/tasks');
     } else if (reminder.type === 'event') {
-      navigate('/calendar');
+      navigate('/app/calendar');
     }
   };
 
@@ -247,9 +247,9 @@ const Reminders = () => {
               <h3 style={{ fontSize: 13, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Quick Links</h3>
             </div>
             {[
-              { label: 'Deadline Tracker', path: '/deadlines', icon: Clock },
-              { label: 'Tasks', path: '/tasks', icon: FileText },
-              { label: 'Calendar', path: '/calendar', icon: Calendar },
+              { label: 'Deadline Tracker', path: '/app/deadlines', icon: Clock },
+              { label: 'Tasks', path: '/app/tasks', icon: FileText },
+              { label: 'Calendar', path: '/app/calendar', icon: Calendar },
             ].map((ql, idx) => {
               const QIcon = ql.icon;
               return (

@@ -218,58 +218,58 @@ const MainLayout = ({ user }) => {
     {
       title: 'Overview',
       items: [
-        { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { path: '/tasks', label: 'Tasks', icon: ClipboardList },
-        { path: '/deadlines', label: 'Deadline Tracker', icon: Clock, badge: '4' },
-        { path: '/calendar', label: 'Calendar', icon: Calendar },
-        { path: '/appreciation', label: 'Staff Appreciation', icon: Star, partnerOnly: true },
-        { path: '/reminders', label: 'Reminders', icon: Bell, badge: '5' },
-        { path: '/ai-assistant', label: 'AI Assistant', icon: MessageSquare },
-        { path: '/client-master', label: 'Client Master', icon: Database, managingPartnerOnly: true },
-        { path: '/onboarding', label: 'Client Onboarding', icon: UserPlus, partnerOnly: true },
-        { path: '/documents', label: 'Documents', icon: FolderOpen },
-        { path: '/settings', label: 'Settings', icon: Settings, partnerOnly: true },
+        { path: '/app/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { path: '/app/tasks', label: 'Tasks', icon: ClipboardList },
+        { path: '/app/deadlines', label: 'Deadline Tracker', icon: Clock, badge: '4' },
+        { path: '/app/calendar', label: 'Calendar', icon: Calendar },
+        { path: '/app/appreciation', label: 'Staff Appreciation', icon: Star, partnerOnly: true },
+        { path: '/app/reminders', label: 'Reminders', icon: Bell, badge: '5' },
+        { path: '/app/ai-assistant', label: 'AI Assistant', icon: MessageSquare },
+        { path: '/app/client-master', label: 'Client Master', icon: Database, managingPartnerOnly: true },
+        { path: '/app/onboarding', label: 'Client Onboarding', icon: UserPlus, partnerOnly: true },
+        { path: '/app/documents', label: 'Documents', icon: FolderOpen },
+        { path: '/app/settings', label: 'Settings', icon: Settings, partnerOnly: true },
       ]
     },
     {
       title: 'Audit',
       items: [
-        { path: '/audit/statutory', label: 'Statutory Audit', icon: FileText, badge: '10' },
-        { path: '/audit/internal', label: 'Internal Audit', icon: Activity, badge: '3' },
-        { path: '/audit/stock', label: 'Stock Audit', icon: Receipt },
-        { path: '/audit/fraud', label: 'Fraud Audit', icon: Shield },
+        { path: '/app/audit/statutory', label: 'Statutory Audit', icon: FileText, badge: '10' },
+        { path: '/app/audit/internal', label: 'Internal Audit', icon: Activity, badge: '3' },
+        { path: '/app/audit/stock', label: 'Stock Audit', icon: Receipt },
+        { path: '/app/audit/fraud', label: 'Fraud Audit', icon: Shield },
       ]
     },
     {
       title: 'VAT',
       items: [
-        { path: '/vat/registration', label: 'Registration', icon: FileText },
-        { path: '/vat/filing', label: 'Filing', icon: Receipt, badge: '5' },
-        { path: '/vat/amendments', label: 'Amendments', icon: Activity },
+        { path: '/app/vat/registration', label: 'Registration', icon: FileText },
+        { path: '/app/vat/filing', label: 'Filing', icon: Receipt, badge: '5' },
+        { path: '/app/vat/amendments', label: 'Amendments', icon: Activity },
       ]
     },
     {
       title: 'Corporate',
       items: [
-        { path: '/corporate/registration', label: 'Registration', icon: Building2 },
-        { path: '/corporate/tax', label: 'Corporate Tax', icon: Receipt, badge: '5' },
-        { path: '/corporate/formation', label: 'Formation', icon: Briefcase },
-        { path: '/corporate/liquidation', label: 'Liquidation', icon: TrendingUp },
+        { path: '/app/corporate/registration', label: 'Registration', icon: Building2 },
+        { path: '/app/corporate/tax', label: 'Corporate Tax', icon: Receipt, badge: '5' },
+        { path: '/app/corporate/formation', label: 'Formation', icon: Briefcase },
+        { path: '/app/corporate/liquidation', label: 'Liquidation', icon: TrendingUp },
       ]
     },
     {
       title: 'Advisory',
       items: [
-        { path: '/advisory/valuation', label: 'Valuation', icon: TrendingUp, badge: '2' },
-        { path: '/advisory/due-diligence', label: 'Due Diligence', icon: FileText, badge: '2' },
+        { path: '/app/advisory/valuation', label: 'Valuation', icon: TrendingUp, badge: '2' },
+        { path: '/app/advisory/due-diligence', label: 'Due Diligence', icon: FileText, badge: '2' },
       ]
     },
     {
       title: 'AML',
       items: [
-        { path: '/aml/review', label: 'Monthly Review', icon: Shield, badge: '3' },
-        { path: '/aml/filing', label: 'Filing', icon: Receipt },
-        { path: '/aml/reports', label: 'Monthly Reports', icon: FileText, badge: '3' },
+        { path: '/app/aml/review', label: 'Monthly Review', icon: Shield, badge: '3' },
+        { path: '/app/aml/filing', label: 'Filing', icon: Receipt },
+        { path: '/app/aml/reports', label: 'Monthly Reports', icon: FileText, badge: '3' },
       ]
     },
   ];
@@ -481,7 +481,7 @@ const MainLayout = ({ user }) => {
               <>
                 <button className="tbtn tbtn-green topbar-action-btn" onClick={() => openEventModal('meeting')} data-testid="topbar-meeting-btn"><Users size={13} /> <span className="btn-label">+ Meeting</span></button>
                 <button className="tbtn tbtn-blue topbar-action-btn" onClick={() => openEventModal('followup')} data-testid="topbar-followup-btn"><Mail size={13} /> <span className="btn-label">Follow-up</span></button>
-                <button className="tbtn topbar-action-btn" style={{ background: 'var(--gold5)', color: 'var(--gold4)' }} onClick={() => navigate('/appreciation')} data-testid="topbar-appreciate-btn"><Star size={13} /> <span className="btn-label">Appreciate</span></button>
+                <button className="tbtn topbar-action-btn" style={{ background: 'var(--gold5)', color: 'var(--gold4)' }} onClick={() => navigate('/app/appreciation')} data-testid="topbar-appreciate-btn"><Star size={13} /> <span className="btn-label">Appreciate</span></button>
               </>
             )}
             {/* Notification Bell */}

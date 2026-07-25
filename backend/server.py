@@ -296,6 +296,9 @@ async def create_session(session_id: str):
             {"user_id": user_id},
             {"$set": {"name": data["name"], "picture": data["picture"]}}
         )
+        # Check if user is approved
+        if user_doc.get("status") == "pending_approval":
+            return {"error": "pending_approval", "message": "Your account is pending admin approval. Please contact the administrator."}
     else:
         user_id = f"user_{uuid.uuid4().hex[:12]}"
         user_doc = {
@@ -303,9 +306,13 @@ async def create_session(session_id: str):
             "email": data["email"],
             "name": data["name"],
             "picture": data["picture"],
+            "role": "staff",
+            "title": "",
+            "status": "pending_approval",
             "created_at": datetime.now(timezone.utc).isoformat()
         }
         await db.users.insert_one(user_doc)
+        return {"error": "pending_approval", "message": "Account created! Your access is pending admin approval."}
     
     session_doc = {
         "user_id": user_id,
@@ -1533,6 +1540,26 @@ async def update_user(user_id: str, req: UpdateUserRequest, authorization: str =
     await db.users.update_one({"user_id": user_id}, {"$set": update_data})
     await log_activity("User updated", f"Updated {target.get('name', user_id)}: {', '.join(update_data.keys())}", user["user_id"])
     return {"message": f"User {target.get('name')} updated"}
+
+@api_router.patch("/settings/users/{user_id}/approve")
+async def approve_user(user_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await require_partner(authorization, session_token)
+    target = await db.users.find_one({"user_id": user_id})
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+    await db.users.update_one({"user_id": user_id}, {"$set": {"status": "approved"}})
+    await log_activity("User approved", f"Approved {target.get('name', user_id)} ({target.get('email')})", user["user_id"])
+    return {"message": f"User {target.get('name')} approved"}
+
+@api_router.patch("/settings/users/{user_id}/reject")
+async def reject_user(user_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await require_partner(authorization, session_token)
+    target = await db.users.find_one({"user_id": user_id})
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+    await db.users.delete_one({"user_id": user_id})
+    await log_activity("User rejected", f"Rejected {target.get('name', user_id)} ({target.get('email')})", user["user_id"])
+    return {"message": f"User {target.get('name')} rejected and removed"}
 
 # --- Storage ---
 @api_router.get("/settings/storage")

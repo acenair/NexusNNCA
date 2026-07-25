@@ -414,8 +414,8 @@ const ClientOnboarding = () => {
             )}
 
             <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-              <button onClick={() => navigate('/client-master')} className="tbtn tbtn-outline" data-testid="onboarding-view-clients">View Clients</button>
-              <button onClick={() => navigate('/tasks')} className="tbtn tbtn-outline" data-testid="onboarding-view-tasks">View Tasks</button>
+              <button onClick={() => navigate('/app/client-master')} className="tbtn tbtn-outline" data-testid="onboarding-view-clients">View Clients</button>
+              <button onClick={() => navigate('/app/tasks')} className="tbtn tbtn-outline" data-testid="onboarding-view-tasks">View Tasks</button>
               <button onClick={() => { setStep(1); setForm({ name: '', entity_type: 'LLC', jurisdiction: '', trade_licence_no: '', trn: '', ct_registration_no: '', active_services: [], aml_risk_rating: 'Low', pep_flag: false, relationship_manager: '', relationship_manager_name: '', contact_person: '', contact_email: '', contact_phone: '', notes: '', auto_create_engagements: true }); setResult(null); }} className="tbtn tbtn-gold" data-testid="onboarding-new">Onboard Another Client</button>
             </div>
           </div>

@@ -1,0 +1,67 @@
+{
+  "summary": "Iteration 13 tested the public landing page, prefixed/legacy routing, email/password and Google login entry points, partner Settings status UI, and approve/reject APIs. UI core flows passed. Backend pytest: 5 passed, 1 failed because GET /api/auth/me exposes the stored bcrypt password hash. Approval/rejection RBAC and persistence passed. A critical approval bypass was also confirmed: public POST /api/auth/register immediately creates an authenticated session usable at /api/auth/me without pending approval.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "GET /api/auth/me",
+        "issue": "Authenticated response includes the user's bcrypt password hash in the `password` field. This leaks credential material to every logged-in browser/client.",
+        "priority": "CRITICAL"
+      },
+      {
+        "endpoint": "POST /api/auth/register",
+        "issue": "Approval can be bypassed: public registration creates a user and immediately returns a valid session_token; that token successfully accesses GET /api/auth/me. The pending_approval restriction is only implemented for first-time Google users.",
+        "priority": "CRITICAL"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "PATCH /api/settings/users/{id}/reject",
+        "issue": "Reject deletes the user but does not delete their existing user_sessions. Current get_current_user later returns 404 because the user is gone, but orphaned session records remain until manual cleanup/expiry."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Mobile landing navigation (390px)",
+        "issues": [
+          "The desktop navigation is compressed into one row: branding wraps, 'How It Works' wraps, and the Sign In button is visibly clipped. It remains clickable and no horizontal page overflow occurs, but a responsive menu or reduced nav set is needed."
+        ]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration13_landing_auth_approval.py",
+    "/app/test_reports/pytest/pytest_results_iter13.xml"
+  ],
+  "action_items": [
+    "Sanitize GET /api/auth/me with an explicit response model/projection that excludes password, password_hash, and _id.",
+    "Remove or protect POST /api/auth/register, or apply status='pending_approval' and do not issue a usable session until a partner approves the account. Enforce approved status centrally in get_current_user so no authentication path can bypass approval.",
+    "On reject, revoke/delete all user_sessions for the rejected user.",
+    "Improve landing-page mobile navigation so branding and Sign In are not clipped.",
+    "Retest Google pending-account callback with a controlled OAuth test identity after the security fixes; full OAuth completion was not possible in headless testing."
+  ],
+  "critical_code_review_comments": [
+    "get_current_user fetches the complete users document and get_me returns it verbatim, directly causing password hash disclosure.",
+    "The account approval policy is implemented only inside /auth/session (Google exchange), not as a central authorization invariant. /auth/register issues a session regardless of status and get_current_user never checks status.",
+    "server.py is 2808 lines and Settings.js is 839 lines, both well above the 700-line maintainability threshold; split backend routers/services and Settings tabs into focused modules.",
+    "Login.loadUsers silently falls back to a hardcoded staff directory when the API fails, masking outages and exposing internal names/emails even during backend failure.",
+    "Synchronous requests calls are used inside async FastAPI routes/helpers (Google session exchange and object storage), which can block the event loop under load."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration13_landing_auth_approval.py",
+    "/app/test_reports/iteration_13.json"
+  ],
+  "success_rate": {
+    "backend": "83%",
+    "frontend": "100% functional coverage; 1 responsive design issue"
+  },
+  "seed_data_creation": "Created temporary TEST_approve, TEST_reject, and TEST_approval_bypass users through /api/auth/register; all were removed through the reject endpoint during fixture cleanup.",
+  "should_call_test_agent_after_fix": true,
+  "should_main_agent_self_test": false,
+  "test_credentials": "Partner and staff credentials loaded from /app/memory/test_credentials.md.",
+  "context_for_next_testing_agent": "Run test_iteration13_landing_auth_approval.py after fixes. Expected current failure is password exposure in /api/auth/me. Approval/reject endpoint RBAC, persistence/removal, landing sections/nav, partner login, /app sidebar paths, Tasks navigation, and /dashboard + /tasks legacy redirects passed. Google button reached the real Google account page, but OAuth completion/pending callback was not tested.",
+  "rca_of_the_issue": "Password leak: GET /api/auth/me returns the raw dict from db.users through get_current_user without a safe projection/response model. Approval bypass: pending_approval assignment/checking exists only in /api/auth/session for Google users; the still-public /api/auth/register creates users without pending status and immediately inserts/returns a valid session. Reproduction: POST /api/auth/register with arbitrary credentials, then call GET /api/auth/me using the returned Bearer token; response is 200 and includes the password hash."
+}

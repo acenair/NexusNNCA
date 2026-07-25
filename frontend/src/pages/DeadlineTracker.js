@@ -84,7 +84,7 @@ const DeadlineTracker = () => {
     { label: 'Staff Active', value: workload.length, color: 'var(--amber)', pill: 'pill-amber', pillText: 'Assigned' },
   ];
 
-  const openEngagement = (engId) => navigate(`/engagements/${engId}`);
+  const openEngagement = (engId) => navigate(`/app/engagements/${engId}`);
 
   const EngagementTable = ({ items, typeLabel, typeColor, showScope }) => {
     const filtered = filterItems(items);

@@ -28,8 +28,14 @@ const AuthCallback = () => {
           params: { session_id: sessionId }
         });
         
+        // Check if pending approval
+        if (response.data.error === 'pending_approval') {
+          navigate('/login', { state: { pendingApproval: true, message: response.data.message }, replace: true });
+          return;
+        }
+        
         document.cookie = `session_token=${response.data.session_token}; path=/; secure; samesite=none; max-age=604800`;
-        navigate('/dashboard', { state: { user: response.data }, replace: true });
+        navigate('/app/dashboard', { state: { user: response.data }, replace: true });
       } catch (error) {
         console.error('Session exchange failed:', error);
         navigate('/login');
