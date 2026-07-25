@@ -336,7 +336,12 @@ async def get_me(authorization: str = Header(None), session_token: str = Cookie(
 
 @api_router.post("/auth/logout")
 async def logout(authorization: str = Header(None), session_token: str = Cookie(None)):
-    token = session_token if session_token else (authorization.split(" ")[1] if authorization else None)
+    # Prefer Authorization header over cookie (consistent with get_current_user)
+    token = None
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split(" ")[1]
+    elif session_token:
+        token = session_token
     if token:
         await db.user_sessions.delete_one({"session_token": token})
     return {"message": "Logged out"}
