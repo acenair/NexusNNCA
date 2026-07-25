@@ -16,6 +16,7 @@ import requests
 from emergentintegrations.llm.chat import LlmChat, UserMessage
 import json
 import asyncio
+import io
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -2879,6 +2880,245 @@ async def send_deadline_push_alerts(authorization: str = Header(None), session_t
         total_sent += sent
 
     return {"message": f"Pushed alerts to {len(user_alerts)} user(s), {total_sent} device(s)"}
+
+# ============= RESET DATA (ADMIN) =============
+
+class ResetRequest(BaseModel):
+    confirm: str
+    collections: List[str] = []
+
+RESETTABLE_COLLECTIONS = ["clients", "tasks", "events", "activities", "appreciations", "service_engagements", "documents", "invoices", "billable_hours", "client_doc_checklists", "vat_registrations", "vat_filings", "audit_engagements", "aml_alerts", "workflows", "chat_messages", "dismissed_notifications", "push_subscriptions"]
+
+@api_router.post("/admin/reset-data")
+async def reset_data(req: ResetRequest, authorization: str = Header(None), session_token: str = Cookie(None)):
+    """Clear selected collections. Requires confirmation text 'RESET'."""
+    user = await get_current_user(authorization, session_token)
+    if user.get("role") != "partner" or user.get("title") != "Managing Partner":
+        raise HTTPException(status_code=403, detail="Only Managing Partner can reset data")
+    if req.confirm != "RESET":
+        raise HTTPException(status_code=400, detail="Type 'RESET' to confirm")
+
+    deleted_counts = {}
+    targets = req.collections if req.collections else RESETTABLE_COLLECTIONS
+
+    for coll_name in targets:
+        if coll_name in RESETTABLE_COLLECTIONS:
+            result = await db[coll_name].delete_many({})
+            deleted_counts[coll_name] = result.deleted_count
+
+    await log_activity("Data reset", f"Reset {len(deleted_counts)} collections: {', '.join(deleted_counts.keys())}", user["user_id"])
+    return {"message": f"Reset {len(deleted_counts)} collection(s)", "deleted": deleted_counts}
+
+@api_router.get("/admin/data-stats")
+async def get_data_stats(authorization: str = Header(None), session_token: str = Cookie(None)):
+    """Get document count per collection for the reset UI."""
+    user = await get_current_user(authorization, session_token)
+    if user.get("role") != "partner":
+        raise HTTPException(status_code=403, detail="Partners only")
+
+    stats = {}
+    for coll_name in RESETTABLE_COLLECTIONS:
+        stats[coll_name] = await db[coll_name].count_documents({})
+    stats["users"] = await db.users.count_documents({})
+    return stats
+
+# ============= GOOGLE DRIVE INTEGRATION =============
+
+from google_auth_oauthlib.flow import Flow
+from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request as GoogleRequest
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaIoBaseUpload
+
+DRIVE_SCOPES = ['https://www.googleapis.com/auth/drive.file']
+
+@api_router.get("/drive/connect")
+async def connect_drive(authorization: str = Header(None), session_token: str = Cookie(None)):
+    """Initiate Google Drive OAuth flow."""
+    user = await require_partner(authorization, session_token)
+
+    # Get Drive config from settings
+    storage_doc = await db.settings.find_one({"type": "storage"}, {"_id": 0})
+    config = storage_doc.get("config", {}).get("google_drive", {}) if storage_doc else {}
+
+    client_id = config.get("client_id") or os.environ.get("GOOGLE_DRIVE_CLIENT_ID")
+    client_secret = config.get("client_secret") or os.environ.get("GOOGLE_DRIVE_CLIENT_SECRET")
+
+    if not client_id or not client_secret:
+        raise HTTPException(status_code=400, detail="Google Drive credentials not configured. Go to Settings > Storage to add Client ID and Client Secret.")
+
+    frontend_url = os.environ.get("FRONTEND_URL", "").rstrip("/")
+    redirect_uri = f"{frontend_url}/api/drive/callback"
+
+    flow = Flow.from_client_config(
+        {"web": {"client_id": client_id, "client_secret": client_secret, "auth_uri": "https://accounts.google.com/o/oauth2/auth", "token_uri": "https://oauth2.googleapis.com/token", "redirect_uris": [redirect_uri]}},
+        scopes=DRIVE_SCOPES,
+        redirect_uri=redirect_uri
+    )
+    authorization_url, state = flow.authorization_url(access_type='offline', include_granted_scopes='true', prompt='consent', state=user["user_id"])
+    return {"authorization_url": authorization_url}
+
+@api_router.get("/drive/callback")
+async def drive_callback(code: str = "", state: str = "", error: str = ""):
+    """Handle Google Drive OAuth callback."""
+    if error:
+        raise HTTPException(status_code=400, detail=f"OAuth error: {error}")
+
+    storage_doc = await db.settings.find_one({"type": "storage"}, {"_id": 0})
+    config = storage_doc.get("config", {}).get("google_drive", {}) if storage_doc else {}
+    client_id = config.get("client_id") or os.environ.get("GOOGLE_DRIVE_CLIENT_ID")
+    client_secret = config.get("client_secret") or os.environ.get("GOOGLE_DRIVE_CLIENT_SECRET")
+
+    frontend_url = os.environ.get("FRONTEND_URL", "").rstrip("/")
+    redirect_uri = f"{frontend_url}/api/drive/callback"
+
+    flow = Flow.from_client_config(
+        {"web": {"client_id": client_id, "client_secret": client_secret, "auth_uri": "https://accounts.google.com/o/oauth2/auth", "token_uri": "https://oauth2.googleapis.com/token", "redirect_uris": [redirect_uri]}},
+        scopes=None,
+        redirect_uri=redirect_uri
+    )
+    flow.fetch_token(code=code)
+    credentials = flow.credentials
+
+    await db.drive_credentials.update_one(
+        {"type": "firm"},
+        {"$set": {
+            "type": "firm",
+            "connected_by": state,
+            "access_token": credentials.token,
+            "refresh_token": credentials.refresh_token,
+            "token_uri": credentials.token_uri,
+            "client_id": credentials.client_id,
+            "client_secret": credentials.client_secret,
+            "scopes": list(credentials.scopes) if credentials.scopes else [],
+            "expiry": credentials.expiry.isoformat() if credentials.expiry else None,
+            "connected_at": datetime.now(timezone.utc).isoformat(),
+        }},
+        upsert=True
+    )
+
+    from starlette.responses import RedirectResponse
+    return RedirectResponse(url=f"{frontend_url}/app/settings?drive=connected")
+
+@api_router.get("/drive/status")
+async def drive_status(authorization: str = Header(None), session_token: str = Cookie(None)):
+    """Check if Google Drive is connected."""
+    user = await get_current_user(authorization, session_token)
+    creds_doc = await db.drive_credentials.find_one({"type": "firm"}, {"_id": 0})
+    if not creds_doc or not creds_doc.get("access_token"):
+        return {"connected": False}
+    return {"connected": True, "connected_at": creds_doc.get("connected_at"), "connected_by": creds_doc.get("connected_by")}
+
+async def get_drive_service():
+    """Get an authenticated Drive service with auto-refresh."""
+    creds_doc = await db.drive_credentials.find_one({"type": "firm"}, {"_id": 0})
+    if not creds_doc or not creds_doc.get("access_token"):
+        return None
+
+    creds = Credentials(
+        token=creds_doc["access_token"],
+        refresh_token=creds_doc.get("refresh_token"),
+        token_uri=creds_doc["token_uri"],
+        client_id=creds_doc["client_id"],
+        client_secret=creds_doc["client_secret"],
+        scopes=creds_doc.get("scopes"),
+    )
+
+    if creds.expired and creds.refresh_token:
+        creds.refresh(GoogleRequest())
+        await db.drive_credentials.update_one(
+            {"type": "firm"},
+            {"$set": {"access_token": creds.token, "expiry": creds.expiry.isoformat() if creds.expiry else None}}
+        )
+
+    return build('drive', 'v3', credentials=creds)
+
+@api_router.post("/drive/sync-document/{file_id}")
+async def sync_document_to_drive(file_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
+    """Upload a specific document to Google Drive."""
+    user = await require_partner(authorization, session_token)
+    service = await get_drive_service()
+    if not service:
+        raise HTTPException(status_code=400, detail="Google Drive not connected")
+
+    file_doc = await db.documents.find_one({"file_id": file_id}, {"_id": 0})
+    if not file_doc:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    # Get or create a folder for the client
+    client_name = file_doc.get("client_name") or file_doc.get("client_id", "General")
+    folder_id = await get_or_create_drive_folder(service, client_name)
+
+    # Upload file
+    file_data = file_doc.get("data")
+    if not file_data:
+        raise HTTPException(status_code=400, detail="No file data to sync")
+
+    media = MediaIoBaseUpload(io.BytesIO(file_data), mimetype=file_doc.get("content_type", "application/octet-stream"))
+    file_metadata = {"name": file_doc.get("filename", "document"), "parents": [folder_id]}
+    drive_file = service.files().create(body=file_metadata, media_body=media, fields="id,name,webViewLink").execute()
+
+    # Update document record with drive link
+    await db.documents.update_one(
+        {"file_id": file_id},
+        {"$set": {"drive_file_id": drive_file["id"], "drive_link": drive_file.get("webViewLink"), "synced_at": datetime.now(timezone.utc).isoformat()}}
+    )
+
+    return {"drive_file_id": drive_file["id"], "drive_link": drive_file.get("webViewLink"), "message": "Synced to Google Drive"}
+
+async def get_or_create_drive_folder(service, folder_name):
+    """Get or create a folder in Drive for organizing client docs."""
+    # First check if we have a root NN folder
+    root_query = "name='Nair & Nelliyatt Documents' and mimeType='application/vnd.google-apps.folder' and trashed=false"
+    results = service.files().list(q=root_query, fields="files(id,name)", spaces='drive').execute()
+    root_files = results.get("files", [])
+
+    if root_files:
+        root_id = root_files[0]["id"]
+    else:
+        root_meta = {"name": "Nair & Nelliyatt Documents", "mimeType": "application/vnd.google-apps.folder"}
+        root_folder = service.files().create(body=root_meta, fields="id").execute()
+        root_id = root_folder["id"]
+
+    # Now get or create client subfolder
+    client_query = f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and '{root_id}' in parents and trashed=false"
+    results = service.files().list(q=client_query, fields="files(id,name)", spaces='drive').execute()
+    client_files = results.get("files", [])
+
+    if client_files:
+        return client_files[0]["id"]
+    else:
+        client_meta = {"name": folder_name, "mimeType": "application/vnd.google-apps.folder", "parents": [root_id]}
+        client_folder = service.files().create(body=client_meta, fields="id").execute()
+        return client_folder["id"]
+
+@api_router.get("/drive/files")
+async def list_drive_files(authorization: str = Header(None), session_token: str = Cookie(None)):
+    """List files in the N&N Drive folder."""
+    user = await require_partner(authorization, session_token)
+    service = await get_drive_service()
+    if not service:
+        raise HTTPException(status_code=400, detail="Google Drive not connected")
+
+    root_query = "name='Nair & Nelliyatt Documents' and mimeType='application/vnd.google-apps.folder' and trashed=false"
+    results = service.files().list(q=root_query, fields="files(id,name)", spaces='drive').execute()
+    root_files = results.get("files", [])
+    if not root_files:
+        return {"files": [], "folder_count": 0}
+
+    root_id = root_files[0]["id"]
+    # List subfolders
+    folders_query = f"'{root_id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false"
+    folders = service.files().list(q=folders_query, fields="files(id,name)", spaces='drive').execute().get("files", [])
+
+    return {"root_folder_id": root_id, "folders": folders, "folder_count": len(folders)}
+
+@api_router.post("/drive/disconnect")
+async def disconnect_drive(authorization: str = Header(None), session_token: str = Cookie(None)):
+    """Disconnect Google Drive."""
+    user = await require_partner(authorization, session_token)
+    await db.drive_credentials.delete_many({"type": "firm"})
+    return {"message": "Google Drive disconnected"}
 
 # Include router
 app.include_router(api_router)

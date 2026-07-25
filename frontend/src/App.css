@@ -305,3 +305,13 @@ h1, h2, h3, h4, h5, h6 {
   justify-content: flex-end;
   gap: 8px;
 }
+
+
+/* Landing page mobile responsive */
+@media (max-width: 768px) {
+  .landing-desktop-nav { display: none !important; }
+  .landing-mobile-toggle { display: flex !important; }
+}
+@media (min-width: 769px) {
+  .landing-mobile-menu { display: none !important; }
+}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { Settings as SettingsIcon, Shield, HardDrive, GitBranch, Save, Plus, Trash2, GripVertical, ChevronDown, ChevronUp, X, CheckCircle, Cloud, Edit2, Building, Users, Timer, Download } from 'lucide-react';
+import { Settings as SettingsIcon, Shield, HardDrive, GitBranch, Save, Plus, Trash2, GripVertical, ChevronDown, ChevronUp, X, CheckCircle, Cloud, Edit2, Building, Users, Timer, Download, AlertTriangle, RefreshCw, Link as LinkIcon } from 'lucide-react';
 import axios from 'axios';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -83,7 +83,45 @@ const Settings = () => {
   // Clients for linking
   const [clientsForLinking, setClientsForLinking] = useState([]);
 
+  // Reset data
+  const [dataStats, setDataStats] = useState(null);
+  const [resetConfirm, setResetConfirm] = useState('');
+  const [resetSelected, setResetSelected] = useState([]);
+  const [resetting, setResetting] = useState(false);
+
+  // Drive
+  const [driveStatus, setDriveStatus] = useState(null);
+
   useEffect(() => { loadSettings(); }, []);
+  useEffect(() => { if (tab === 'reset') loadDataStats(); }, [tab]);
+  useEffect(() => { if (tab === 'storage') loadDriveStatus(); }, [tab]);
+
+  const loadDataStats = async () => {
+    try {
+      const res = await axios.get(`${API}/admin/data-stats`, { withCredentials: true });
+      setDataStats(res.data);
+    } catch (err) { console.error(err); }
+  };
+
+  const loadDriveStatus = async () => {
+    try {
+      const res = await axios.get(`${API}/drive/status`, { withCredentials: true });
+      setDriveStatus(res.data);
+    } catch (err) { console.error(err); }
+  };
+
+  const handleReset = async () => {
+    if (resetConfirm !== 'RESET') return;
+    setResetting(true);
+    try {
+      const res = await axios.post(`${API}/admin/reset-data`, { confirm: 'RESET', collections: resetSelected.length > 0 ? resetSelected : [] }, { withCredentials: true });
+      showSave(`Reset complete: ${Object.keys(res.data.deleted).length} collections cleared`);
+      setResetConfirm('');
+      setResetSelected([]);
+      loadDataStats();
+    } catch (err) { alert(err.response?.data?.detail || 'Reset failed'); }
+    finally { setResetting(false); }
+  };
 
   const loadSettings = async () => {
     try {
@@ -301,6 +339,7 @@ const Settings = () => {
     { key: 'storage', label: 'Storage', icon: HardDrive },
     { key: 'workflows', label: 'Workflows', icon: GitBranch },
     { key: 'billable', label: 'Billable Hours', icon: Timer },
+    { key: 'reset', label: 'Reset Data', icon: AlertTriangle },
   ];
 
   return (
@@ -849,6 +888,79 @@ const Settings = () => {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* === RESET DATA TAB === */}
+      {tab === 'reset' && (
+        <div data-testid="reset-data-tab">
+          <div className="nn-card" style={{ overflow: 'hidden', marginBottom: 14, borderLeft: '3px solid var(--red)' }}>
+            <div style={{ padding: '16px 20px' }}>
+              <h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--red)', marginBottom: 4 }}>Danger Zone — Reset Application Data</h3>
+              <p style={{ fontSize: 12, color: 'var(--muted)' }}>This will permanently delete selected data. User accounts and firm settings will be preserved. This action cannot be undone.</p>
+            </div>
+          </div>
+
+          {/* Data Stats */}
+          {dataStats && (
+            <div className="nn-card" style={{ padding: '16px 20px', marginBottom: 14 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 10 }}>Current Data</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 8 }}>
+                {Object.entries(dataStats).filter(([k]) => k !== 'users').map(([key, count]) => (
+                  <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 'var(--rs)', border: '1px solid var(--nn-border)', cursor: 'pointer', background: resetSelected.includes(key) ? 'var(--red-bg)' : 'var(--white)' }}>
+                    <input type="checkbox" checked={resetSelected.includes(key)} onChange={(e) => setResetSelected(prev => e.target.checked ? [...prev, key] : prev.filter(k => k !== key))} />
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>{key.replace(/_/g, ' ')}</div>
+                      <div style={{ fontSize: 10, color: 'var(--muted)' }}>{count} records</div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+              <div style={{ marginTop: 8, fontSize: 11, color: 'var(--muted)' }}>Users: {dataStats.users} (preserved, not deletable from here)</div>
+            </div>
+          )}
+
+          {/* Confirm */}
+          <div className="nn-card" style={{ padding: '16px 20px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12 }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: 10, fontWeight: 600, color: 'var(--red)', textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>Type "RESET" to confirm</label>
+                <input value={resetConfirm} onChange={(e) => setResetConfirm(e.target.value)} placeholder="RESET" style={{ ...inputStyle, borderColor: resetConfirm === 'RESET' ? 'var(--red)' : 'var(--nn-border)' }} data-testid="reset-confirm-input" />
+              </div>
+              <button onClick={handleReset} disabled={resetConfirm !== 'RESET' || resetting} className="tbtn" style={{ padding: '8px 20px', background: resetConfirm === 'RESET' ? 'var(--red)' : 'var(--off)', color: resetConfirm === 'RESET' ? '#fff' : 'var(--muted)', border: 'none', fontSize: 12, fontWeight: 600, cursor: resetConfirm === 'RESET' ? 'pointer' : 'not-allowed' }} data-testid="reset-btn">
+                {resetting ? 'Resetting...' : resetSelected.length > 0 ? `Reset ${resetSelected.length} Selected` : 'Reset All Data'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* === STORAGE TAB - DRIVE CONNECT === */}
+      {tab === 'storage' && driveStatus && (
+        <div className="nn-card" style={{ overflow: 'hidden', marginTop: 14 }} data-testid="drive-integration">
+          <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--nn-border)' }}>
+            <h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Google Drive Integration</h3>
+            <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>Connect Google Drive to sync client documents to the cloud.</p>
+          </div>
+          <div style={{ padding: '16px 20px' }}>
+            {driveStatus.connected ? (
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                  <CheckCircle size={16} color="var(--green)" />
+                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--green)' }}>Google Drive Connected</span>
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 12 }}>Connected: {driveStatus.connected_at ? new Date(driveStatus.connected_at).toLocaleDateString() : '—'}</div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={async () => { try { await axios.post(`${API}/drive/disconnect`, {}, { withCredentials: true }); loadDriveStatus(); showSave('Drive disconnected'); } catch (e) { alert('Failed'); } }} className="tbtn tbtn-outline" style={{ fontSize: 11 }} data-testid="drive-disconnect-btn"><X size={12} /> Disconnect</button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 12 }}>To connect, first add your Google Cloud OAuth credentials above in the Storage Config (Client ID + Client Secret), then click Connect.</p>
+                <button onClick={async () => { try { const res = await axios.get(`${API}/drive/connect`, { withCredentials: true }); if (res.data.authorization_url) window.location.href = res.data.authorization_url; } catch (e) { alert(e.response?.data?.detail || 'Failed to connect'); } }} className="tbtn tbtn-gold" style={{ display: 'flex', alignItems: 'center', gap: 6 }} data-testid="drive-connect-btn"><LinkIcon size={13} /> Connect Google Drive</button>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

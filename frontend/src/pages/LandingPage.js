@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle, Users, ClipboardCheck, Clock, Calendar, ShieldCheck, BarChart3, FileText, FolderOpen, FileSearch, Receipt, ShieldAlert, Workflow, GitBranch, UserCheck, ArrowRight, LogIn } from 'lucide-react';
+import { CheckCircle, Users, ClipboardCheck, Clock, Calendar, ShieldCheck, BarChart3, FileText, FolderOpen, FileSearch, Receipt, ShieldAlert, Workflow, GitBranch, UserCheck, ArrowRight, LogIn, Menu, X } from 'lucide-react';
 
 const FEATURES = [
   { icon: Users, title: 'Client Management', desc: 'Manage client profiles, TRN numbers, trade licenses, and full engagement history in one centralized hub.' },
@@ -47,9 +47,11 @@ const BADGES = ['UAE FTA Compliant', 'VAT & Corporate Tax', 'goAML Ready', 'IAAS
 
 const LandingPage = () => {
   const navigate = useNavigate();
+  const [mobileMenu, setMobileMenu] = useState(false);
 
   const handleSignIn = () => navigate('/login');
   const scrollTo = (id) => {
+    setMobileMenu(false);
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
@@ -63,7 +65,8 @@ const LandingPage = () => {
             <div style={{ width: 34, height: 34, borderRadius: 8, background: 'linear-gradient(135deg, #0a1128, #1a2744)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D4AF37', fontWeight: 800, fontSize: 12 }}>N&N</div>
             <span style={{ fontFamily: 'DM Serif Display, serif', fontSize: 16, color: '#0a1128', fontWeight: 700 }}>Nair & Nelliyatt</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+          {/* Desktop nav */}
+          <div className="landing-desktop-nav" style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
             <button onClick={() => scrollTo('features')} style={{ background: 'none', border: 'none', fontSize: 13, color: '#64748b', cursor: 'pointer', fontFamily: 'DM Sans' }}>Features</button>
             <button onClick={() => scrollTo('services')} style={{ background: 'none', border: 'none', fontSize: 13, color: '#64748b', cursor: 'pointer', fontFamily: 'DM Sans' }}>Services</button>
             <button onClick={() => scrollTo('workflow')} style={{ background: 'none', border: 'none', fontSize: 13, color: '#64748b', cursor: 'pointer', fontFamily: 'DM Sans' }}>How It Works</button>
@@ -71,7 +74,20 @@ const LandingPage = () => {
               <LogIn size={14} /> Sign In
             </button>
           </div>
+          {/* Mobile hamburger */}
+          <button className="landing-mobile-toggle" onClick={() => setMobileMenu(!mobileMenu)} style={{ display: 'none', background: 'none', border: 'none', cursor: 'pointer', padding: 6 }} data-testid="mobile-menu-toggle">
+            {mobileMenu ? <X size={22} color="#0a1128" /> : <Menu size={22} color="#0a1128" />}
+          </button>
         </div>
+        {/* Mobile dropdown */}
+        {mobileMenu && (
+          <div className="landing-mobile-menu" style={{ background: '#fff', borderTop: '1px solid #e5e7eb', padding: '12px 24px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <button onClick={() => scrollTo('features')} style={{ background: 'none', border: 'none', fontSize: 14, color: '#334155', cursor: 'pointer', fontFamily: 'DM Sans', textAlign: 'left', padding: '8px 0' }}>Features</button>
+            <button onClick={() => scrollTo('services')} style={{ background: 'none', border: 'none', fontSize: 14, color: '#334155', cursor: 'pointer', fontFamily: 'DM Sans', textAlign: 'left', padding: '8px 0' }}>Services</button>
+            <button onClick={() => scrollTo('workflow')} style={{ background: 'none', border: 'none', fontSize: 14, color: '#334155', cursor: 'pointer', fontFamily: 'DM Sans', textAlign: 'left', padding: '8px 0' }}>How It Works</button>
+            <button onClick={handleSignIn} style={{ padding: '10px 0', borderRadius: 8, background: '#0a1128', color: '#fff', border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans', textAlign: 'center', marginTop: 4 }} data-testid="mobile-signin">Sign In</button>
+          </div>
+        )}
       </nav>
 
       {/* Hero */}
