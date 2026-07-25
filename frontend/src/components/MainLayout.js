@@ -228,6 +228,7 @@ const MainLayout = ({ user }) => {
         { path: '/app/ai-assistant', label: 'AI Assistant', icon: MessageSquare },
         { path: '/app/client-master', label: 'Client Master', icon: Database, managingPartnerOnly: true },
         { path: '/app/onboarding', label: 'Client Onboarding', icon: UserPlus, partnerOnly: true },
+        { path: '/app/invoices', label: 'Invoices', icon: Receipt, partnerOnly: true },
         { path: '/app/documents', label: 'Documents', icon: FolderOpen },
         { path: '/app/settings', label: 'Settings', icon: Settings, partnerOnly: true },
       ]

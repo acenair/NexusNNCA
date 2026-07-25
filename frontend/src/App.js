@@ -34,6 +34,7 @@ import MyTasks from '@/pages/MyTasks';
 import ClientTimeline from '@/pages/ClientTimeline';
 import EngagementDetail from '@/pages/EngagementDetail';
 import ClientOnboarding from '@/pages/ClientOnboarding';
+import Invoices from '@/pages/Invoices';
 import ClientLayout from '@/components/ClientLayout';
 import ClientDocuments from '@/pages/ClientDocuments';
 import ClientWorkflow from '@/pages/ClientWorkflow';
@@ -105,6 +106,7 @@ function AppRouter() {
         <Route path="clients/:clientId/timeline" element={<ClientTimeline />} />
         <Route path="engagements/:engagementId" element={<EngagementDetail />} />
         <Route path="onboarding" element={<ClientOnboarding />} />
+        <Route path="invoices" element={<Invoices />} />
       </Route>
       {/* Client Portal Routes */}
       <Route path="/client" element={<ProtectedRoute allowedRoles={['client']}><ClientLayout /></ProtectedRoute>}>
@@ -124,6 +126,7 @@ function AppRouter() {
       <Route path="/client-master" element={<Navigate to="/app/client-master" replace />} />
       <Route path="/documents" element={<Navigate to="/app/documents" replace />} />
       <Route path="/onboarding" element={<Navigate to="/app/onboarding" replace />} />
+      <Route path="/invoices" element={<Navigate to="/app/invoices" replace />} />
       <Route path="/appreciation" element={<Navigate to="/app/appreciation" replace />} />
     </Routes>
   );
