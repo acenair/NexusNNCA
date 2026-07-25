@@ -1,34 +1,53 @@
 # Nair & Nelliyatt Chartered Accountants — Practice Management System
 
 ## Original Problem Statement
-Build a comprehensive practice management system for "Nair & Nelliyatt Chartered Accountants" based on an uploaded HTML file. Features: Dark Navy (#0a1128) and Gold (#D4AF37) theme, Partner vs. Staff RBAC, complex Dashboard KPIs, Deadline Tracker, Calendar, and specific service modules (Audit, VAT, Corporate, Advisory, AML).
+Build a comprehensive practice management system for "Nair & Nelliyatt Chartered Accountants" with Dark Navy + Gold theme, Partner/Staff RBAC, service modules. Now includes public landing page, Google + email auth with admin approval.
 
 ## Tech Stack
-- Frontend: React, Tailwind CSS, Shadcn UI, DM Serif Display + DM Sans fonts
-- Backend: FastAPI, Motor (async MongoDB), bcrypt, PyJWT, pywebpush, openpyxl
+- Frontend: React, Tailwind CSS, Shadcn UI, DM Serif Display + DM Sans
+- Backend: FastAPI, Motor (MongoDB), bcrypt, PyJWT, pywebpush, openpyxl
 - Database: MongoDB
-- AI: Gemini 3 Flash via emergentintegrations (Emergent LLM Key)
-- PWA: Service Worker + manifest.json + Web Push API (VAPID)
+- AI: Gemini 3 Flash via emergentintegrations
+- PWA: Service Worker + Web Push (VAPID)
+- Auth: JWT sessions + Emergent-managed Google OAuth
 
-## Completed Features (as of 2026-06-09)
-1-26. [All previous features — Dashboard, Calendar, Audit/VAT/Corporate/Advisory/AML modules, Settings, RBAC, Workflows, Notifications, AI Assistant, Client Master, Documents, Engagements, Timeline, Exports, Onboarding, Editable Email, Reminders, Billable Hours, Web Push]
-27. **Bulk Task Upload** — Partners can upload CSV or Excel files to mass-import tasks. Auto-maps ~40 header variations (Title/Task Name/Subject, Due Date/Deadline, Priority, Assigned To/Assignee, Client/Company, Service Module/Category, Description/Notes, Status). Preview step shows column mapping + data preview before importing. Auto-resolves staff names to emails and client names to IDs. Download CSV template. Partner-only access. Available on Tasks page.
+## URL Structure
+- `/` — Public landing page (Hero, Features, Services, Workflow, CTA)
+- `/login` — User picker + password login + Google sign-in
+- `/app/*` — Protected app routes (dashboard, tasks, settings, etc.)
+- Legacy routes (`/dashboard`, `/tasks`, etc.) redirect to `/app/*`
+
+## Auth & Approval Flow
+- Existing seeded users login with email/password
+- New users sign up via Google or email registration
+- New users get `status: "pending_approval"` — cannot access app until partner approves
+- Partners approve/reject in Settings > Firm & Users (Status column + Approve/Reject buttons)
+- `get_current_user` centrally blocks pending users from all API endpoints
+- Password hashes excluded from all API responses
+
+## Completed Features (as of 2026-07-25)
+1-27. [All previous features — Dashboard, Calendar, Modules, Settings, RBAC, Workflows, Notifications, AI, Client Master, Documents, Engagements, Timeline, Exports, Onboarding, Email editing, Reminders, Billable Hours, Web Push, Bulk Task Upload]
+28. **Public Landing Page** — Hero section, 8 feature cards, 4 service workflow cards with step lists, 4-step "How It Works", CTA section, footer. Clean SaaS design with N&N branding.
+29. **Google Sign-In** — OAuth via Emergent auth. Pending approval for new users. Google button on login page.
+30. **Admin User Approval** — Settings > Firm & Users shows Status column (Active/Pending Approval). Approve/Reject buttons for pending users. Reject deletes user + sessions.
 
 ## Testing Status
-- Iterations 1-8: 100% pass
-- Iteration 9: 100% pass — Client Onboarding
-- Iteration 10: 100% pass — Email editing, Reminders, Billable Hours
-- Iteration 11: 100% pass — Browser Push Notifications
-- Iteration 12: 100% pass — Bulk Task Upload (7 backend + full frontend Playwright)
+- Iterations 1-12: 100% pass
+- Iteration 13: 100% frontend, 83% backend → 2 CRITICAL security issues found and FIXED (password exposure + approval bypass)
 
 ## Backlog
 - P1: Wire actual Storage Sync (S3/Drive/OneDrive)
-- P2: Backend refactoring — split server.py (2780+ lines) into modular route files
-- P3: Add DELETE /api/tasks/{task_id} endpoint
+- P2: Backend refactoring (server.py 2800+ lines)
+- P3: Mobile responsive landing page nav
 
-## Key API Endpoints (New)
-- **POST /api/tasks/bulk-preview** (parse file, return headers + column mapping + preview rows)
-- **POST /api/tasks/bulk-upload** (parse file, create tasks, return created/error counts)
+## Key API Endpoints (New/Changed)
+- **GET /** — Landing page (frontend)
+- **POST /api/auth/register** — Creates user with pending_approval, no session issued
+- **POST /api/auth/session** — Google OAuth callback, pending users get error response
+- **PATCH /api/settings/users/{id}/approve** — Partner approves pending user
+- **PATCH /api/settings/users/{id}/reject** — Partner rejects + deletes user + sessions
+- **GET /api/auth/me** — Now excludes password field
+- **GET /api/auth/users-list** — Excludes pending users from login picker
 
 ## DB Collections
 users, clients, tasks, events, activities, appreciations, chat_messages, vat_registrations, vat_filings, audit_engagements, aml_alerts, documents, user_sessions, service_engagements, workflows, settings, dismissed_notifications, billable_hours, push_subscriptions

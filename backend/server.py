@@ -190,9 +190,13 @@ async def get_current_user(authorization: str = Header(None), session_token: str
     if expires_at < datetime.now(timezone.utc):
         raise HTTPException(status_code=401, detail="Session expired")
     
-    user_doc = await db.users.find_one({"user_id": session_doc["user_id"]}, {"_id": 0})
+    user_doc = await db.users.find_one({"user_id": session_doc["user_id"]}, {"_id": 0, "password": 0})
     if not user_doc:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    # Block pending users from accessing the app
+    if user_doc.get("status") == "pending_approval":
+        raise HTTPException(status_code=403, detail="Account pending approval")
     
     return user_doc
 
@@ -224,21 +228,14 @@ async def register(email: str, password: str, name: str):
         "email": email,
         "name": name,
         "password": hashed_pwd,
+        "role": "staff",
+        "status": "pending_approval",
         "picture": None,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.users.insert_one(user_doc)
     
-    session_token = create_jwt_token(user_id)
-    session_doc = {
-        "user_id": user_id,
-        "session_token": session_token,
-        "expires_at": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
-        "created_at": datetime.now(timezone.utc).isoformat()
-    }
-    await db.user_sessions.insert_one(session_doc)
-    
-    return {"user_id": user_id, "email": email, "name": name, "session_token": session_token}
+    return {"message": "Account created. Pending admin approval.", "error": "pending_approval"}
 
 class LoginRequest(BaseModel):
     email: str
@@ -271,7 +268,7 @@ async def login(req: LoginRequest):
 
 @api_router.get("/auth/users-list")
 async def get_users_list():
-    users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(100)
+    users = await db.users.find({"status": {"$ne": "pending_approval"}}, {"_id": 0, "password": 0}).to_list(100)
     return [{"name": u.get("name"), "email": u.get("email"), "role": u.get("role", "staff"), "title": u.get("title", "")} for u in users]
 
 @api_router.post("/auth/session")
@@ -1558,6 +1555,7 @@ async def reject_user(user_id: str, authorization: str = Header(None), session_t
     if not target:
         raise HTTPException(status_code=404, detail="User not found")
     await db.users.delete_one({"user_id": user_id})
+    await db.user_sessions.delete_many({"user_id": user_id})
     await log_activity("User rejected", f"Rejected {target.get('name', user_id)} ({target.get('email')})", user["user_id"])
     return {"message": f"User {target.get('name')} rejected and removed"}
 
