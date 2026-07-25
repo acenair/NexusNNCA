@@ -378,6 +378,13 @@ async def get_recent_activities(authorization: str = Header(None), session_token
 @api_router.get("/clients")
 async def get_clients(authorization: str = Header(None), session_token: str = Cookie(None)):
     user = await get_current_user(authorization, session_token)
+    # Client role users can only see their own linked client record
+    if user.get("role") == "client":
+        client_id = user.get("client_id")
+        if not client_id:
+            return []
+        client = await db.clients.find_one({"client_id": client_id}, {"_id": 0})
+        return [client] if client else []
     clients = await db.clients.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
     return clients
 
@@ -1056,12 +1063,18 @@ async def download_file(file_id: str, authorization: str = Header(None), session
     auth_header = authorization or (f"Bearer {auth}" if auth else None)
     user = await get_current_user(auth_header, session_token)
     
-    file_doc = await db.documents.find_one({"file_id": file_id, "is_deleted": False}, {"_id": 0})
+    file_doc = await db.documents.find_one({"file_id": file_id, "is_deleted": {"$ne": True}}, {"_id": 0})
     if not file_doc:
         raise HTTPException(status_code=404, detail="File not found")
     
-    data, content_type = get_object(file_doc["storage_path"])
-    return Response(content=data, media_type=file_doc.get("content_type", content_type))
+    # Support both object storage and direct MongoDB storage
+    if file_doc.get("storage_path"):
+        data, content_type = get_object(file_doc["storage_path"])
+        return Response(content=data, media_type=file_doc.get("content_type", content_type))
+    elif file_doc.get("data"):
+        return Response(content=file_doc["data"], media_type=file_doc.get("content_type", "application/octet-stream"))
+    else:
+        raise HTTPException(status_code=404, detail="File data not found")
 
 # Simplified VAT, Audit, Corporate, AML, Advisory routes (basic CRUD for MVP)
 
@@ -1522,7 +1535,10 @@ async def update_user(user_id: str, req: UpdateUserRequest, authorization: str =
     update_data = {}
     if req.role and req.role in ("staff", "partner", "client"):
         update_data["role"] = req.role
-    if req.client_id is not None:
+        # Clear client_id when role changes away from client
+        if req.role != "client":
+            update_data["client_id"] = None
+    if req.client_id is not None and req.role == "client":
         update_data["client_id"] = req.client_id
     if req.title is not None:
         update_data["title"] = req.title
@@ -2501,6 +2517,8 @@ CLIENT_DOC_CHECKLISTS = {
 async def get_client_documents(authorization: str = Header(None), session_token: str = Cookie(None)):
     """Get document checklist for the logged-in client user."""
     user = await get_current_user(authorization, session_token)
+    if user.get("role") != "client":
+        raise HTTPException(status_code=403, detail="Client role required")
     client_id = user.get("client_id")
     if not client_id:
         return {"checklist": [], "client_name": ""}
@@ -2543,9 +2561,16 @@ async def get_client_documents(authorization: str = Header(None), session_token:
 async def upload_client_document(item_id: str, file: UploadFile = File(...), authorization: str = Header(None), session_token: str = Cookie(None)):
     """Client uploads a file for a specific checklist item."""
     user = await get_current_user(authorization, session_token)
+    if user.get("role") != "client":
+        raise HTTPException(status_code=403, detail="Client role required")
     client_id = user.get("client_id")
     if not client_id:
         raise HTTPException(status_code=403, detail="No client linked")
+
+    # Verify item_id exists in this client's checklist
+    checklist_doc = await db.client_doc_checklists.find_one({"client_id": client_id, "items.item_id": item_id}, {"_id": 0})
+    if not checklist_doc:
+        raise HTTPException(status_code=404, detail="Checklist item not found")
 
     content = await file.read()
     file_id = f"file_{uuid.uuid4().hex[:12]}"
@@ -2582,6 +2607,8 @@ async def upload_client_document(item_id: str, file: UploadFile = File(...), aut
 async def get_client_workflow(authorization: str = Header(None), session_token: str = Cookie(None)):
     """Get workflow stages visible to client."""
     user = await get_current_user(authorization, session_token)
+    if user.get("role") != "client":
+        raise HTTPException(status_code=403, detail="Client role required")
     client_id = user.get("client_id")
     if not client_id:
         return {"engagements": []}
@@ -2611,6 +2638,8 @@ async def get_client_workflow(authorization: str = Header(None), session_token: 
 async def get_client_invoices(authorization: str = Header(None), session_token: str = Cookie(None)):
     """Get invoice history for the logged-in client."""
     user = await get_current_user(authorization, session_token)
+    if user.get("role") != "client":
+        raise HTTPException(status_code=403, detail="Client role required")
     client_id = user.get("client_id")
     if not client_id:
         return []
@@ -2631,6 +2660,10 @@ class InvoiceRequest(BaseModel):
 @api_router.post("/invoices")
 async def create_invoice(req: InvoiceRequest, authorization: str = Header(None), session_token: str = Cookie(None)):
     user = await require_partner(authorization, session_token)
+    if req.status not in ("Paid", "Unpaid"):
+        raise HTTPException(status_code=400, detail="Status must be 'Paid' or 'Unpaid'")
+    if req.amount < 0:
+        raise HTTPException(status_code=400, detail="Amount must be non-negative")
     invoice_id = f"inv_{uuid.uuid4().hex[:12]}"
     client_name = req.client_name
     if not client_name:
@@ -2670,6 +2703,8 @@ async def update_invoice(invoice_id: str, authorization: str = Header(None), ses
         raise HTTPException(status_code=404, detail="Invoice not found")
     update = {}
     if status:
+        if status not in ("Paid", "Unpaid"):
+            raise HTTPException(status_code=400, detail="Status must be 'Paid' or 'Unpaid'")
         update["status"] = status
     if amount is not None:
         update["amount"] = amount
@@ -2682,7 +2717,9 @@ async def update_invoice(invoice_id: str, authorization: str = Header(None), ses
 @api_router.delete("/invoices/{invoice_id}")
 async def delete_invoice(invoice_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
     user = await require_partner(authorization, session_token)
-    await db.invoices.delete_one({"invoice_id": invoice_id})
+    result = await db.invoices.delete_one({"invoice_id": invoice_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Invoice not found")
     return {"message": "Invoice deleted"}
 
 # Admin: edit client document checklist

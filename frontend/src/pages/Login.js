@@ -47,6 +47,7 @@ const Login = () => {
 
   const partners = users.filter(u => u.role === 'partner');
   const staff = users.filter(u => u.role === 'staff');
+  const clientUsers = users.filter(u => u.role === 'client');
 
   const handleLogin = async () => {
     if (!selectedUser || !password) {
@@ -175,6 +176,32 @@ const Login = () => {
                 ))}
               </div>
             </div>
+
+            {/* Clients */}
+            {clientUsers.length > 0 && (
+            <div>
+              <div style={{ fontSize: 9, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1, color: '#3b82f6', marginBottom: 4 }}>Clients</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
+                {clientUsers.map((c) => (
+                  <button
+                    key={c.email}
+                    onClick={() => setSelectedUser(c.email)}
+                    style={{
+                      padding: '7px 6px', borderRadius: 6,
+                      border: selectedUser === c.email ? '2px solid #3b82f6' : '1.5px solid rgba(11,21,38,0.09)',
+                      background: selectedUser === c.email ? '#eff6ff' : '#fff',
+                      cursor: 'pointer', transition: 'all 0.15s', textAlign: 'center',
+                      fontFamily: 'DM Sans',
+                    }}
+                    data-testid={`user-${c.email.split('@')[0]}`}
+                  >
+                    <div style={{ fontSize: 11, fontWeight: 500, color: '#0B1526' }}>{c.name}</div>
+                    <div style={{ fontSize: 9, color: '#60718a' }}>{c.title || 'Client'}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+            )}
           </div>
 
           {/* Password */}

@@ -62,7 +62,7 @@ const ClientDashboard = ({ user, defaultTab }) => {
       </div>
 
       {/* Summary Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14, marginBottom: 20 }}>
         <div className="nn-card" style={{ padding: '16px 18px' }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase' }}>Documents</div>
           <div style={{ fontSize: 22, fontWeight: 700, color: uploadedDocs === totalDocs && totalDocs > 0 ? 'var(--green)' : 'var(--gold4)', marginTop: 4 }}>{uploadedDocs}/{totalDocs}</div>

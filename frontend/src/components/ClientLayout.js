@@ -24,12 +24,12 @@ const ClientLayout = ({ user }) => {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off, #f7f8fa)' }} data-testid="client-layout">
       {/* Top Nav */}
-      <nav style={{ background: 'var(--navy, #0a1128)', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56, position: 'sticky', top: 0, zIndex: 50 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 30, height: 30, borderRadius: 6, background: 'var(--gold, #D4AF37)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--navy, #0a1128)', fontWeight: 800, fontSize: 10, fontFamily: 'DM Serif Display' }}>N&N</div>
-          <span style={{ fontFamily: 'DM Serif Display', fontSize: 14, color: 'var(--gold, #D4AF37)' }}>Client Portal</span>
+      <nav style={{ background: 'var(--navy, #0a1128)', padding: '0 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56, position: 'sticky', top: 0, zIndex: 50, flexWrap: 'wrap', gap: 4 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 6, background: 'var(--gold, #D4AF37)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--navy, #0a1128)', fontWeight: 800, fontSize: 9, fontFamily: 'DM Serif Display' }}>N&N</div>
+          <span style={{ fontFamily: 'DM Serif Display', fontSize: 13, color: 'var(--gold, #D4AF37)' }}>Client Portal</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           {navItems.map(item => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;

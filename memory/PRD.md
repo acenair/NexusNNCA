@@ -1,7 +1,7 @@
 # Nair & Nelliyatt Chartered Accountants — Practice Management System
 
 ## Original Problem Statement
-Build a comprehensive practice management system for "Nair & Nelliyatt Chartered Accountants" with Dark Navy + Gold theme, Partner/Staff RBAC, service modules. Now includes public landing page, Google + email auth with admin approval.
+Build a comprehensive practice management system for "Nair & Nelliyatt Chartered Accountants" with Dark Navy + Gold theme, Partner/Staff/Client RBAC, service modules, landing page, and client portal.
 
 ## Tech Stack
 - Frontend: React, Tailwind CSS, Shadcn UI, DM Serif Display + DM Sans
@@ -12,42 +12,43 @@ Build a comprehensive practice management system for "Nair & Nelliyatt Chartered
 - Auth: JWT sessions + Emergent-managed Google OAuth
 
 ## URL Structure
-- `/` — Public landing page (Hero, Features, Services, Workflow, CTA)
-- `/login` — User picker + password login + Google sign-in
-- `/app/*` — Protected app routes (dashboard, tasks, settings, etc.)
-- Legacy routes (`/dashboard`, `/tasks`, etc.) redirect to `/app/*`
+- `/` — Public landing page
+- `/login` — User picker + password + Google sign-in
+- `/app/*` — Protected partner/staff routes
+- `/client/*` — Protected client portal routes
 
-## Auth & Approval Flow
-- Existing seeded users login with email/password
-- New users sign up via Google or email registration
-- New users get `status: "pending_approval"` — cannot access app until partner approves
-- Partners approve/reject in Settings > Firm & Users (Status column + Approve/Reject buttons)
-- `get_current_user` centrally blocks pending users from all API endpoints
-- Password hashes excluded from all API responses
+## Roles
+- **Partner**: Full access to all features, settings, approvals
+- **Staff**: Task/engagement access based on RBAC
+- **Client**: Simplified portal with Documents, Workflow Status, Invoices only
 
 ## Completed Features (as of 2026-07-25)
-1-27. [All previous features — Dashboard, Calendar, Modules, Settings, RBAC, Workflows, Notifications, AI, Client Master, Documents, Engagements, Timeline, Exports, Onboarding, Email editing, Reminders, Billable Hours, Web Push, Bulk Task Upload]
-28. **Public Landing Page** — Hero section, 8 feature cards, 4 service workflow cards with step lists, 4-step "How It Works", CTA section, footer. Clean SaaS design with N&N branding.
-29. **Google Sign-In** — OAuth via Emergent auth. Pending approval for new users. Google button on login page.
-30. **Admin User Approval** — Settings > Firm & Users shows Status column (Active/Pending Approval). Approve/Reject buttons for pending users. Reject deletes user + sessions.
+1-30. [All previous features]
+31. **Client Portal** — Dedicated dashboard for client-role users with 3 sections:
+  - Documents pending: Predefined checklists per service type (AML, Company Formation, VAT Registration, Audit) with file upload per item
+  - Workflow Status: Shows engagement stages (name + status only, no internal details)
+  - Invoice History: Service name, date, amount, paid/unpaid
+32. **Invoice Management (Admin)** — Partners can create/update/delete invoices linked to clients. Status validation (Paid/Unpaid only).
+33. **Client Role Assignment** — Settings > Firm & Users supports "Client" role with linked client record dropdown.
+34. **Security Hardening** — Client users can only see their own data. Role checks on all client-portal endpoints. client_id cleared when role changes away from client. File download supports both object storage and direct MongoDB storage.
 
 ## Testing Status
 - Iterations 1-12: 100% pass
-- Iteration 13: 100% frontend, 83% backend → 2 CRITICAL security issues found and FIXED (password exposure + approval bypass)
+- Iteration 13: Security fixes applied (password exposure + approval bypass)
+- Iteration 14: Client portal — 10/16 backend pass, all frontend routes work. Critical fixes applied: data isolation, file download, role checks, invoice validation.
 
 ## Backlog
-- P1: Wire actual Storage Sync (S3/Drive/OneDrive)
-- P2: Backend refactoring (server.py 2800+ lines)
-- P3: Mobile responsive landing page nav
+- P1: Mobile responsive landing page nav + client portal
+- P2: Backend refactoring (server.py 3100+ lines)
+- P3: Wire actual Storage Sync (S3/Drive/OneDrive)
 
-## Key API Endpoints (New/Changed)
-- **GET /** — Landing page (frontend)
-- **POST /api/auth/register** — Creates user with pending_approval, no session issued
-- **POST /api/auth/session** — Google OAuth callback, pending users get error response
-- **PATCH /api/settings/users/{id}/approve** — Partner approves pending user
-- **PATCH /api/settings/users/{id}/reject** — Partner rejects + deletes user + sessions
-- **GET /api/auth/me** — Now excludes password field
-- **GET /api/auth/users-list** — Excludes pending users from login picker
+## Key API Endpoints (New)
+- **GET /api/client-portal/documents** — Client's document checklist
+- **POST /api/client-portal/documents/{item_id}/upload** — Client uploads file
+- **GET /api/client-portal/workflow** — Client's engagement stages
+- **GET /api/client-portal/invoices** — Client's invoices
+- **POST/GET/PATCH/DELETE /api/invoices** — Partner invoice CRUD
+- **GET/PATCH /api/admin/client-checklists/{client_id}** — Admin edit checklists
 
 ## DB Collections
-users, clients, tasks, events, activities, appreciations, chat_messages, vat_registrations, vat_filings, audit_engagements, aml_alerts, documents, user_sessions, service_engagements, workflows, settings, dismissed_notifications, billable_hours, push_subscriptions
+users, clients, tasks, events, activities, appreciations, chat_messages, vat_registrations, vat_filings, audit_engagements, aml_alerts, documents, user_sessions, service_engagements, workflows, settings, dismissed_notifications, billable_hours, push_subscriptions, client_doc_checklists, invoices
