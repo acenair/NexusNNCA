@@ -67,6 +67,7 @@ const MainLayout = ({ user }) => {
   const handleLogout = async () => {
     try { await axios.post(`${API}/auth/logout`, {}, { withCredentials: true }); } catch (e) { /* ignore */ }
     document.cookie = 'session_token=; path=/; max-age=0';
+    localStorage.removeItem('session_token');
     navigate('/login');
   };
 

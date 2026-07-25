@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import axios from 'axios';
 import '@/App.css';
 import LandingPage from '@/pages/LandingPage';
 import Login from '@/pages/Login';
@@ -39,6 +40,15 @@ import ClientWorkflow from '@/pages/ClientWorkflow';
 import ClientInvoices from '@/pages/ClientInvoices';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import MainLayout from '@/components/MainLayout';
+
+// Global axios interceptor — adds auth token to ALL requests
+axios.interceptors.request.use((config) => {
+  const token = localStorage.getItem('session_token');
+  if (token && !config.headers.Authorization) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
 function AppRouter() {
   const location = useLocation();

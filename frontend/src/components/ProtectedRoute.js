@@ -5,6 +5,11 @@ import axios from 'axios';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('session_token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState(location.state?.user ? true : null);
@@ -16,11 +21,14 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     const checkAuth = async () => {
       try {
         const response = await axios.get(`${API}/auth/me`, {
-          withCredentials: true
+          withCredentials: true,
+          headers: getAuthHeaders(),
         });
         setUser(response.data);
         setIsAuthenticated(true);
       } catch (error) {
+        // Clear stale tokens
+        localStorage.removeItem('session_token');
         setIsAuthenticated(false);
       }
     };
@@ -57,4 +65,5 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   return React.cloneElement(children, { user });
 };
 
+export { getAuthHeaders };
 export default ProtectedRoute;

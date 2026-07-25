@@ -34,7 +34,8 @@ const AuthCallback = () => {
           return;
         }
         
-        document.cookie = `session_token=${response.data.session_token}; path=/; secure; samesite=none; max-age=604800`;
+        document.cookie = `session_token=${response.data.session_token}; path=/; secure; samesite=lax; max-age=604800`;
+        localStorage.setItem('session_token', response.data.session_token);
         navigate('/app/dashboard', { state: { user: response.data }, replace: true });
       } catch (error) {
         console.error('Session exchange failed:', error);

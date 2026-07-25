@@ -63,7 +63,8 @@ const Login = () => {
         password: password,
       }, { withCredentials: true });
       if (res.data.session_token) {
-        document.cookie = `session_token=${res.data.session_token}; path=/; max-age=86400`;
+        document.cookie = `session_token=${res.data.session_token}; path=/; max-age=604800; secure; samesite=lax`;
+        localStorage.setItem('session_token', res.data.session_token);
       }
       const role = res.data.role || 'staff';
       navigate(role === 'client' ? '/client/documents' : '/app/dashboard');

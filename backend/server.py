@@ -171,10 +171,11 @@ def create_jwt_token(user_id: str) -> str:
 
 async def get_current_user(authorization: str = Header(None), session_token: str = Cookie(None)) -> dict:
     token = None
-    if session_token:
-        token = session_token
-    elif authorization and authorization.startswith("Bearer "):
+    # Prefer explicit Authorization header over cookie
+    if authorization and authorization.startswith("Bearer "):
         token = authorization.split(" ")[1]
+    elif session_token:
+        token = session_token
     
     if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
