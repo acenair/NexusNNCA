@@ -1,0 +1,65 @@
+{
+  "summary": "Iteration 16 tested bypass approval and service-based reminder routing through the public URL. Backend pytest: 3 passed, 1 failed (75%). Partner approval correctly completes every checklist item and persists approval metadata; staff receives 403; reminder config GET/PATCH persists; login/dashboard and checklist toggle regressions pass. However, AML routing is additive rather than exclusive: the designated staff sees the reminder, but the original assignee also sees it and the response still labels the original assignee. Partner/staff desktop UI flows pass. Reminder Routing is severely off-canvas on 390px mobile.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "GET /api/reminders",
+        "issue": "AML routing does not always route reminders exclusively to the configured designated staff. Reproduction: configure Fazil, create an AML task assigned to Subin, then fetch reminders as both users. Fazil receives it, but Subin also receives it and Fazil's reminder payload says assigned_to='Subin'. This contradicts the requirement that AML reminders always go to fixed designated staff.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Settings Reminder Routing mobile layout",
+        "issue": "At 390px, the Settings content is translated off the left side of the viewport (settings x=-361; AML select x=-340; first mapping row x=-340 and width=414). The tab remains visible while the actual configuration controls are effectively unusable.",
+        "selector": "[data-testid='reminder-config-tab']",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Settings > Reminder Routing",
+        "issues": [
+          "Mobile content is off-canvas despite document scrollWidth equaling viewport width, so users cannot recover it by horizontal scrolling.",
+          "Audit mapping selects lack data-testid attributes; each per-client select should have a stable identifier.",
+          "Desktop audit mapping is a long undifferentiated list; consider search/grouping or a bounded scroll region for larger client sets."
+        ]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration16_approval_reminders.py",
+    "/app/test_reports/pytest/pytest_results_iter16.xml"
+  ],
+  "action_items": [
+    "Change GET /api/reminders staff task routing to override ordinary assignment for AML tasks: only aml_designated_staff should receive an AML reminder, and the returned assigned_to field should identify the designated staff.",
+    "Fix the mobile Settings layout/off-canvas transform and make Reminder Routing controls fit within the viewport.",
+    "Add data-testid to each audit mapping select, for example audit-map-select-{client_id}.",
+    "After fixes, rerun the iteration 16 API suite plus partner/staff and 390px UI flows."
+  ],
+  "critical_code_review_comments": [
+    "server.py:2358 always starts the staff query with assigned_to=user_email and only appends service-routing conditions. This union cannot implement 'always/fixed' routing; excluded service modules must be removed from the ordinary assignment branch or effective assignee routing must be computed first.",
+    "The reminder response at server.py:2384 renders the stored original assigned_to_name rather than the effective route, creating misleading ownership even for the designated recipient.",
+    "server.py:1424 redefines imported require_partner (ruff F811). Remove the duplicate to avoid route behavior depending on declaration order.",
+    "server.py shutdown references undefined client at line 3314 (ruff F821); the Mongo client is encapsulated in core.py.",
+    "server.py (3315 lines) and Settings.js (over 1000 lines) exceed the 700-line maintainability threshold; split into routers/services and per-tab components."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration16_approval_reminders.py",
+    "/app/test_reports/iteration_16.json"
+  ],
+  "success_rate": {
+    "backend": "75% (3/4)",
+    "frontend": "87.5% (7/8 exercised checks; mobile Reminder Routing failed)"
+  },
+  "seed_data_creation": "Created disposable TEST_iter16 AML engagements and AML routing tasks. Engagements were archived as Deleted and tasks marked Completed. Reminder configuration was restored by fixture after each module run; final AML staff remains Fazil as originally configured.",
+  "should_call_test_agent_after_fix": true,
+  "should_main_agent_self_test": false,
+  "test_credentials": "Partner and staff credentials were read from /app/memory/test_credentials.md.",
+  "context_for_next_testing_agent": "The final pytest intentionally expects exclusive AML routing and fails reproducibly. Approval, role protection, config persistence, partner Quick Approve visibility/hiding, checklist toggle, staff button absence, staff Settings restriction, login/dashboard, and desktop config save passed. Re-run pytest and specifically inspect mobile element geometry after fixes.",
+  "rca_of_the_issue": "Backend RCA: the staff query is built as $or=[assigned_to=current user, AML service when current user is designated, audit mappings]. That additive union grants the designated staff extra visibility but never suppresses the original assignee. The payload then reports the stored assignee. Mobile RCA: Settings content is positioned about 361px left of the viewport while body overflow is clipped, leaving controls unreachable."
+}

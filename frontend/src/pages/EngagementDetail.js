@@ -59,6 +59,17 @@ const EngagementDetail = () => {
     window.open(`${API}/export/${type}/${engagementId}`, '_blank');
   };
 
+  const bypassApprove = async () => {
+    if (!window.confirm(`Approve all remaining steps for this engagement? This will mark it as Completed.`)) return;
+    try {
+      const res = await axios.post(`${API}/service/engagements/${engagementId}/approve`, {}, { withCredentials: true });
+      // Refresh the engagement data
+      loadEngagement();
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Approval failed');
+    }
+  };
+
   if (loading) return <div className="fade-in nn-card" style={{ padding: 40, textAlign: 'center', color: 'var(--muted)' }}>Loading...</div>;
   if (!eng) return <div className="fade-in nn-card" style={{ padding: 40, textAlign: 'center', color: 'var(--muted)' }}>Engagement not found</div>;
 
@@ -78,6 +89,9 @@ const EngagementDetail = () => {
             <button onClick={exportPdf} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 6, padding: '6px 10px', cursor: 'pointer', color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11 }} data-testid="export-pdf-btn"><Download size={14} /> Export PDF</button>
             {!editing && (
               <button onClick={() => setEditing(true)} style={{ background: 'rgba(201,168,76,0.15)', border: 'none', borderRadius: 6, padding: '6px 10px', cursor: 'pointer', color: 'var(--gold)', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11 }} data-testid="edit-eng-btn"><Edit2 size={12} /> Edit</button>
+            )}
+            {user?.role === 'partner' && eng.status !== 'Completed' && (
+              <button onClick={bypassApprove} style={{ background: 'rgba(34,197,94,0.15)', border: 'none', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', color: 'var(--green)', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600 }} data-testid="bypass-approve-btn"><CheckCircle size={12} /> Quick Approve</button>
             )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>

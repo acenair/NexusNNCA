@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { Settings as SettingsIcon, Shield, HardDrive, GitBranch, Save, Plus, Trash2, GripVertical, ChevronDown, ChevronUp, X, CheckCircle, Cloud, Edit2, Building, Users, Timer, Download, AlertTriangle, RefreshCw, Link as LinkIcon } from 'lucide-react';
+import { Settings as SettingsIcon, Shield, HardDrive, GitBranch, Save, Plus, Trash2, GripVertical, ChevronDown, ChevronUp, X, CheckCircle, Cloud, Edit2, Building, Users, Timer, Download, AlertTriangle, RefreshCw, Link as LinkIcon, Bell } from 'lucide-react';
 import axios from 'axios';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -89,12 +89,43 @@ const Settings = () => {
   const [resetSelected, setResetSelected] = useState([]);
   const [resetting, setResetting] = useState(false);
 
+  // Reminder config
+  const [reminderCfg, setReminderCfg] = useState({ aml_designated_staff: '', audit_client_mapping: {} });
+  const [reminderClients, setReminderClients] = useState([]);
+  const [reminderStaff, setReminderStaff] = useState([]);
+
   // Drive
   const [driveStatus, setDriveStatus] = useState(null);
 
   useEffect(() => { loadSettings(); }, []);
   useEffect(() => { if (tab === 'reset') loadDataStats(); }, [tab]);
   useEffect(() => { if (tab === 'storage') loadDriveStatus(); }, [tab]);
+  useEffect(() => { if (tab === 'reminders') loadReminderConfig(); }, [tab]);
+
+  const loadReminderConfig = async () => {
+    try {
+      const [cfgRes, clientsRes, staffRes] = await Promise.all([
+        axios.get(`${API}/settings/reminder-config`, { withCredentials: true }),
+        axios.get(`${API}/clients`, { withCredentials: true }),
+        axios.get(`${API}/auth/users-list`),
+      ]);
+      setReminderCfg({
+        aml_designated_staff: cfgRes.data.aml_designated_staff || '',
+        audit_client_mapping: cfgRes.data.audit_client_mapping || {},
+      });
+      setReminderClients(clientsRes.data);
+      setReminderStaff(staffRes.data.filter(u => u.role === 'staff'));
+    } catch (err) { console.error(err); }
+  };
+
+  const saveReminderConfig = async () => {
+    setSaving(true);
+    try {
+      await axios.patch(`${API}/settings/reminder-config`, reminderCfg, { withCredentials: true });
+      showSave('Reminder config saved');
+    } catch (err) { alert('Failed to save'); }
+    finally { setSaving(false); }
+  };
 
   const loadDataStats = async () => {
     try {
@@ -339,6 +370,7 @@ const Settings = () => {
     { key: 'storage', label: 'Storage', icon: HardDrive },
     { key: 'workflows', label: 'Workflows', icon: GitBranch },
     { key: 'billable', label: 'Billable Hours', icon: Timer },
+    { key: 'reminders', label: 'Reminder Routing', icon: Bell },
     { key: 'reset', label: 'Reset Data', icon: AlertTriangle },
   ];
 
@@ -888,6 +920,57 @@ const Settings = () => {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* === REMINDER ROUTING TAB === */}
+      {tab === 'reminders' && (
+        <div data-testid="reminder-config-tab">
+          <div className="nn-card" style={{ overflow: 'hidden', marginBottom: 14 }}>
+            <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--nn-border)' }}>
+              <h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>AML Service Reminders</h3>
+              <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>All AML-related reminders and tasks will be routed to a single designated staff member.</p>
+            </div>
+            <div style={{ padding: '16px 20px' }}>
+              <label style={labelStyle}>Designated AML Staff *</label>
+              <select value={reminderCfg.aml_designated_staff} onChange={(e) => setReminderCfg(p => ({ ...p, aml_designated_staff: e.target.value }))} style={{ ...inputStyle, maxWidth: 300 }} data-testid="aml-staff-select">
+                <option value="">— Not configured —</option>
+                {reminderStaff.map(s => <option key={s.email} value={s.email}>{s.name} ({s.title || 'Staff'})</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="nn-card" style={{ overflow: 'hidden', marginBottom: 14 }}>
+            <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--nn-border)' }}>
+              <h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Audit Service Reminders</h3>
+              <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>Map each client to the staff member responsible for their audit reminders.</p>
+            </div>
+            <div style={{ padding: '16px 20px' }}>
+              {reminderClients.length === 0 ? (
+                <div style={{ fontSize: 12, color: 'var(--muted)' }}>No clients found.</div>
+              ) : (
+                <div style={{ display: 'grid', gap: 8 }}>
+                  {reminderClients.map(c => (
+                    <div key={c.client_id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px', background: 'var(--off)', borderRadius: 'var(--rs)', border: '1px solid var(--nn-border)' }} data-testid={`audit-map-${c.client_id}`}>
+                      <div style={{ flex: 1, fontSize: 12, fontWeight: 500, color: 'var(--text)' }}>{c.name}</div>
+                      <select
+                        value={reminderCfg.audit_client_mapping[c.client_id] || ''}
+                        onChange={(e) => setReminderCfg(p => ({ ...p, audit_client_mapping: { ...p.audit_client_mapping, [c.client_id]: e.target.value } }))}
+                        style={{ ...inputStyle, width: 200 }}
+                      >
+                        <option value="">— Not assigned —</option>
+                        {reminderStaff.map(s => <option key={s.email} value={s.email}>{s.name}</option>)}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <button onClick={saveReminderConfig} disabled={saving} className="tbtn tbtn-gold" data-testid="save-reminder-config"><Save size={13} /> {saving ? 'Saving...' : 'Save Reminder Config'}</button>
+          </div>
         </div>
       )}
 

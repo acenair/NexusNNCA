@@ -1356,6 +1356,67 @@ async def update_service_engagement(engagement_id: str, status: Optional[str] = 
     await db.service_engagements.update_one({"engagement_id": engagement_id}, {"$set": update_data})
     return {"message": "Engagement updated"}
 
+# ============= BYPASS APPROVAL (Quick Approve) =============
+
+@api_router.post("/service/engagements/{engagement_id}/approve")
+async def bypass_approve_engagement(engagement_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
+    """Partner can directly approve all remaining checklist items and mark engagement as Completed."""
+    user = await get_current_user(authorization, session_token)
+    if user.get("role") != "partner":
+        raise HTTPException(status_code=403, detail="Only partners can bypass-approve")
+
+    eng = await db.service_engagements.find_one({"engagement_id": engagement_id}, {"_id": 0})
+    if not eng:
+        raise HTTPException(status_code=404, detail="Engagement not found")
+
+    # Mark all checklist items as done
+    checklist = eng.get("checklist", [])
+    for group in checklist:
+        for item in group.get("items", []):
+            item["done"] = True
+
+    # Set last group as current phase
+    last_phase = checklist[-1]["group"] if checklist else eng.get("phase", "")
+
+    await db.service_engagements.update_one(
+        {"engagement_id": engagement_id},
+        {"$set": {
+            "checklist": checklist,
+            "status": "Completed",
+            "phase": last_phase,
+            "approved_by": user["user_id"],
+            "approved_by_name": user.get("name"),
+            "approved_at": datetime.now(timezone.utc).isoformat(),
+        }}
+    )
+    await log_activity("Bypass approval", f"Partner {user.get('name')} approved {eng.get('service_type')} for {eng.get('client_name')}", user["user_id"], eng.get("client_id"), eng.get("client_name"))
+    return {"message": f"Engagement approved by {user.get('name')}", "status": "Completed", "phase": last_phase}
+
+# ============= SERVICE-BASED REMINDER CONFIG =============
+
+@api_router.get("/settings/reminder-config")
+async def get_reminder_config(authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await require_partner(authorization, session_token)
+    doc = await db.settings.find_one({"type": "reminder_config"}, {"_id": 0})
+    if not doc:
+        return {"type": "reminder_config", "aml_designated_staff": "", "audit_client_mapping": {}}
+    return doc
+
+class ReminderConfigRequest(BaseModel):
+    aml_designated_staff: Optional[str] = None
+    audit_client_mapping: Optional[Dict[str, str]] = None
+
+@api_router.patch("/settings/reminder-config")
+async def update_reminder_config(req: ReminderConfigRequest, authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await require_partner(authorization, session_token)
+    update = {"type": "reminder_config", "updated_by": user["user_id"], "updated_at": datetime.now(timezone.utc).isoformat()}
+    if req.aml_designated_staff is not None:
+        update["aml_designated_staff"] = req.aml_designated_staff
+    if req.audit_client_mapping is not None:
+        update["audit_client_mapping"] = req.audit_client_mapping
+    await db.settings.update_one({"type": "reminder_config"}, {"$set": update}, upsert=True)
+    return {"message": "Reminder config updated"}
+
 # ============= SETTINGS ROUTES (Partner Only) =============
 
 SECTIONS = ["overview", "audit", "vat", "corporate", "advisory", "aml"]
@@ -2278,15 +2339,31 @@ async def export_billable_hours(authorization: str = Header(None), session_token
 
 @api_router.get("/reminders")
 async def get_reminders(authorization: str = Header(None), session_token: str = Cookie(None)):
-    """Returns reminders from real tasks, engagements, and events."""
+    """Returns reminders from real tasks, engagements, and events. Applies service-based routing."""
     user = await get_current_user(authorization, session_token)
     today = datetime.now(timezone.utc).date()
     reminders = []
 
+    # Load service-based reminder config
+    reminder_cfg = await db.settings.find_one({"type": "reminder_config"}, {"_id": 0})
+    aml_staff = reminder_cfg.get("aml_designated_staff", "") if reminder_cfg else ""
+    audit_mapping = reminder_cfg.get("audit_client_mapping", {}) if reminder_cfg else {}
+
     # Overdue & upcoming tasks
     task_query = {"status": {"$ne": "Completed"}}
     if user.get("role") != "partner":
-        task_query["assigned_to"] = user.get("email")
+        # Staff see their own + service-routed tasks
+        user_email = user.get("email")
+        # If this staff is the designated AML person, also show AML tasks
+        service_or = [{"assigned_to": user_email}]
+        if aml_staff == user_email:
+            service_or.append({"service_module": {"$regex": "AML", "$options": "i"}})
+        # If this staff is mapped for any audit client, show those too
+        audit_clients = [cid for cid, staff in audit_mapping.items() if staff == user_email]
+        if audit_clients:
+            service_or.append({"client_id": {"$in": audit_clients}, "service_module": {"$regex": "Audit", "$options": "i"}})
+        task_query["$or"] = service_or
+
     tasks = await db.tasks.find(task_query, {"_id": 0}).to_list(200)
     for t in tasks:
         due = t.get("due_date")
