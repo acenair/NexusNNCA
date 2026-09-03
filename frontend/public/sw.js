@@ -79,16 +79,16 @@ self.addEventListener('notificationclick', (event) => {
   const url = event.notification.data?.url || '/';
 
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       // Focus existing window if open
-      for (const client of clientList) {
-        if (client.url.includes(self.location.origin) && 'focus' in client) {
-          client.navigate(url);
-          return client.focus();
+      for (const winClient of clientList) {
+        if (winClient.url.includes(self.location.origin) && 'focus' in winClient) {
+          winClient.navigate(url);
+          return winClient.focus();
         }
       }
       // Open new window
-      return clients.openWindow(url);
+      return self.clients.openWindow(url);
     })
   );
 });

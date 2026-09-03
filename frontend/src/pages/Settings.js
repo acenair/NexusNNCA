@@ -388,7 +388,7 @@ const Settings = () => {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+      <div className="settings-tabs-scroll" style={{ display: 'flex', gap: 6, marginBottom: 16, overflowX: 'auto', WebkitOverflowScrolling: 'touch', maxWidth: '100%' }}>
         {tabs.map(t => {
           const Icon = t.icon;
           const active = tab === t.key;
@@ -399,6 +399,7 @@ const Settings = () => {
               background: active ? 'rgba(201,168,76,0.08)' : 'var(--white)',
               color: active ? 'var(--gold4)' : 'var(--muted)',
               fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans', transition: 'all 0.15s',
+              flexShrink: 0, whiteSpace: 'nowrap',
             }} data-testid={`tab-${t.key}`}><Icon size={14} /> {t.label}</button>
           );
         })}
@@ -951,12 +952,13 @@ const Settings = () => {
               ) : (
                 <div style={{ display: 'grid', gap: 8 }}>
                   {reminderClients.map(c => (
-                    <div key={c.client_id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px', background: 'var(--off)', borderRadius: 'var(--rs)', border: '1px solid var(--nn-border)' }} data-testid={`audit-map-${c.client_id}`}>
-                      <div style={{ flex: 1, fontSize: 12, fontWeight: 500, color: 'var(--text)' }}>{c.name}</div>
+                    <div key={c.client_id} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12, padding: '8px 12px', background: 'var(--off)', borderRadius: 'var(--rs)', border: '1px solid var(--nn-border)' }} data-testid={`audit-map-${c.client_id}`}>
+                      <div style={{ flex: '1 1 140px', minWidth: 0, fontSize: 12, fontWeight: 500, color: 'var(--text)', wordBreak: 'break-word' }}>{c.name}</div>
                       <select
                         value={reminderCfg.audit_client_mapping[c.client_id] || ''}
                         onChange={(e) => setReminderCfg(p => ({ ...p, audit_client_mapping: { ...p.audit_client_mapping, [c.client_id]: e.target.value } }))}
-                        style={{ ...inputStyle, width: 200 }}
+                        style={{ ...inputStyle, width: 'auto', minWidth: 160, maxWidth: 220, flex: '0 1 200px' }}
+                        data-testid={`audit-map-select-${c.client_id}`}
                       >
                         <option value="">— Not assigned —</option>
                         {reminderStaff.map(s => <option key={s.email} value={s.email}>{s.name}</option>)}

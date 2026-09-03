@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
-import { ArrowLeft, Download, CheckCircle, Clock, GitBranch, User, Calendar, Edit2, Save, X } from 'lucide-react';
+import { ArrowLeft, Download, CheckCircle, Clock, GitBranch, User, Calendar, Edit2, Save, X, ListChecks, BookOpen } from 'lucide-react';
 import axios from 'axios';
+import AuditWorkbook from './AuditWorkbook';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const AUDIT_SERVICE_TYPES = ['statutory_audit', 'internal_audit', 'stock_audit', 'fraud_audit'];
 
 const EngagementDetail = () => {
   const { engagementId } = useParams();
@@ -15,6 +17,7 @@ const EngagementDetail = () => {
   const [editForm, setEditForm] = useState({});
   const [staffList, setStaffList] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState('checklist');
 
   useEffect(() => { loadEngagement(); }, [engagementId]);
 
@@ -154,7 +157,17 @@ const EngagementDetail = () => {
         </div>
       )}
 
-      {/* Checklist */}
+      {/* Tab Switcher */}
+      {AUDIT_SERVICE_TYPES.includes(eng.service_type) && (
+        <div style={{ display: 'flex', gap: 6, marginBottom: 14 }} data-testid="engagement-tabs">
+          <button onClick={() => setActiveTab('checklist')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 'var(--rs)', border: activeTab === 'checklist' ? '1px solid var(--gold)' : '1px solid var(--nn-border)', background: activeTab === 'checklist' ? 'rgba(201,168,76,0.08)' : 'var(--white)', color: activeTab === 'checklist' ? 'var(--gold4)' : 'var(--muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }} data-testid="tab-checklist"><ListChecks size={14} /> Checklist</button>
+          <button onClick={() => setActiveTab('audit')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 'var(--rs)', border: activeTab === 'audit' ? '1px solid var(--gold)' : '1px solid var(--nn-border)', background: activeTab === 'audit' ? 'rgba(201,168,76,0.08)' : 'var(--white)', color: activeTab === 'audit' ? 'var(--gold4)' : 'var(--muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }} data-testid="tab-audit-workbook"><BookOpen size={14} /> Audit Workbook</button>
+        </div>
+      )}
+
+      {activeTab === 'audit' && AUDIT_SERVICE_TYPES.includes(eng.service_type) ? (
+        <AuditWorkbook engagementId={engagementId} clientId={eng.client_id} clientName={eng.client_name} />
+      ) : (
       <div className="nn-card" style={{ overflow: 'hidden' }} data-testid="engagement-checklist">
         <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--nn-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Checklist</h3>
@@ -195,6 +208,7 @@ const EngagementDetail = () => {
           );
         })}
       </div>
+      )}
     </div>
   );
 };

@@ -1,0 +1,43 @@
+{
+  "summary": "Iteration 17 e2e testing: Digital Audit Workbook (backend /api/audit/* + UI), AML reminder exclusivity fix, Settings mobile layout fix, and non-audit engagement regression. 21/21 new pytest cases pass; iteration_16 regression suite (4 tests) still passes. UI flows all pass end-to-end (start audit, 25-section sidebar, yes/no + text + underscore sub-question saves, flag on 'No', file upload, Excel/PDF export, Mark Complete, Start New Period with roll-forward, tab hidden for non-audit types). Two data-quality/UX defects found in the parsed audit template (duplicate question code B19 causing shared state + React duplicate-key error; is_input heuristic never marks label rows).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/audit/template", "issue": "Duplicate question code 'B19' in section 2 (LEGAL DOCUMENTS): 'System generated B/s & P&L match with the audited financial statements' and 'Additional Comments:' both parse to code B19. Both share one responses.B19 document key, so answering one auto-answers the other and progress is double-counted (2 of 35 done from a single answer). parse_template() must de-duplicate codes (e.g. append _1/_2 suffix on collision)."},
+      {"endpoint": "GET /api/audit/template", "issue": "is_input heuristic in audit_workbook.parse_template() never fires: 295 of 295 rows are is_input=True, so pure label/header rows are rendered as answerable questions (e.g. 'Additional Comments:', A8_1 'Auditor'). Inflates the denominator and shows meaningless input rows."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "AuditWorkbook / AuditQuestionRow", "issue": "React console error 'Encountered two children with the same key' in Legal Documents section, caused by the duplicate B19 template code (key={q.code}); both rows render and mirror the same value.", "selector": "[data-testid=\"audit-question-B19\"]", "priority": "MEDIUM"},
+      {"component": "AuditWorkbook start form", "issue": "Minor UX/race: openStartForm() renders the start form immediately and fetches client audit history afterwards, so the 'Roll Forward Static Data From' dropdown pops in ~1-2s late (an automated/quick user can submit before it appears). Suggest loading history before showing the form or rendering a disabled placeholder select.", "selector": "[data-testid=\"audit-rollforward-select\"]", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Audit Workbook - roll forward / history dropdowns", "issues": ["Roll-forward and history <select> option labels list every prior audit including duplicates with identical period text ('TEST FY 2025-26 (completed)' x3 in test data) - no client/created-date disambiguation, hard to pick the right prior year once multiple audits exist per client."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration17_audit_workbook.py",
+    "/app/test_reports/pytest/pytest_results_iter17.xml"
+  ],
+  "action_items": [
+    "De-duplicate question codes in audit_workbook.parse_template() (B19 collision in section 2) so each row has a unique responses key; re-seed audit_templates (bump TEMPLATE_ID/version since seed is skipped when the doc exists).",
+    "Fix the is_input/label detection heuristic so header/label rows ('Additional Comments:', 'Auditor') are not counted as answerable questions.",
+    "Optional: fetch client audit history before rendering the start form so the roll-forward dropdown is present on first paint."
+  ],
+  "critical_code_review_comments": [
+    "audit_workbook.seed_audit_template() early-returns when a template with TEMPLATE_ID exists, so any parser fix will NOT take effect on existing environments - version the template_id or add a re-seed/migration path.",
+    "server.py save_audit_response builds $set paths from the URL {code}; codes are validated against the template (good) but keep enforcing that guard - any future code containing '.' or '$' would corrupt the document. Verified underscore codes (A8_1, B1_1) work end-to-end.",
+    "server.py is ~3577 lines - well over the 700-line guideline; the audit routes are a good candidate for extraction into an APIRouter module.",
+    "Audit export/download endpoints accept a session token via the ?auth= query param (verified working). Tokens in URLs land in logs/history - consider a short-lived signed download token."
+  ],
+  "updated_files": ["/app/backend/tests/test_iteration17_audit_workbook.py"],
+  "success_rate": {"backend": "100% (21/21 new + 4/4 iteration_16 regression)", "frontend": "95% (all flows pass; 1 duplicate-key React error, 1 dropdown load race)"},
+  "seed_data_creation": "Created and then archived TEST statutory_audit engagement eng_cda1bea65b6c and TEST aml engagement eng_63400d844863 (client TEST_UI_Onboard_1221564373). Created AML task task_eed6a9f821ca (marked Completed after test). All TEST_* client_audits documents deleted afterwards (client_audits collection is now empty). Settings > Reminder Routing 'Designated AML Staff' is currently left set to fazil@nnadvisory.ae (as per the test scenario).",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": true,
+  "test_credentials": "arjun@nnadvisory.ae / nn123456 (partner), fazil@nnadvisory.ae, subin@nnadvisory.ae / nn123456 (staff) - from /app/memory/test_credentials.md",
+  "context_for_next_testing_agent": "Backend suite for this feature: /app/backend/tests/test_iteration17_audit_workbook.py (module-scoped fixtures create + archive their own statutory_audit engagement; login uses POST /api/auth/login -> session_token bearer). Verified working: template (25 sections / 295 rows, no dotted codes), start, list, detail+progress, yes/no save, flag-on-No (+db.activities 'Audit flag raised' entry, flag clears on Yes), underscore sub-question codes, unknown code 404, upload+download, xlsx (36KB)/pdf (25KB) exports incl. ?auth= token, complete, roll-forward (only sections order 0/1 copied, rolled_forward=true), client history without responses payload, staff read access. AML exclusivity verified for Fazil/Subin/Partner both via API and UI (Reminders page shows 'Assigned: Fazil'). Mobile 390px Settings verified: docScrollWidth==390 (no page overflow), tabs container scrollWidth 948 > clientWidth 366 (internal scroll), all 16 audit-map selects inside viewport. Still open: duplicate B19 template code and label rows counted as questions.",
+  "rca_of_the_issue": "Duplicate code B19: parse_template() reuses the Sl.No value from the source XLS as the unique question code, and the Legal Documents sheet repeats '19' on two rows ('System generated B/s & P&L match...' and 'Additional Comments:'). Because responses are stored keyed by code, both rows read/write responses.B19 - answering one visually answers both and compute_progress counts 2 completions for a single answer; React also logs a duplicate-key error since AuditQuestionRow uses key={q.code}. Fix: detect code collisions during parsing and suffix them, then re-seed with a new template version. Related: the is_label heuristic (requires no code AND no remarks AND ALL-UPPERCASE text) never matches real rows, so every one of the 295 rows is answerable."
+}

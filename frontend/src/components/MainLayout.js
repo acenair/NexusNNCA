@@ -612,7 +612,7 @@ const MainLayout = ({ user }) => {
           .topbar-date { display: none !important; }
           .btn-label { display: none; }
           .topbar-action-btn { padding: 7px 8px !important; gap: 0 !important; }
-          .main-content { padding: 14px 12px !important; }
+          .main-content { padding: 14px 12px !important; overflow-x: hidden !important; }
           .modal-box { width: 95vw !important; max-height: 88vh !important; }
         }
         @media (min-width: 769px) {
