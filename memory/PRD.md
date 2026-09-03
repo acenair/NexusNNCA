@@ -41,6 +41,11 @@
 - Backend prioritizes Authorization header over cookie
 - Works on custom domains (app.nairnelliyatt.com)
 
+## Client Master — Audit Summary Card (2026-09-03)
+- New `GET /api/audit/clients-summary` endpoint (server.py, placed before `/audit/{audit_id}` to avoid route-matching collision) returns each client's latest audit (period, status, overall_pct, flagged_count).
+- `ClientMaster.js` gets a new "Audit Status" column: shows period/status/progress/flag-count badge, or "No audit yet". Clicking navigates to `/app/engagements/{engagement_id}` with `location.state.defaultTab='audit'`, which `EngagementDetail.js` reads to auto-open the Audit Workbook tab.
+- Verified end-to-end via screenshot: card renders correctly empty and populated, click-through lands directly on the pre-filled workbook.
+
 ## Backlog
 - Per-user RBAC section hiding
 - Run 2: Ageing report dashboard for unpaid/overdue invoices

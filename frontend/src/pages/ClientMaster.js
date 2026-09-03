@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
-import { Search, Edit2, X, ChevronDown, ChevronUp, Filter, Clock } from 'lucide-react';
+import { Search, Edit2, X, ChevronDown, ChevronUp, Filter, Clock, ClipboardCheck, AlertTriangle } from 'lucide-react';
 import axios from 'axios';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -20,6 +20,7 @@ const ClientMaster = () => {
   const { user } = useOutletContext();
   const navigate = useNavigate();
   const [clients, setClients] = useState([]);
+  const [auditSummary, setAuditSummary] = useState({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterService, setFilterService] = useState('');
@@ -35,8 +36,12 @@ const ClientMaster = () => {
 
   const loadClients = async () => {
     try {
-      const res = await axios.get(`${API}/clients`, { withCredentials: true });
-      setClients(res.data);
+      const [cRes, aRes] = await Promise.all([
+        axios.get(`${API}/clients`, { withCredentials: true }),
+        axios.get(`${API}/audit/clients-summary`, { withCredentials: true }).catch(() => ({ data: {} })),
+      ]);
+      setClients(cRes.data);
+      setAuditSummary(aRes.data);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
@@ -146,15 +151,16 @@ const ClientMaster = () => {
                 <th style={thStyle}>TRN</th>
                 <th style={thStyle} onClick={() => handleSort('aml_risk_rating')}>AML Risk <SortIcon col="aml_risk_rating" /></th>
                 <th style={thStyle}>Services</th>
+                <th style={thStyle}>Audit Status</th>
                 <th style={thStyle} onClick={() => handleSort('status')}>Status <SortIcon col="status" /></th>
                 <th style={{ ...thStyle, textAlign: 'center' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={8} style={{ ...tdStyle, textAlign: 'center', padding: 40, color: 'var(--muted)' }}>Loading...</td></tr>
+                <tr><td colSpan={9} style={{ ...tdStyle, textAlign: 'center', padding: 40, color: 'var(--muted)' }}>Loading...</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={8} style={{ ...tdStyle, textAlign: 'center', padding: 40, color: 'var(--muted)' }}>No clients match your filters</td></tr>
+                <tr><td colSpan={9} style={{ ...tdStyle, textAlign: 'center', padding: 40, color: 'var(--muted)' }}>No clients match your filters</td></tr>
               ) : filtered.map(c => (
                 <tr key={c.client_id} style={{ transition: 'background 0.12s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(201,168,76,0.03)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'} data-testid={`client-row-${c.client_id}`}>
                   <td style={{ ...tdStyle, fontWeight: 600 }}>{c.name}</td>
@@ -173,6 +179,34 @@ const ClientMaster = () => {
                       ))}
                       {(!c.active_services || c.active_services.length === 0) && <span style={{ fontSize: 11, color: 'var(--light)' }}>—</span>}
                     </div>
+                  </td>
+                  <td style={tdStyle}>
+                    {auditSummary[c.client_id] ? (
+                      <div
+                        onClick={() => navigate(`/app/engagements/${auditSummary[c.client_id].engagement_id}`, { state: { defaultTab: 'audit' } })}
+                        style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 3 }}
+                        data-testid={`audit-summary-${c.client_id}`}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <ClipboardCheck size={11} color={auditSummary[c.client_id].status === 'completed' ? 'var(--green)' : 'var(--gold4)'} />
+                          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text)' }}>{auditSummary[c.client_id].period}</span>
+                          <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 7px', borderRadius: 8, background: auditSummary[c.client_id].status === 'completed' ? 'var(--green-bg)' : 'rgba(201,168,76,0.12)', color: auditSummary[c.client_id].status === 'completed' ? 'var(--green)' : 'var(--gold4)' }}>
+                            {auditSummary[c.client_id].status === 'completed' ? 'Completed' : 'In Progress'}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div className="nn-progress" style={{ width: 70, height: 4 }}><div className="nn-progress-bar" style={{ width: `${auditSummary[c.client_id].overall_pct}%`, background: 'var(--gold)' }} /></div>
+                          <span style={{ fontSize: 9, color: 'var(--muted)' }}>{auditSummary[c.client_id].overall_pct}%</span>
+                          {auditSummary[c.client_id].flagged_count > 0 && (
+                            <span style={{ fontSize: 9, fontWeight: 700, color: '#dc2626', display: 'flex', alignItems: 'center', gap: 2 }} data-testid={`audit-flags-${c.client_id}`}>
+                              <AlertTriangle size={10} /> {auditSummary[c.client_id].flagged_count}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <span style={{ fontSize: 11, color: 'var(--light)' }} data-testid={`audit-summary-${c.client_id}-empty`}>No audit yet</span>
+                    )}
                   </td>
                   <td style={tdStyle}>
                     <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 10, background: c.status === 'Active' ? 'var(--green-bg)' : 'var(--red-bg)', color: c.status === 'Active' ? 'var(--green)' : 'var(--red)' }}>

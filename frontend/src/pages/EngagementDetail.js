@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, useOutletContext } from 'react-router-dom';
 import { ArrowLeft, Download, CheckCircle, Clock, GitBranch, User, Calendar, Edit2, Save, X, ListChecks, BookOpen } from 'lucide-react';
 import axios from 'axios';
 import AuditWorkbook from './AuditWorkbook';
@@ -10,6 +10,7 @@ const AUDIT_SERVICE_TYPES = ['statutory_audit', 'internal_audit', 'stock_audit',
 const EngagementDetail = () => {
   const { engagementId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useOutletContext();
   const [eng, setEng] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -17,7 +18,7 @@ const EngagementDetail = () => {
   const [editForm, setEditForm] = useState({});
   const [staffList, setStaffList] = useState([]);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState('checklist');
+  const [activeTab, setActiveTab] = useState(location.state?.defaultTab === 'audit' ? 'audit' : 'checklist');
 
   useEffect(() => { loadEngagement(); }, [engagementId]);
 

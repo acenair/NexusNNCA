@@ -1491,6 +1491,31 @@ async def get_client_audit_history(client_id: str, authorization: str = Header(N
     audits = await db.client_audits.find({"client_id": client_id}, {"_id": 0, "responses": 0}).sort("created_at", -1).to_list(100)
     return audits
 
+@api_router.get("/audit/clients-summary")
+async def get_audit_clients_summary(authorization: str = Header(None), session_token: str = Cookie(None)):
+    """Latest audit snapshot per client — for the Client Master dashboard card."""
+    user = await get_current_user(authorization, session_token)
+    if user.get("role") == "client":
+        raise HTTPException(status_code=403, detail="Not available for this role")
+    template = await db.audit_templates.find_one({"template_id": audit_workbook.TEMPLATE_ID}, {"_id": 0})
+    all_audits = await db.client_audits.find({}, {"_id": 0}).sort("created_at", -1).to_list(2000)
+    summary = {}
+    for a in all_audits:
+        cid = a.get("client_id")
+        if not cid or cid in summary:
+            continue
+        responses = a.get("responses", {})
+        flagged_count = sum(1 for r in responses.values() if r.get("flagged"))
+        overall_pct, done, total = 0, 0, 0
+        if template:
+            _, overall_pct, done, total = audit_workbook.compute_progress(template, responses)
+        summary[cid] = {
+            "audit_id": a["audit_id"], "engagement_id": a["engagement_id"], "period": a["period"],
+            "status": a["status"], "overall_pct": overall_pct, "flagged_count": flagged_count,
+            "questions_done": done, "questions_total": total,
+        }
+    return summary
+
 @api_router.get("/audit/{audit_id}")
 async def get_client_audit(audit_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
     user = await get_current_user(authorization, session_token)
