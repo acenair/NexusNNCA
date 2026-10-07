@@ -1868,6 +1868,7 @@ async def get_all_users(authorization: str = Header(None), session_token: str = 
     return users
 
 class UpdateUserRequest(BaseModel):
+    name: Optional[str] = None
     role: Optional[str] = None
     title: Optional[str] = None
     email: Optional[str] = None
@@ -1876,6 +1877,17 @@ class UpdateUserRequest(BaseModel):
     client_id: Optional[str] = None
     notification_email: Optional[str] = None
     phone: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    gender: Optional[str] = None
+    emirates_id: Optional[str] = None
+    passport_number: Optional[str] = None
+    passport_expiry: Optional[str] = None
+    visa_status: Optional[str] = None
+    visa_expiry: Optional[str] = None
+    emergency_contact_name: Optional[str] = None
+    emergency_contact_phone: Optional[str] = None
+    address: Optional[str] = None
+    department: Optional[str] = None
 
 @api_router.patch("/settings/users/{user_id}")
 async def update_user(user_id: str, req: UpdateUserRequest, authorization: str = Header(None), session_token: str = Cookie(None)):
@@ -1884,9 +1896,10 @@ async def update_user(user_id: str, req: UpdateUserRequest, authorization: str =
     if not target:
         raise HTTPException(status_code=404, detail="User not found")
     update_data = {}
+    if req.name is not None and req.name.strip():
+        update_data["name"] = req.name.strip()
     if req.role and req.role in ("staff", "partner", "client"):
         update_data["role"] = req.role
-        # Clear client_id when role changes away from client
         if req.role != "client":
             update_data["client_id"] = None
     if req.client_id is not None and req.role == "client":
@@ -1904,6 +1917,11 @@ async def update_user(user_id: str, req: UpdateUserRequest, authorization: str =
         update_data["notification_email"] = req.notification_email
     if req.phone is not None:
         update_data["phone"] = req.phone
+    # HR fields
+    for field in ["date_of_birth", "gender", "emirates_id", "passport_number", "passport_expiry", "visa_status", "visa_expiry", "emergency_contact_name", "emergency_contact_phone", "address", "department"]:
+        val = getattr(req, field, None)
+        if val is not None:
+            update_data[field] = val
     password_changed = False
     if req.new_password:
         if len(req.new_password) < MIN_PASSWORD_LENGTH:
@@ -1918,7 +1936,7 @@ async def update_user(user_id: str, req: UpdateUserRequest, authorization: str =
     if password_changed:
         await db.user_sessions.delete_many({"user_id": user_id})
     await log_activity("User updated", f"Updated {target.get('name', user_id)}: {', '.join(update_data.keys())}", user["user_id"])
-    return {"message": f"User {target.get('name')} updated"}
+    return {"message": f"User {update_data.get('name', target.get('name'))} updated"}
 
 class CreateUserRequest(BaseModel):
     name: str

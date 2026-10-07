@@ -73,7 +73,7 @@ const Settings = () => {
   const [firmName, setFirmName] = useState('Nair & Nelliyatt Chartered Accountants');
   const [users, setUsers] = useState([]);
   const [editUser, setEditUser] = useState(null);
-  const [userForm, setUserForm] = useState({ role: '', title: '', email: '', new_password: '', date_of_joining: '', notification_email: '', phone: '' });
+  const [userForm, setUserForm] = useState({ name: '', role: '', title: '', email: '', new_password: '', date_of_joining: '', notification_email: '', phone: '', date_of_birth: '', gender: '', emirates_id: '', passport_number: '', passport_expiry: '', visa_status: '', visa_expiry: '', emergency_contact_name: '', emergency_contact_phone: '', address: '', department: '' });
 
   // Add User modal
   const [showAddUser, setShowAddUser] = useState(false);
@@ -371,18 +371,35 @@ const Settings = () => {
 
   const openUserEdit = (u) => {
     setEditUser(u);
-    setUserForm({ role: u.role, title: u.title || '', email: u.email || '', new_password: '', date_of_joining: u.date_of_joining || '', client_id: u.client_id || '', notification_email: u.notification_email || '', phone: u.phone || '' });
+    setUserForm({
+      name: u.name || '', role: u.role, title: u.title || '', email: u.email || '', new_password: '',
+      date_of_joining: u.date_of_joining || '', client_id: u.client_id || '',
+      notification_email: u.notification_email || '', phone: u.phone || '',
+      date_of_birth: u.date_of_birth || '', gender: u.gender || '', emirates_id: u.emirates_id || '',
+      passport_number: u.passport_number || '', passport_expiry: u.passport_expiry || '',
+      visa_status: u.visa_status || '', visa_expiry: u.visa_expiry || '',
+      emergency_contact_name: u.emergency_contact_name || '', emergency_contact_phone: u.emergency_contact_phone || '',
+      address: u.address || '', department: u.department || '',
+    });
   };
 
   const saveUser = async () => {
     setSaving(true);
     try {
-      const payload = { role: userForm.role, title: userForm.title, date_of_joining: userForm.date_of_joining, notification_email: userForm.notification_email, phone: userForm.phone };
+      const payload = {
+        name: userForm.name, role: userForm.role, title: userForm.title,
+        date_of_joining: userForm.date_of_joining, notification_email: userForm.notification_email, phone: userForm.phone,
+        date_of_birth: userForm.date_of_birth, gender: userForm.gender, emirates_id: userForm.emirates_id,
+        passport_number: userForm.passport_number, passport_expiry: userForm.passport_expiry,
+        visa_status: userForm.visa_status, visa_expiry: userForm.visa_expiry,
+        emergency_contact_name: userForm.emergency_contact_name, emergency_contact_phone: userForm.emergency_contact_phone,
+        address: userForm.address, department: userForm.department,
+      };
       if (userForm.email && userForm.email !== editUser.email) payload.email = userForm.email;
       if (userForm.new_password) payload.new_password = userForm.new_password;
       if (userForm.role === 'client' && userForm.client_id) payload.client_id = userForm.client_id;
       await axios.patch(`${API}/settings/users/${editUser.user_id}`, payload, { withCredentials: true });
-      showSave(`${editUser.name} updated`);
+      showSave(`${userForm.name || editUser.name} updated`);
       setEditUser(null);
       loadSettings();
     } catch (err) { alert(err.response?.data?.detail || 'Failed'); }
@@ -561,50 +578,142 @@ const Settings = () => {
           {/* Edit User Modal */}
           {editUser && (
             <div className="modal-overlay" onClick={() => !saving && setEditUser(null)} data-testid="edit-user-modal">
-              <div className="modal-box" style={{ maxWidth: 440 }} onClick={(e) => e.stopPropagation()}>
+              <div className="modal-box" style={{ maxWidth: 600 }} onClick={(e) => e.stopPropagation()}>
                 <div className="modal-hdr">
                   <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 16 }}>Edit: {editUser.name}</h3>
                   <button onClick={() => setEditUser(null)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex' }}><X size={18} /></button>
                 </div>
-                <div className="modal-body">
-                  <div style={{ marginBottom: 12 }}>
-                    <label style={labelStyle}>Email Address</label>
-                    <input type="email" value={userForm.email} onChange={(e) => setUserForm(p => ({ ...p, email: e.target.value }))} placeholder="user@nnadvisory.ae" style={inputStyle} data-testid="user-email-input" />
-                  </div>
-                  <div style={{ marginBottom: 12 }}>
-                    <label style={labelStyle}>Role *</label>
-                    <select value={userForm.role} onChange={(e) => setUserForm(p => ({ ...p, role: e.target.value }))} style={inputStyle} data-testid="user-role-select">
-                      <option value="staff">Staff</option>
-                      <option value="partner">Partner</option>
-                      <option value="client">Client</option>
-                    </select>
-                  </div>
-                  {userForm.role === 'client' && (
-                    <div style={{ marginBottom: 12 }}>
-                      <label style={labelStyle}>Linked Client Record</label>
-                      <select value={userForm.client_id || ''} onChange={(e) => setUserForm(p => ({ ...p, client_id: e.target.value }))} style={inputStyle} data-testid="user-client-select">
-                        <option value="">— Select Client —</option>
-                        {(clientsForLinking || []).map(c => <option key={c.client_id} value={c.client_id}>{c.name}</option>)}
+                <div className="modal-body" style={{ maxHeight: '65vh', overflowY: 'auto' }}>
+                  {/* — Personal — */}
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--gold4)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, paddingBottom: 4, borderBottom: '1px solid var(--nn-border)' }}>Personal</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+                    <div>
+                      <label style={labelStyle}>Full Name *</label>
+                      <input value={userForm.name} onChange={(e) => setUserForm(p => ({ ...p, name: e.target.value }))} placeholder="Full name" style={inputStyle} data-testid="user-name-input" />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Email Address</label>
+                      <input type="email" value={userForm.email} onChange={(e) => setUserForm(p => ({ ...p, email: e.target.value }))} placeholder="user@nnadvisory.ae" style={inputStyle} data-testid="user-email-input" />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Date of Birth</label>
+                      <input type="date" value={userForm.date_of_birth} onChange={(e) => setUserForm(p => ({ ...p, date_of_birth: e.target.value }))} style={inputStyle} data-testid="user-dob-input" />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Gender</label>
+                      <select value={userForm.gender} onChange={(e) => setUserForm(p => ({ ...p, gender: e.target.value }))} style={inputStyle} data-testid="user-gender-select">
+                        <option value="">— Select —</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
                       </select>
                     </div>
-                  )}
-                  <div style={{ marginBottom: 12 }}>
-                    <label style={labelStyle}>Title / Designation</label>
-                    <input value={userForm.title} onChange={(e) => setUserForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Senior Associate, Manager..." style={inputStyle} data-testid="user-title-input" />
+                    <div style={{ gridColumn: '1 / -1' }}>
+                      <label style={labelStyle}>Address</label>
+                      <input value={userForm.address} onChange={(e) => setUserForm(p => ({ ...p, address: e.target.value }))} placeholder="Residential address..." style={inputStyle} data-testid="user-address-input" />
+                    </div>
                   </div>
-                  <div style={{ marginBottom: 12 }}>
-                    <label style={labelStyle}>Date of Joining</label>
-                    <input type="date" value={userForm.date_of_joining} onChange={(e) => setUserForm(p => ({ ...p, date_of_joining: e.target.value }))} style={inputStyle} data-testid="user-doj-input" />
+
+                  {/* — Role & Organization — */}
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--gold4)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, paddingBottom: 4, borderBottom: '1px solid var(--nn-border)' }}>Role & Organization</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+                    <div>
+                      <label style={labelStyle}>Role *</label>
+                      <select value={userForm.role} onChange={(e) => setUserForm(p => ({ ...p, role: e.target.value }))} style={inputStyle} data-testid="user-role-select">
+                        <option value="staff">Staff</option>
+                        <option value="partner">Partner</option>
+                        <option value="client">Client</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Department</label>
+                      <select value={userForm.department} onChange={(e) => setUserForm(p => ({ ...p, department: e.target.value }))} style={inputStyle} data-testid="user-department-select">
+                        <option value="">— Select —</option>
+                        <option value="Audit">Audit</option>
+                        <option value="Tax">Tax</option>
+                        <option value="Advisory">Advisory</option>
+                        <option value="AML & Compliance">AML & Compliance</option>
+                        <option value="Corporate Services">Corporate Services</option>
+                        <option value="Administration">Administration</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Title / Designation</label>
+                      <input value={userForm.title} onChange={(e) => setUserForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Senior Associate" style={inputStyle} data-testid="user-title-input" />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Date of Joining</label>
+                      <input type="date" value={userForm.date_of_joining} onChange={(e) => setUserForm(p => ({ ...p, date_of_joining: e.target.value }))} style={inputStyle} data-testid="user-doj-input" />
+                    </div>
+                    {userForm.role === 'client' && (
+                      <div style={{ gridColumn: '1 / -1' }}>
+                        <label style={labelStyle}>Linked Client Record</label>
+                        <select value={userForm.client_id || ''} onChange={(e) => setUserForm(p => ({ ...p, client_id: e.target.value }))} style={inputStyle} data-testid="user-client-select">
+                          <option value="">— Select Client —</option>
+                          {(clientsForLinking || []).map(c => <option key={c.client_id} value={c.client_id}>{c.name}</option>)}
+                        </select>
+                      </div>
+                    )}
                   </div>
-                  <div style={{ marginBottom: 12 }}>
-                    <label style={labelStyle}>Notification Email</label>
-                    <input type="email" value={userForm.notification_email} onChange={(e) => setUserForm(p => ({ ...p, notification_email: e.target.value }))} placeholder="Alternate email for alerts..." style={inputStyle} data-testid="user-notification-email-input" />
+
+                  {/* — Identity Documents — */}
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--gold4)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, paddingBottom: 4, borderBottom: '1px solid var(--nn-border)' }}>Identity & Visa</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+                    <div>
+                      <label style={labelStyle}>Emirates ID</label>
+                      <input value={userForm.emirates_id} onChange={(e) => setUserForm(p => ({ ...p, emirates_id: e.target.value }))} placeholder="784-XXXX-XXXXXXX-X" style={inputStyle} data-testid="user-emirates-id-input" />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Passport Number</label>
+                      <input value={userForm.passport_number} onChange={(e) => setUserForm(p => ({ ...p, passport_number: e.target.value }))} placeholder="e.g. Z1234567" style={inputStyle} data-testid="user-passport-input" />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Passport Expiry</label>
+                      <input type="date" value={userForm.passport_expiry} onChange={(e) => setUserForm(p => ({ ...p, passport_expiry: e.target.value }))} style={inputStyle} data-testid="user-passport-expiry-input" />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Visa Status</label>
+                      <select value={userForm.visa_status} onChange={(e) => setUserForm(p => ({ ...p, visa_status: e.target.value }))} style={inputStyle} data-testid="user-visa-status-select">
+                        <option value="">— Select —</option>
+                        <option value="Employment">Employment Visa</option>
+                        <option value="Investor">Investor Visa</option>
+                        <option value="Golden">Golden Visa</option>
+                        <option value="Freelance">Freelance Permit</option>
+                        <option value="Visit">Visit Visa</option>
+                        <option value="Cancelled">Cancelled</option>
+                        <option value="N/A">N/A (UAE National)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Visa Expiry</label>
+                      <input type="date" value={userForm.visa_expiry} onChange={(e) => setUserForm(p => ({ ...p, visa_expiry: e.target.value }))} style={inputStyle} data-testid="user-visa-expiry-input" />
+                    </div>
                   </div>
-                  <div style={{ marginBottom: 12 }}>
-                    <label style={labelStyle}>Phone / WhatsApp</label>
-                    <input value={userForm.phone} onChange={(e) => setUserForm(p => ({ ...p, phone: e.target.value }))} placeholder="+971 50 123 4567" style={inputStyle} data-testid="user-phone-input" />
+
+                  {/* — Contact & Emergency — */}
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--gold4)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, paddingBottom: 4, borderBottom: '1px solid var(--nn-border)' }}>Contact & Emergency</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+                    <div>
+                      <label style={labelStyle}>Notification Email</label>
+                      <input type="email" value={userForm.notification_email} onChange={(e) => setUserForm(p => ({ ...p, notification_email: e.target.value }))} placeholder="Alternate email for alerts" style={inputStyle} data-testid="user-notification-email-input" />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Phone / WhatsApp</label>
+                      <input value={userForm.phone} onChange={(e) => setUserForm(p => ({ ...p, phone: e.target.value }))} placeholder="+971 50 123 4567" style={inputStyle} data-testid="user-phone-input" />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Emergency Contact Name</label>
+                      <input value={userForm.emergency_contact_name} onChange={(e) => setUserForm(p => ({ ...p, emergency_contact_name: e.target.value }))} placeholder="Full name" style={inputStyle} data-testid="user-emergency-name-input" />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Emergency Contact Phone</label>
+                      <input value={userForm.emergency_contact_phone} onChange={(e) => setUserForm(p => ({ ...p, emergency_contact_phone: e.target.value }))} placeholder="+971 50 000 0000" style={inputStyle} data-testid="user-emergency-phone-input" />
+                    </div>
                   </div>
-                  <div>
+
+                  {/* — Security — */}
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--gold4)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, paddingBottom: 4, borderBottom: '1px solid var(--nn-border)' }}>Security</div>
+                  <div style={{ marginBottom: 4 }}>
                     <label style={labelStyle}>New Password (leave blank to keep current, min 10 chars)</label>
                     <input type="password" value={userForm.new_password} onChange={(e) => setUserForm(p => ({ ...p, new_password: e.target.value }))} placeholder="At least 10 characters..." style={inputStyle} data-testid="user-password-input" />
                   </div>

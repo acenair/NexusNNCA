@@ -28,20 +28,22 @@ Build a comprehensive practice management system for "Nair & Nelliyatt Chartered
 - Google OAuth removed; email/password only login
 - Forced password change on first login (`must_change_password` flag)
 - Staff directory gated behind authentication
-- Public login-directory shows names only (no emails)
+- 403 PASSWORD_CHANGE_REQUIRED interceptor on both api.js and global axios
+- ProtectedRoute re-validates user on every route change
 - Self-service forgot-password with partner-issued 6-digit codes
 - Partner-initiated password resets with temp passwords
-- 403 PASSWORD_CHANGE_REQUIRED interceptor on both api.js and global axios (Bug fix 2026-10-07)
-- ProtectedRoute re-validates user on every route change (Bug fix 2026-10-07)
 
 ## User Management (Completed 2026-10-07)
 - Partners can add new users via Settings > Firm & Users > "Add User"
 - Auto-generated temporary password shown once, user forced to change on first login
-- Users have notification_email and phone/WhatsApp fields for task/update alerts
-- Edit User modal includes notification contact fields
+- Full HR profile editing with sectioned modal:
+  - **Personal**: Name (editable), Email, Date of Birth, Gender, Address
+  - **Role & Organization**: Role, Department, Title, Date of Joining
+  - **Identity & Visa**: Emirates ID, Passport Number & Expiry, Visa Status & Expiry
+  - **Contact & Emergency**: Notification Email, Phone/WhatsApp, Emergency Contact (name + phone)
+  - **Security**: Password change
 - Team Members table shows Contact column
 - Admin account: srinivas.anup@gmail.com (Managing Partner)
-- Seed script updates existing users' name/title/role to stay in sync
 
 ## Prioritized Backlog
 
@@ -57,21 +59,16 @@ Build a comprehensive practice management system for "Nair & Nelliyatt Chartered
 ### P3 — Future
 - Security Phase 2 (lockout after failed logins, audit trail for resets)
 - Security Phase 3 (email/SMS codes, partner 2FA, re-evaluate Google sign-in)
-- Backend Refactoring (split server.py ~3800 lines into /routes/ modules)
+- Backend Refactoring (split server.py ~3800+ lines into /routes/ modules)
 - Notification delivery via email/SMS using notification_email and phone fields
 
 ## Key Data Models
-- `users`: user_id, email, name, title, role, password, must_change_password, status, notification_email, phone
+- `users`: user_id, email, name, title, role, password, must_change_password, status, notification_email, phone, date_of_birth, gender, emirates_id, passport_number, passport_expiry, visa_status, visa_expiry, emergency_contact_name, emergency_contact_phone, address, department, date_of_joining
 - `client_audits`: audit_id, engagement_id, client_id, template_id, status, progress, flagged_count, answers
 - `user_sessions`: user_id, session_token, expires_at
 
 ## Key API Endpoints
-- POST /api/auth/login — email/password login
-- GET /api/auth/me — current user (ungated, returns must_change_password)
-- POST /api/auth/change-password — forced + voluntary password change
-- POST /api/auth/forgot-password — request reset
-- POST /api/auth/admin-reset-password — partner-initiated reset
-- GET /api/settings/users — list all users (partner only)
-- POST /api/settings/users — create new user (partner only)
-- PATCH /api/settings/users/{user_id} — update user (partner only)
-- POST /api/audit/start, PATCH /api/audit/{id}/answer — audit workbook
+- POST /api/auth/login, GET /api/auth/me, POST /api/auth/change-password
+- POST /api/auth/forgot-password, POST /api/auth/admin-reset-password
+- GET /api/settings/users, POST /api/settings/users, PATCH /api/settings/users/{user_id}
+- POST /api/audit/start, PATCH /api/audit/{id}/answer
