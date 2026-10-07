@@ -34,7 +34,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     };
 
     checkAuth();
-  }, [location.state]);
+  }, [location.pathname]);
 
   if (isAuthenticated === null) {
     return (

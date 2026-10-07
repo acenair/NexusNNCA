@@ -54,6 +54,21 @@ axios.interceptors.request.use((config) => {
   return config;
 });
 
+// Global response interceptor — redirect 403 PASSWORD_CHANGE_REQUIRED to change-password
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (
+      error.response?.status === 403 &&
+      String(error.response?.data?.detail).toLowerCase() === 'password_change_required' &&
+      window.location.pathname !== '/change-password'
+    ) {
+      window.location.href = '/change-password';
+    }
+    return Promise.reject(error);
+  }
+);
+
 function AppRouter() {
   const location = useLocation();
   // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH

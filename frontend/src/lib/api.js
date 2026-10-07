@@ -14,7 +14,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// On 401/403, clear token and redirect to login
+// On 401 → login, on 403 PASSWORD_CHANGE_REQUIRED → change-password
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -24,6 +24,13 @@ api.interceptors.response.use(
       if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
         window.location.href = '/login';
       }
+    }
+    if (
+      error.response?.status === 403 &&
+      String(error.response?.data?.detail).toLowerCase() === 'password_change_required' &&
+      window.location.pathname !== '/change-password'
+    ) {
+      window.location.href = '/change-password';
     }
     return Promise.reject(error);
   }
