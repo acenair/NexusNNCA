@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Clock, Calendar, Star, Bell, FileText, Activity, Receipt, Building2, Briefcase, TrendingUp, Shield, LogOut, Users, Mail, Plus, X, CheckCircle, ChevronDown, ChevronRight, Menu, PanelLeftClose, MessageSquare, Database, FolderOpen, Settings, ClipboardList, UserPlus } from 'lucide-react';
+import { LayoutDashboard, Clock, Calendar, Star, Bell, FileText, Activity, Receipt, Building2, Briefcase, TrendingUp, Shield, LogOut, Users, Mail, Plus, X, CheckCircle, ChevronDown, ChevronRight, Menu, PanelLeftClose, MessageSquare, Database, FolderOpen, Settings, ClipboardList, UserPlus, AlertTriangle } from 'lucide-react';
 import axios from 'axios';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -146,6 +146,11 @@ const MainLayout = ({ user }) => {
 
   // Check section access based on RBAC
   const isSectionAllowed = (sectionTitle) => {
+    // Per-user override: check hidden_sections on the user object
+    if (user?.hidden_sections?.length > 0) {
+      const sectionKey = sectionTitle.toLowerCase();
+      if (user.hidden_sections.includes(sectionKey)) return false;
+    }
     if (!rbacConfig) return true; // No RBAC set = all access
     const role = user?.role || 'staff';
     const sectionKey = sectionTitle.toLowerCase();
@@ -229,6 +234,8 @@ const MainLayout = ({ user }) => {
         { path: '/app/client-master', label: 'Client Master', icon: Database, managingPartnerOnly: true },
         { path: '/app/onboarding', label: 'Client Onboarding', icon: UserPlus, partnerOnly: true },
         { path: '/app/invoices', label: 'Invoices', icon: Receipt, partnerOnly: true },
+        { path: '/app/ageing-report', label: 'Ageing Report', icon: AlertTriangle, partnerOnly: true },
+        { path: '/app/proposals', label: 'Proposals', icon: FileText, partnerOnly: true },
         { path: '/app/documents', label: 'Documents', icon: FolderOpen },
         { path: '/app/settings', label: 'Settings', icon: Settings, partnerOnly: true },
       ]

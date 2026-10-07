@@ -38,6 +38,8 @@ import ClientTimeline from '@/pages/ClientTimeline';
 import EngagementDetail from '@/pages/EngagementDetail';
 import ClientOnboarding from '@/pages/ClientOnboarding';
 import Invoices from '@/pages/Invoices';
+import AgeingReport from '@/pages/AgeingReport';
+import Proposals from '@/pages/Proposals';
 import ClientLayout from '@/components/ClientLayout';
 import ClientDocuments from '@/pages/ClientDocuments';
 import ClientWorkflow from '@/pages/ClientWorkflow';
@@ -128,6 +130,8 @@ function AppRouter() {
         <Route path="engagements/:engagementId" element={<EngagementDetail />} />
         <Route path="onboarding" element={<ClientOnboarding />} />
         <Route path="invoices" element={<Invoices />} />
+        <Route path="ageing-report" element={<AgeingReport />} />
+        <Route path="proposals" element={<Proposals />} />
       </Route>
       {/* Client Portal Routes */}
       <Route path="/client" element={<ProtectedRoute allowedRoles={['client']}><ClientLayout /></ProtectedRoute>}>

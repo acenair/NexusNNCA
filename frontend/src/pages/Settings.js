@@ -60,6 +60,10 @@ const Settings = () => {
   // RBAC
   const [rbac, setRbac] = useState({ staff: {}, partner: {} });
 
+  // Per-User Access
+  const [userAccessList, setUserAccessList] = useState([]);
+  const [userAccessSaving, setUserAccessSaving] = useState(null);
+
   // Storage
   const [storage, setStorage] = useState({ provider: 'default', aws_s3: {}, google_drive: {}, onedrive: {} });
 
@@ -110,6 +114,26 @@ const Settings = () => {
   useEffect(() => { if (tab === 'reset') loadDataStats(); }, [tab]);
   useEffect(() => { if (tab === 'storage') loadDriveStatus(); }, [tab]);
   useEffect(() => { if (tab === 'reminders') loadReminderConfig(); }, [tab]);
+  useEffect(() => { if (tab === 'user-access') loadUserAccess(); }, [tab]);
+
+  const SIDEBAR_SECTIONS = ['overview', 'audit', 'vat', 'corporate', 'advisory', 'aml'];
+
+  const loadUserAccess = async () => {
+    try {
+      const res = await axios.get(`${API}/settings/user-access`, { withCredentials: true });
+      setUserAccessList(res.data);
+    } catch (err) { console.error(err); }
+  };
+
+  const toggleUserSection = async (userId, section, currentHidden = []) => {
+    setUserAccessSaving(userId + section);
+    const newHidden = currentHidden.includes(section) ? currentHidden.filter(s => s !== section) : [...currentHidden, section];
+    try {
+      await axios.patch(`${API}/settings/user-access/${userId}`, { hidden_sections: newHidden }, { withCredentials: true });
+      setUserAccessList(prev => prev.map(u => u.user_id === userId ? { ...u, hidden_sections: newHidden } : u));
+    } catch (err) { alert(err.response?.data?.detail || 'Failed'); }
+    finally { setUserAccessSaving(null); }
+  };
 
   const loadReminderConfig = async () => {
     try {
@@ -432,6 +456,7 @@ const Settings = () => {
   const tabs = [
     { key: 'firm', label: 'Firm & Users', icon: Building },
     { key: 'rbac', label: 'Access Control', icon: Shield },
+    { key: 'user-access', label: 'Per-User Access', icon: Users },
     { key: 'storage', label: 'Storage', icon: HardDrive },
     { key: 'workflows', label: 'Workflows', icon: GitBranch },
     { key: 'billable', label: 'Billable Hours', icon: Timer },
@@ -845,6 +870,64 @@ const Settings = () => {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* === PER-USER ACCESS TAB === */}
+      {tab === 'user-access' && (
+        <div data-testid="per-user-access-tab">
+          <div style={{ background: 'var(--white)', border: '1px solid var(--nn-border)', borderRadius: 'var(--rl)', overflow: 'hidden' }}>
+            <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--nn-border)' }}>
+              <h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Per-User Sidebar Access</h3>
+              <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>Toggle sidebar sections for individual staff. Unchecked sections will be hidden from that user's sidebar.</p>
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid var(--nn-border)' }}>
+                    <th style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', textAlign: 'left', letterSpacing: 0.5, minWidth: 160 }}>User</th>
+                    {SIDEBAR_SECTIONS.map(s => (
+                      <th key={s} style={{ padding: '10px 12px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', textAlign: 'center', letterSpacing: 0.5 }}>{s}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {userAccessList.map(u => {
+                    const hidden = u.hidden_sections || [];
+                    return (
+                      <tr key={u.user_id} style={{ borderBottom: '1px solid var(--nn-border)' }}>
+                        <td style={{ padding: '10px 16px' }}>
+                          <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>{u.name}</div>
+                          <div style={{ fontSize: 10, color: 'var(--muted)' }}>{u.role}</div>
+                        </td>
+                        {SIDEBAR_SECTIONS.map(s => {
+                          const isHidden = hidden.includes(s);
+                          const isLoading = userAccessSaving === u.user_id + s;
+                          return (
+                            <td key={s} style={{ padding: '10px 12px', textAlign: 'center' }}>
+                              <button
+                                onClick={() => toggleUserSection(u.user_id, s, hidden)}
+                                disabled={isLoading}
+                                style={{
+                                  width: 28, height: 28, borderRadius: 6, border: `2px solid ${isHidden ? 'var(--nn-border)' : 'var(--gold)'}`,
+                                  background: isHidden ? 'transparent' : 'var(--gold)', color: isHidden ? 'var(--muted)' : 'var(--navy)',
+                                  cursor: 'pointer', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                  opacity: isLoading ? 0.5 : 1, transition: 'all 0.15s',
+                                }}
+                                data-testid={`toggle-${u.user_id}-${s}`}
+                              >
+                                {isHidden ? '' : '✓'}
+                              </button>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}

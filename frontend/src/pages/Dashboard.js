@@ -10,7 +10,9 @@ const Dashboard = () => {
   const { user } = useOutletContext();
   const [stats, setStats] = useState(null);
   const [activities, setActivities] = useState([]);
+  const [visaAlerts, setVisaAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const isPartner = user?.role === 'partner';
 
   useEffect(() => {
     loadData();
@@ -18,12 +20,15 @@ const Dashboard = () => {
 
   const loadData = async () => {
     try {
-      const [statsRes, activitiesRes] = await Promise.all([
+      const promises = [
         axios.get(`${API}/dashboard/stats`, { withCredentials: true }),
         axios.get(`${API}/dashboard/activities`, { withCredentials: true })
-      ]);
-      setStats(statsRes.data);
-      setActivities(activitiesRes.data);
+      ];
+      if (isPartner) promises.push(axios.get(`${API}/dashboard/visa-alerts`, { withCredentials: true }));
+      const results = await Promise.all(promises);
+      setStats(results[0].data);
+      setActivities(results[1].data);
+      if (isPartner && results[2]) setVisaAlerts(results[2].data);
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
     } finally {
@@ -193,6 +198,33 @@ const Dashboard = () => {
               <Link to="/calendar" className="sec-link" data-testid="view-calendar-link">View calendar →</Link>
             </div>
           </div>
+
+          {/* Visa / Passport Expiry Alerts — Partners only */}
+          {isPartner && visaAlerts.length > 0 && (
+            <div className="nn-card" data-testid="visa-alerts-widget">
+              <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--nn-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Expiry Alerts</h3>
+                <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 8, background: 'rgba(239,68,68,0.12)', color: 'var(--red)' }}>{visaAlerts.length}</span>
+              </div>
+              <div style={{ maxHeight: 200, overflowY: 'auto' }}>
+                {visaAlerts.map((a, idx) => (
+                  <div key={idx} style={{ padding: '9px 16px', borderBottom: '1px solid var(--nn-border)', display: 'flex', alignItems: 'center', gap: 10 }} data-testid={`visa-alert-${idx}`}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: a.days_left <= 15 ? 'var(--red)' : 'var(--amber)', flexShrink: 0 }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 12, color: 'var(--text)', fontWeight: 500 }}>{a.name}</div>
+                      <div style={{ fontSize: 10, color: 'var(--muted)' }}>{a.document} expires {a.expiry_date}</div>
+                    </div>
+                    <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 8, background: a.days_left <= 15 ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)', color: a.days_left <= 15 ? 'var(--red)' : 'var(--amber)' }}>
+                      {a.days_left <= 0 ? 'Expired' : `${a.days_left}d left`}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ padding: '8px 16px', borderTop: '1px solid var(--nn-border)', textAlign: 'center' }}>
+                <Link to="/app/settings" className="sec-link" data-testid="manage-users-link">Manage users →</Link>
+              </div>
+            </div>
+          )}
 
           {/* Today's Schedule */}
           <div className="nn-card">

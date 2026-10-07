@@ -3220,6 +3220,193 @@ async def delete_invoice(invoice_id: str, authorization: str = Header(None), ses
         raise HTTPException(status_code=404, detail="Invoice not found")
     return {"message": "Invoice deleted"}
 
+# ─── Ageing Report ───
+@api_router.get("/invoices/ageing-report")
+async def get_ageing_report(authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await require_partner(authorization, session_token)
+    unpaid = await db.invoices.find({"status": "Unpaid"}, {"_id": 0}).to_list(1000)
+    today = datetime.now(timezone.utc).date()
+    buckets = {"current": [], "30": [], "60": [], "90": [], "120plus": []}
+    client_summary = {}
+    for inv in unpaid:
+        inv_date = datetime.fromisoformat(inv["date"]).date() if isinstance(inv["date"], str) else inv["date"]
+        days = (today - inv_date).days
+        inv["days_overdue"] = days
+        if days <= 0:
+            buckets["current"].append(inv)
+        elif days <= 30:
+            buckets["30"].append(inv)
+        elif days <= 60:
+            buckets["60"].append(inv)
+        elif days <= 90:
+            buckets["90"].append(inv)
+        else:
+            buckets["120plus"].append(inv)
+        cid = inv.get("client_id", "unknown")
+        if cid not in client_summary:
+            client_summary[cid] = {"client_id": cid, "client_name": inv.get("client_name", "Unknown"), "total_outstanding": 0, "invoice_count": 0, "oldest_days": 0, "invoices": []}
+        client_summary[cid]["total_outstanding"] += inv.get("amount", 0)
+        client_summary[cid]["invoice_count"] += 1
+        client_summary[cid]["oldest_days"] = max(client_summary[cid]["oldest_days"], days)
+        client_summary[cid]["invoices"].append(inv)
+    # Sort by oldest overdue first
+    clients_sorted = sorted(client_summary.values(), key=lambda x: -x["oldest_days"])
+    summary = {
+        "total_unpaid": sum(i.get("amount", 0) for i in unpaid),
+        "total_invoices": len(unpaid),
+        "bucket_totals": {k: {"count": len(v), "amount": sum(i.get("amount", 0) for i in v)} for k, v in buckets.items()},
+    }
+    return {"summary": summary, "clients": clients_sorted}
+
+@api_router.post("/invoices/follow-up")
+async def create_follow_up(client_id: str = "", client_name: str = "", authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await require_partner(authorization, session_token)
+    if not client_id:
+        raise HTTPException(status_code=400, detail="client_id required")
+    task_id = f"task_{uuid.uuid4().hex[:12]}"
+    task = {
+        "task_id": task_id, "title": f"Follow up: Unpaid invoices — {client_name or client_id}",
+        "description": f"Outstanding invoices require follow-up. Review the ageing report and contact the client.",
+        "status": "Pending", "priority": "High", "client_id": client_id, "client_name": client_name,
+        "created_by": user["user_id"], "created_by_name": user.get("name"),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.tasks.insert_one(task)
+    await log_activity("Follow-up task created", f"Ageing follow-up for {client_name}", user["user_id"], client_id, client_name)
+    return {"message": "Follow-up task created", "task_id": task_id}
+
+# ─── Visa Expiry Alerts ───
+@api_router.get("/dashboard/visa-alerts")
+async def get_visa_alerts(authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await require_partner(authorization, session_token)
+    all_users = await db.users.find({"status": {"$ne": "pending_approval"}, "role": {"$ne": "client"}}, {"_id": 0, "password": 0}).to_list(200)
+    today = datetime.now(timezone.utc).date()
+    alerts = []
+    for u in all_users:
+        for field, label in [("passport_expiry", "Passport"), ("visa_expiry", "Visa")]:
+            val = u.get(field)
+            if not val:
+                continue
+            try:
+                exp_date = datetime.fromisoformat(val).date() if isinstance(val, str) else val
+                days_left = (exp_date - today).days
+                if days_left <= 30:
+                    alerts.append({"user_id": u["user_id"], "name": u.get("name"), "document": label, "expiry_date": val, "days_left": days_left, "title": u.get("title", "")})
+            except Exception:
+                pass
+    alerts.sort(key=lambda x: x["days_left"])
+    return alerts
+
+# ─── Proposal Manager ───
+class ProposalTemplateRequest(BaseModel):
+    name: str
+    scope_of_work: str = ""
+    fee_structure: str = ""
+    terms: str = ""
+    service_type: Optional[str] = None
+
+@api_router.post("/proposal-templates")
+async def create_proposal_template(req: ProposalTemplateRequest, authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await require_partner(authorization, session_token)
+    template_id = f"ptpl_{uuid.uuid4().hex[:12]}"
+    doc = {"template_id": template_id, "name": req.name, "scope_of_work": req.scope_of_work, "fee_structure": req.fee_structure, "terms": req.terms, "service_type": req.service_type, "created_by": user["user_id"], "created_at": datetime.now(timezone.utc).isoformat()}
+    await db.proposal_templates.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+@api_router.get("/proposal-templates")
+async def get_proposal_templates(authorization: str = Header(None), session_token: str = Cookie(None)):
+    await require_partner(authorization, session_token)
+    return await db.proposal_templates.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
+
+@api_router.delete("/proposal-templates/{template_id}")
+async def delete_proposal_template(template_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
+    await require_partner(authorization, session_token)
+    r = await db.proposal_templates.delete_one({"template_id": template_id})
+    if r.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Template not found")
+    return {"message": "Template deleted"}
+
+class ProposalRequest(BaseModel):
+    client_id: str
+    client_name: Optional[str] = None
+    template_id: Optional[str] = None
+    title: str
+    scope_of_work: str = ""
+    fee_structure: str = ""
+    terms: str = ""
+    total_fee: Optional[float] = None
+    status: str = "Draft"
+
+@api_router.post("/proposals")
+async def create_proposal(req: ProposalRequest, authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await require_partner(authorization, session_token)
+    proposal_id = f"prop_{uuid.uuid4().hex[:12]}"
+    cname = req.client_name
+    if not cname:
+        c = await db.clients.find_one({"client_id": req.client_id}, {"_id": 0, "name": 1})
+        cname = c["name"] if c else "Unknown"
+    doc = {"proposal_id": proposal_id, "client_id": req.client_id, "client_name": cname, "template_id": req.template_id, "title": req.title, "scope_of_work": req.scope_of_work, "fee_structure": req.fee_structure, "terms": req.terms, "total_fee": req.total_fee, "status": req.status, "created_by": user["user_id"], "created_by_name": user.get("name"), "created_at": datetime.now(timezone.utc).isoformat()}
+    await db.proposals.insert_one(doc)
+    doc.pop("_id", None)
+    await log_activity("Proposal created", f"Proposal '{req.title}' for {cname}", user["user_id"], req.client_id, cname)
+    return doc
+
+@api_router.get("/proposals")
+async def get_proposals(authorization: str = Header(None), session_token: str = Cookie(None), client_id: Optional[str] = None):
+    await require_partner(authorization, session_token)
+    query = {}
+    if client_id:
+        query["client_id"] = client_id
+    return await db.proposals.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
+
+@api_router.patch("/proposals/{proposal_id}")
+async def update_proposal(proposal_id: str, authorization: str = Header(None), session_token: str = Cookie(None), status: Optional[str] = None, title: Optional[str] = None, scope_of_work: Optional[str] = None, fee_structure: Optional[str] = None, terms: Optional[str] = None, total_fee: Optional[float] = None):
+    user = await require_partner(authorization, session_token)
+    prop = await db.proposals.find_one({"proposal_id": proposal_id})
+    if not prop:
+        raise HTTPException(status_code=404, detail="Proposal not found")
+    update = {}
+    if status and status in ("Draft", "Sent", "Accepted", "Declined"):
+        update["status"] = status
+    if title is not None: update["title"] = title
+    if scope_of_work is not None: update["scope_of_work"] = scope_of_work
+    if fee_structure is not None: update["fee_structure"] = fee_structure
+    if terms is not None: update["terms"] = terms
+    if total_fee is not None: update["total_fee"] = total_fee
+    if update:
+        update["updated_at"] = datetime.now(timezone.utc).isoformat()
+        await db.proposals.update_one({"proposal_id": proposal_id}, {"$set": update})
+    return {"message": "Proposal updated"}
+
+@api_router.delete("/proposals/{proposal_id}")
+async def delete_proposal(proposal_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
+    await require_partner(authorization, session_token)
+    r = await db.proposals.delete_one({"proposal_id": proposal_id})
+    if r.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Proposal not found")
+    return {"message": "Proposal deleted"}
+
+# ─── Per-User Access ───
+class UserAccessRequest(BaseModel):
+    hidden_sections: List[str] = []
+
+@api_router.patch("/settings/user-access/{user_id}")
+async def update_user_access(user_id: str, req: UserAccessRequest, authorization: str = Header(None), session_token: str = Cookie(None)):
+    await require_partner(authorization, session_token)
+    target = await db.users.find_one({"user_id": user_id})
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+    await db.users.update_one({"user_id": user_id}, {"$set": {"hidden_sections": req.hidden_sections}})
+    return {"message": f"Access updated for {target.get('name')}"}
+
+@api_router.get("/settings/user-access")
+async def get_all_user_access(authorization: str = Header(None), session_token: str = Cookie(None)):
+    await require_partner(authorization, session_token)
+    users = await db.users.find({"role": {"$in": ["staff", "partner"]}}, {"_id": 0, "user_id": 1, "name": 1, "role": 1, "hidden_sections": 1}).to_list(100)
+    return users
+
+
 # Admin: edit client document checklist
 @api_router.get("/admin/client-checklists/{client_id}")
 async def get_client_checklist(client_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
