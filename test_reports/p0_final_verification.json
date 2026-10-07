@@ -1,0 +1,39 @@
+{
+  "scope": "P0 structural backend modularization only",
+  "date": "2026-10-07",
+  "status": "passed",
+  "implementation": {
+    "server_lines_before": 4150,
+    "server_lines_after": 77,
+    "domain_routers": 25,
+    "api_operations_preserved": 135,
+    "url_paths_preserved": 109,
+    "function_class_definitions_preserved": 192,
+    "openapi_exact_match": true,
+    "body_signature_constant_equivalence": true,
+    "frontend_modified": false,
+    "credentials_modified": false
+  },
+  "backend": {
+    "regression_pack": "26 passed, 0 failed",
+    "final_stricter_recheck": "13 passed, 0 failed (subset of the same pack)",
+    "reports": [
+      "pytest/pytest_results_iter21.xml",
+      "pytest/p0_final_checks.xml"
+    ]
+  },
+  "frontend": {
+    "login_and_dashboard": "passed",
+    "major_screen_navigation": "passed by testing agent",
+    "login_test_id": "login-submit-button exists uniquely and was used successfully",
+    "client_master_stage_5": "passed with existing client_4e8c208a0176; populated action and exactly two required document slots",
+    "legacy_client_only_tracker_url": "passed; full record hydration retains PBC and Trial Balance slots",
+    "prior_report_disposition": "Both UI findings in iteration_20.json were not reproducible on the current preview. Existing frontend fixes were already present. No implementation changes required."
+  },
+  "unresolved_refactor_regressions": [],
+  "mocked_integrations": [],
+  "limitations": [
+    "Live AI generation, Google Drive OAuth/sync and actual device push delivery were not revalidated end-to-end. Existing implementations were moved unchanged.",
+    "Pre-existing same-second JWT token reuse noted for future security work; intentionally outside the structural refactor."
+  ]
+}

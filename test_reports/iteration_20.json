@@ -1,0 +1,61 @@
+{
+  "summary": "Completed P0 structural regression + auth + 25-router smoke + onboarding/invoice/proposal/settings/audit UI regression on preview. Backend contracts and extracted code structure remain intact; one frontend integration regression persists in Client Master pipeline tracker hydration.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Login form",
+        "issue": "No stable data-testid found for login submit button (had to fall back to text role selector).",
+        "selector": "button:has-text('Sign In')",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Client Master -> Pipeline tracker",
+        "issue": "Tracker opens but stage action and required document slots render empty (observed action_count=0, document_slots=0).",
+        "affected_selectors": [
+          "[data-testid='onboarding-stage-action']",
+          "[data-testid^='onboarding-document-']",
+          "[data-testid^='onboarding-tracker-']"
+        ]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_p0_structural_regression.py",
+    "/app/backend/tests/test_iteration21_auth_and_router_smoke.py",
+    "/app/backend/tests/test_iteration21_crud_finance_workflows.py",
+    "/app/backend/tests/test_iteration20_onboarding_pipeline.py",
+    "/app/test_reports/pytest/pytest_results_iter21.xml"
+  ],
+  "action_items": [
+    "Fix Client Master pipeline tracker hydration so stage action text and document slots populate on client-level route.",
+    "Add explicit data-testid for login submit button to stabilize UI automation.",
+    "Re-run UI regression for Client Master -> Pipeline after hydration fix."
+  ],
+  "critical_code_review_comments": [
+    "P0 extraction invariants validated by persistent tests: exact OpenAPI equality, route set parity, AST-level def/constant preservation, and no server import cycles in extracted modules.",
+    "Session token generation currently produces identical JWTs for rapid repeated logins of same user (same exp window), making token uniqueness assumptions invalid; not a refactor regression but worth security hardening later."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_p0_structural_regression.py",
+    "/app/backend/tests/test_iteration21_auth_and_router_smoke.py",
+    "/app/backend/tests/test_iteration21_crud_finance_workflows.py",
+    "/app/test_reports/iteration_20.json"
+  ],
+  "success_rate": {
+    "backend": "100% (26/26)",
+    "frontend": "85%"
+  },
+  "test_credentials": "Partner: srinivas.anup@gmail.com / AdminPass2026!; Staff: subin@nnadvisory.ae / SubinNewPass2026; Client disposable: test.client.portal@example.test / ClientNewPass2026; Forced-gate validation: sooraj@nnadvisory.ae / nn123456",
+  "seed_data_creation": "Created disposable TEST_* records via API tests (tasks, onboarding records, follow-up task). Cleaned up workflow/proposal template/proposal/invoice/billable-hours records created in this run.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend regression suite is now persistent and passing against preview URL. Reproduce remaining UI issue by logging in as partner -> Client Master -> click any [data-testid^='onboarding-tracker-']; verify onboarding-stage-action and onboarding-document-* are non-empty. Five onboarding tabs are visible in Client Onboarding form (Company, Tax & Compliance, Service Setup, Commercials, Contacts).",
+  "rca of the issue": "UI regression root cause remains response-shape/hydration mismatch on client-level onboarding tracker route: tracker view can render without enriched stage_tracker/document context, resulting in zero action/doc slots despite pipeline stage data existing in backend."
+}

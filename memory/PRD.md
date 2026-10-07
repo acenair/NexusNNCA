@@ -8,6 +8,7 @@ Build a comprehensive practice management system for "Nair & Nelliyatt Chartered
 - **Backend:** FastAPI (Python) + MongoDB (Motor)
 - **Auth:** Email/password login, JWT sessions, forced password change on first login
 - **Integrations:** Web Push (VAPID), Google Drive (Storage Sync), Gemini 3 Flash (AI Assistant)
+- **Backend structure:** `server.py` is a 77-line composition root registering 25 domain routers in `backend/routes/`; shared helpers live in `backend/services/`, startup/seeding/indexes in `backend/lifecycle.py`, general models in `backend/models.py`. `core.py` remains the single shared MongoDB/auth/storage context. See `backend/ARCHITECTURE.md`.
 
 ## What's Been Implemented
 - Full dashboard with KPI cards, activity feed, calendar
@@ -57,8 +58,13 @@ Build a comprehensive practice management system for "Nair & Nelliyatt Chartered
 
 ## Prioritized Backlog
 
-### P0 — Engineering Foundation
-- Backend Refactoring: split `server.py` (~4,000+ lines) into modular `/routes/` files before further heavy feature work.
+### P0 — Engineering Foundation (Completed 2026-10-07)
+- Split the 4,150-line `server.py` into 25 domain `APIRouter` modules; entry point now 77 lines.
+- Extracted reusable auth helpers, checklist templates, Drive and push helpers into `services/`, and initialization into `lifecycle.py`.
+- Preserved all 135 API operations / 109 paths, all 192 original function/class signatures and bodies, business constants, database logic, middleware and startup ordering.
+- No frontend, dependency, environment, credential or authentication-policy changes. No new mocked flows or integrations.
+- Added permanent schema/AST/route-resolution/shared-DB regression tests and backend architecture documentation.
+- No remaining P0 blockers.
 
 ### P1 — User Verification
 - Review the new multi-service onboarding and tracker experience with live firm workflows.
@@ -69,6 +75,7 @@ Build a comprehensive practice management system for "Nair & Nelliyatt Chartered
 
 ### P3 — Future
 - Security Phase 2 (lockout after failed logins, audit trail for resets)
+- Consider unique session-token identifiers: same-user logins within one second can currently produce identical JWTs (pre-existing behavior, intentionally unchanged in P0).
 - Security Phase 3 (email/SMS codes, partner 2FA, re-evaluate Google sign-in)
 - Notification delivery via email/SMS using notification_email and phone fields
 
@@ -86,5 +93,11 @@ Build a comprehensive practice management system for "Nair & Nelliyatt Chartered
 - GET /api/onboarding/client/{client_id}, POST /api/onboarding/{onboarding_id}/documents
 
 ## Latest Verification (2026-10-07)
-- Automated backend tests: 7/7 passed for multi-service onboarding creation, stage rules, Stage 5 safeguard/engagement handoff, and document persistence.
-- Browser verification passed for login selector and the Client Master → Pipeline fallback, including visible Stage 5 action text and both required upload slots.
+- P0 regression pack: **26/26 passed** across structural compatibility, authentication/permissions, all 25 route families, task/workflow/finance CRUD, billable-hours export, and the 7 onboarding pipeline/document-upload tests.
+- Tightened checks after testing: runtime duplicate detection, actual Starlette route precedence for all 135 operations, and exact expected HTTP statuses across all route families. **13/13 targeted rechecks passed** (a subset of the 26, not additional unique tests).
+- Complete OpenAPI schema matches the frozen pre-refactor schema exactly; all original function/class bodies and constants are AST-equivalent.
+- Browser login/dashboard and major-screen navigation passed. Direct targeted verification confirmed `login-submit-button`, Client Master → Stage 5 tracker, nonempty stage action, and both PBC/Trial Balance slots, including the legacy client-only URL.
+- The testing agent's two UI findings in `iteration_20.json` did not reproduce in targeted checks; existing frontend fixes were already present. No frontend modifications were needed. Final disposition: `test_reports/p0_final_verification.json`.
+- Test artifacts: `test_reports/pytest/pytest_results_iter21.xml` (26 passed), `test_reports/pytest/p0_final_checks.xml` (13 passed), and `test_reports/p0_baseline/` (frozen API/source fixtures).
+- Live AI generation, Google Drive OAuth/sync, and actual device push delivery were not revalidated end-to-end; integration implementations were only relocated unchanged. Document storage upload was exercised by the onboarding suite.
+- Next action: P1 user review of multi-service onboarding against firm workflows. P2 remains audit-flag digest and accounting sync; P3 remains security enhancements.
