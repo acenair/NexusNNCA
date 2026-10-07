@@ -1,0 +1,48 @@
+{
+  "summary": "Tested partner onboarding flow end-to-end for new five-tab onboarding + six-stage tracker. Backend API validations passed (7/7). UI verified login, tabs, dynamic service fields, Audit onboarding creation, stage 2/3/4 label updates, Stage 5 advance-payment guard, Stage 5 success, and Trial Balance upload persistence. Found a critical integration bug when opening tracker from Client Master pipeline action.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Client Master -> Pipeline action -> Onboarding Tracker",
+        "issue": "Tracker opens at /app/clients/{client_id}/onboarding (no onboarding_id), then OnboardingTracker consumes /api/onboarding/client/{client_id} array item that lacks stage_tracker/documents. Result: action text blank and required document rows disappear (doc_rows=0) even when pipeline is Stage 5 and should show PBC/Trial Balance slots.",
+        "affected_selectors": [
+          "[data-testid='onboarding-tracker-{client_id}']",
+          "[data-testid='onboarding-stage-action']",
+          "[data-testid^='onboarding-document-']"
+        ]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration20_onboarding_pipeline.py",
+    "/app/test_reports/pytest/pytest_results_iter20.xml"
+  ],
+  "action_items": [
+    "Fix tracker hydration for /app/clients/{client_id}/onboarding route: either return stage_tracker + documents in GET /api/onboarding/client/{client_id}, or fetch GET /api/onboarding/{onboarding_id} before rendering tracker details.",
+    "For multi-service clients, route Pipeline action with explicit onboarding_id to keep one-service-one-pipeline linkage deterministic end-to-end."
+  ],
+  "critical_code_review_comments": [
+    "ClientMaster pipeline button navigates by client_id only (no onboarding_id), which is brittle for multi-service clients and can open non-deterministic onboarding context.",
+    "OnboardingTracker.load handles array responses by taking response.data[0]; this drops per-record derived fields unless backend pre-enriches each record, causing empty stage actions/doc lists on client-level route."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration20_onboarding_pipeline.py",
+    "/app/test_reports/iteration_19.json"
+  ],
+  "success_rate": {
+    "backend": "100% (7/7)",
+    "frontend": "90%"
+  },
+  "test_credentials": "Partner: srinivas.anup@gmail.com / AdminPass2026!",
+  "seed_data_creation": "Created TEST_I20_Onboard_* onboarding records via API and TEST_UI_I20_* onboarding via UI; uploaded ui_trial_balance_final.csv under Stage 5 Trial Balance slot.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Reproduce integration bug quickly by opening Client Master, searching TEST_UI_I20_91403967 LLC, clicking Pipeline; tracker header shows Stage 5 but action/doc rows are blank. Navigating to explicit /app/clients/client_4e8c208a0176/onboarding/<onboarding_id> restores correct Stage 5 docs and upload controls.",
+  "rca of the issue": "Root cause is response-shape mismatch. /api/onboarding/{onboarding_id} enriches with stage_tracker + documents, but /api/onboarding/client/{client_id} returns raw onboarding docs only. OnboardingTracker (client-only route) expects enriched fields and renders empty action/doc sections. This surfaces prominently when launched from Client Master pipeline action which does not pass onboarding_id."
+}

@@ -137,6 +137,7 @@ const Login = () => {
 
           {/* Login Button */}
           <button
+            type="submit"
             onClick={handleLogin}
             disabled={loading}
             style={{
@@ -145,7 +146,7 @@ const Login = () => {
               fontSize: 14, fontWeight: 600, border: 'none', cursor: loading ? 'default' : 'pointer',
               fontFamily: 'DM Sans', transition: 'all 0.15s',
             }}
-            data-testid="login-btn"
+            data-testid="login-submit-button"
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>

@@ -37,6 +37,7 @@ import MyTasks from '@/pages/MyTasks';
 import ClientTimeline from '@/pages/ClientTimeline';
 import EngagementDetail from '@/pages/EngagementDetail';
 import ClientOnboarding from '@/pages/ClientOnboarding';
+import OnboardingTracker from '@/pages/OnboardingTracker';
 import Invoices from '@/pages/Invoices';
 import AgeingReport from '@/pages/AgeingReport';
 import Proposals from '@/pages/Proposals';
@@ -129,6 +130,8 @@ function AppRouter() {
         <Route path="clients/:clientId/timeline" element={<ClientTimeline />} />
         <Route path="engagements/:engagementId" element={<EngagementDetail />} />
         <Route path="onboarding" element={<ClientOnboarding />} />
+        <Route path="clients/:clientId/onboarding" element={<OnboardingTracker />} />
+        <Route path="clients/:clientId/onboarding/:onboardingId" element={<OnboardingTracker />} />
         <Route path="invoices" element={<Invoices />} />
         <Route path="ageing-report" element={<AgeingReport />} />
         <Route path="proposals" element={<Proposals />} />

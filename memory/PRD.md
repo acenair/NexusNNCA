@@ -45,12 +45,23 @@ Build a comprehensive practice management system for "Nair & Nelliyatt Chartered
 - Team Members table shows Contact column
 - Admin account: srinivas.anup@gmail.com (Managing Partner)
 
+## Dynamic Client Onboarding (Completed 2026-10-07)
+- Rebuilt Client Onboarding into five responsive sections: Company, Tax & Compliance, Dynamic Service Setup, Commercials & Pipeline, and Contacts.
+- A client can now hold multiple independent service onboarding records; each record has one selected service type, its own six-stage pipeline, document requirements, and CRM sheet mapping.
+- Supported services and mappings: Audit → Master Sheet; Corporate Tax Return Filing; Internal Audit; AML Consultancy; Accounting; VAT Consultancy.
+- Service-specific fields follow the requested visibility rules, including purpose, period, previous auditor, corporate tax TRN, and financial year end.
+- Added a Client Details pipeline tracker with stage-specific action prompts and upload slots: KYC documents, proposal, signed engagement/payment proof, and Stage 5 PBC list/trial balance.
+- Stage 5 is protected by advance payment confirmation and creates a linked service engagement. Stage 6 requires a lost reason and supports an optional re-engagement date.
+- Client Master now opens the latest deterministic pipeline and retains a legacy-route fallback for older client records.
+- Login submit button now exposes `data-testid="login-submit-button"` for reliable end-to-end testing.
+
 ## Prioritized Backlog
 
-### P1 — Next Up
-- Ageing Report Dashboard (unpaid/overdue invoices + staff alerts)
-- Proposal Manager (partner-created proposals from templates)
-- Per-User Access / RBAC (hide sidebar sections per staff member)
+### P0 — Engineering Foundation
+- Backend Refactoring: split `server.py` (~4,000+ lines) into modular `/routes/` files before further heavy feature work.
+
+### P1 — User Verification
+- Review the new multi-service onboarding and tracker experience with live firm workflows.
 
 ### P2
 - Audit Flag Digest (Partner Dashboard widget for open red-flags)
@@ -59,7 +70,6 @@ Build a comprehensive practice management system for "Nair & Nelliyatt Chartered
 ### P3 — Future
 - Security Phase 2 (lockout after failed logins, audit trail for resets)
 - Security Phase 3 (email/SMS codes, partner 2FA, re-evaluate Google sign-in)
-- Backend Refactoring (split server.py ~3800+ lines into /routes/ modules)
 - Notification delivery via email/SMS using notification_email and phone fields
 
 ## Key Data Models
@@ -72,3 +82,9 @@ Build a comprehensive practice management system for "Nair & Nelliyatt Chartered
 - POST /api/auth/forgot-password, POST /api/auth/admin-reset-password
 - GET /api/settings/users, POST /api/settings/users, PATCH /api/settings/users/{user_id}
 - POST /api/audit/start, PATCH /api/audit/{id}/answer
+- POST /api/onboarding, GET/PATCH /api/onboarding/{onboarding_id}
+- GET /api/onboarding/client/{client_id}, POST /api/onboarding/{onboarding_id}/documents
+
+## Latest Verification (2026-10-07)
+- Automated backend tests: 7/7 passed for multi-service onboarding creation, stage rules, Stage 5 safeguard/engagement handoff, and document persistence.
+- Browser verification passed for login selector and the Client Master → Pipeline fallback, including visible Stage 5 action text and both required upload slots.

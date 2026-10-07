@@ -216,6 +216,7 @@ const ClientMaster = () => {
                   <td style={{ ...tdStyle, textAlign: 'center' }}>
                     <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
                       <button onClick={() => navigate(`/app/clients/${c.client_id}/timeline`)} className="tbtn" style={{ padding: '5px 8px', fontSize: 10, background: 'var(--blue-bg)', color: 'var(--blue, #3b82f6)', border: 'none' }} data-testid={`timeline-${c.client_id}`}><Clock size={10} /> Timeline</button>
+                      <button onClick={() => navigate(c.latest_onboarding_id ? `/app/clients/${c.client_id}/onboarding/${c.latest_onboarding_id}` : `/app/clients/${c.client_id}/onboarding`)} className="tbtn" style={{ padding: '5px 8px', fontSize: 10, background: 'var(--green-bg)', color: 'var(--green)', border: 'none' }} data-testid={`onboarding-tracker-${c.client_id}`}><ClipboardCheck size={10} /> Pipeline</button>
                       <button onClick={() => openEdit(c)} className="tbtn" style={{ padding: '5px 8px', fontSize: 10, background: 'rgba(201,168,76,0.08)', color: 'var(--gold4)', border: 'none' }} data-testid={`edit-client-${c.client_id}`}><Edit2 size={10} /> Edit</button>
                     </div>
                   </td>
