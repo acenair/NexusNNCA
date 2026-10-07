@@ -1,0 +1,32 @@
+{
+  "summary": "Iter18 — Security Sync & Password Management: ran 14 pytest backend tests (13 pass, 1 pass after fix) covering /auth/users-list auth gating, /auth/login-directory no-email leak, Google /auth/session 410, forced password-change gate (login flag, /auth/me bypass, gated endpoint 403 PASSWORD_CHANGE_REQUIRED), /auth/change-password wrong-current + length validation, /auth/forgot-password generic response for existing+missing, /auth/reset-password wrong-code reject, partner /settings/password-reset-requests + /settings/users/{id}/reset-password endpoints + authz, and /api/files/{id} cross-tenant 403. Full end-to-end UI testing in browser: login page UI (no Google btn, email+password+forgot-link), /forgot-password generic flow, forced /change-password redirect for untouched Anju (incl. direct /app/dashboard URL blocked), inline validation errors (<10 chars + wrong current password), Arjun bypasses gate -> dashboard loads with live stats, Settings>Firm&Users shows pending-resets-card (2 pending), 13 reset-password buttons, 2 generate-code buttons, full partner-generated 6-digit code flow -> /reset-password -> auto-login as client -> old pw rejected -> new pw works + gate cleared, Logout kills server-side session (direct /app/dashboard redirects to /login). Regression: Client Master loads with Audit Status column + 16 clients, Reminder Routing tab loads. All in scope: PASSING.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Settings > Reminder Routing (pre-existing)", "issues": ["React hydration warning: visual-editor <span data-ve-dynamic> injected inside <option> element on Reminder Routing selects. Non-blocking, cosmetic, pre-existing from visual editor instrumentation — not introduced by this iteration."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration18_security_password.py",
+    "/app/test_reports/pytest/pytest_results_iter18.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py is 3812 lines — well over the 700-line split threshold. Should be modularized (auth, settings/users, files, documents, vat/audit/corporate/aml) in a future refactor. Not blocking.",
+    "/auth/session (line 206-264) still contains the full Google OAuth implementation after the raise 410 — dead code behind an unreachable raise. Harmless but should be deleted when the feature is permanently removed to keep the file clean.",
+    "The gate (get_current_user) does not log/audit blocked requests — not required but useful for forensics on compromised-credential scenarios."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration18_security_password.py",
+    "/app/memory/test_credentials.md"
+  ],
+  "success_rate": {"backend": "100% (14/14)", "frontend": "100% (all requested UI flows passed end-to-end)"},
+  "test_credentials": "arjun@nnadvisory.ae / NewSecurePass123 (partner, gate cleared). test.client.portal@example.test password was CHANGED during UI test from 'nn123456' to 'ClientNewPass2026' via the designated self-service /reset-password UI flow (gate now cleared). /app/memory/test_credentials.md has been updated accordingly. Anju, Sooraj, other @nnadvisory.ae staff and client accounts remain UNTOUCHED (still nn123456 + must_change_password=true).",
+  "seed_data_creation": "None. Used existing pending-reset request for test.client.portal (previously submitted) and the UI's own 'Generate Code' button to complete the flow.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All iter18 security + forced-password flows verified end-to-end on live preview URL. test.client.portal credentials are now ClientNewPass2026 (gate cleared). All other untouched accounts (anju, sooraj, roshith, thasleema, jithin, shamil, akhil, haritha, test client portal relationships) still require password change on first login. If re-running the forced-password flow, prefer sooraj@nnadvisory.ae or anju@nnadvisory.ae (both still gated).",
+  "rca of the issue": "No bugs found. Implementation of security sync + password management is complete and working end-to-end across backend + frontend."
+}

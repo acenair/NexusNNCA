@@ -46,6 +46,15 @@
 - `ClientMaster.js` gets a new "Audit Status" column: shows period/status/progress/flag-count badge, or "No audit yet". Clicking navigates to `/app/engagements/{engagement_id}` with `location.state.defaultTab='audit'`, which `EngagementDetail.js` reads to auto-open the Audit Workbook tab.
 - Verified end-to-end via screenshot: card renders correctly empty and populated, click-through lands directly on the pre-filled workbook.
 
+## Security Sync & Password Management (2026-10-07)
+- Cherry-picked GitHub commit `f5ce02d` (public repo `acenair/NexusNNCA`, clean fast-forward): `/api/auth/users-list` now requires auth (401 anonymous), new public `/api/auth/login-directory` (names/titles only, no emails/roles), `/api/files/{file_id}` scoped — client role can't fetch another client's document (403), added DB indexes.
+- Login rewritten to plain email+password form (card picker removed earlier, Google OAuth button now also removed). Backend `/auth/session` (Google OAuth) returns 410 Gone — feature disabled, code left in place behind the raise for an easy Phase-3 re-enable.
+- Forced password change: `core.py` split into `get_current_user_raw()` (session+user lookup, no gate — used only by `/auth/me`, `/auth/logout`, `/auth/change-password`) and `get_current_user()` (raw + raises 403 `PASSWORD_CHANGE_REQUIRED` if `must_change_password=true`). One-time idempotent startup migration (`migrate_force_password_change()`, marker doc `settings.type="security_migration_v1"`) flagged all 14 existing users. Frontend `ProtectedRoute.js` redirects to `/change-password` for any role whenever the flag is set.
+- New endpoints: `POST /auth/change-password` (current+new password, keeps current session, kills all others), `POST /auth/forgot-password` (always generic response, anti-enumeration), `POST /auth/reset-password` (email+6-digit code+new password, auto-login, kills all sessions), `POST /settings/users/{id}/reset-password` (partner, random 12-char temp password shown once, forces gate, kills sessions), `GET /settings/password-reset-requests` (partner, pending self-service requests), `POST /settings/users/{id}/generate-reset-code` (partner, 6-digit code/30min expiry, shown once).
+- New frontend pages: `ChangePassword.js`, `ForgotPassword.js`, `ResetPassword.js`. `Settings.js` > Firm & Users tab gained a "Pending Password Reset Requests" card + "Reset Password" button per user + shared one-time secret-reveal modal.
+- `MIN_PASSWORD_LENGTH = 10`, no other complexity rules. Logout (`/auth/logout`) deletes the exact `session_token` doc from the DB-backed `user_sessions` collection (sessions are server-side, not stateless-JWT-only).
+- Tested: 14/14 backend pytest + full frontend E2E (testing_agent iteration_18, 100% pass, no bugs). Deployed to production — see CHANGELOG/next session notes for live-URL verification results.
+
 ## Backlog
 - Per-user RBAC section hiding
 - Run 2: Ageing report dashboard for unpaid/overdue invoices
