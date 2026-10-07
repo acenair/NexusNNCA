@@ -1874,6 +1874,8 @@ class UpdateUserRequest(BaseModel):
     new_password: Optional[str] = None
     date_of_joining: Optional[str] = None
     client_id: Optional[str] = None
+    notification_email: Optional[str] = None
+    phone: Optional[str] = None
 
 @api_router.patch("/settings/users/{user_id}")
 async def update_user(user_id: str, req: UpdateUserRequest, authorization: str = Header(None), session_token: str = Cookie(None)):
@@ -1898,6 +1900,10 @@ async def update_user(user_id: str, req: UpdateUserRequest, authorization: str =
         update_data["email"] = req.email
     if req.date_of_joining is not None:
         update_data["date_of_joining"] = req.date_of_joining
+    if req.notification_email is not None:
+        update_data["notification_email"] = req.notification_email
+    if req.phone is not None:
+        update_data["phone"] = req.phone
     password_changed = False
     if req.new_password:
         if len(req.new_password) < MIN_PASSWORD_LENGTH:
@@ -1913,6 +1919,42 @@ async def update_user(user_id: str, req: UpdateUserRequest, authorization: str =
         await db.user_sessions.delete_many({"user_id": user_id})
     await log_activity("User updated", f"Updated {target.get('name', user_id)}: {', '.join(update_data.keys())}", user["user_id"])
     return {"message": f"User {target.get('name')} updated"}
+
+class CreateUserRequest(BaseModel):
+    name: str
+    email: str
+    role: str = "staff"
+    title: Optional[str] = None
+    notification_email: Optional[str] = None
+    phone: Optional[str] = None
+
+@api_router.post("/settings/users")
+async def create_user(req: CreateUserRequest, authorization: str = Header(None), session_token: str = Cookie(None)):
+    partner = await require_partner(authorization, session_token)
+    if not req.name.strip() or not req.email.strip():
+        raise HTTPException(status_code=400, detail="Name and email are required")
+    email = req.email.strip().lower()
+    existing = await db.users.find_one({"email": email})
+    if existing:
+        raise HTTPException(status_code=400, detail="A user with this email already exists")
+    if req.role not in ("staff", "partner", "client"):
+        raise HTTPException(status_code=400, detail="Role must be staff, partner, or client")
+    temp_password = _generate_temp_secret(12)
+    user_doc = {
+        "user_id": f"user_{uuid.uuid4().hex[:12]}",
+        "email": email,
+        "name": req.name.strip(),
+        "title": req.title.strip() if req.title else "",
+        "role": req.role,
+        "password": hash_password(temp_password),
+        "must_change_password": True,
+        "notification_email": req.notification_email.strip() if req.notification_email else "",
+        "phone": req.phone.strip() if req.phone else "",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.users.insert_one(user_doc)
+    await log_activity("User created", f"{partner['name']} created user {req.name.strip()} ({email})", partner["user_id"])
+    return {"message": f"User {req.name.strip()} created", "user_id": user_doc["user_id"], "temporary_password": temp_password}
 
 @api_router.post("/settings/users/{user_id}/reset-password")
 async def admin_reset_user_password(user_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
@@ -3572,7 +3614,7 @@ async def seed_nn_users():
     """Seed the Nair & Nelliyatt team into the database if not already present."""
     default_password = hash_password("nn123456")
     team = [
-        {"name": "Arjun Srinivas", "email": "arjun@nnadvisory.ae", "role": "partner", "title": "Managing Partner"},
+        {"name": "Arjun Srinivas", "email": "srinivas.anup@gmail.com", "role": "partner", "title": "Managing Partner"},
         {"name": "Sooraj Nelliyatt", "email": "sooraj@nnadvisory.ae", "role": "partner", "title": "Senior Partner"},
         {"name": "Fazil", "email": "fazil@nnadvisory.ae", "role": "staff", "title": "Associate"},
         {"name": "Subin", "email": "subin@nnadvisory.ae", "role": "staff", "title": "Associate"},
@@ -3597,6 +3639,18 @@ async def seed_nn_users():
                 "created_at": datetime.now(timezone.utc).isoformat()
             })
             logger.info(f"Seeded user: {member['name']}")
+        else:
+            # Ensure seed-defined fields are up to date (name, title, role)
+            updates = {}
+            if existing.get("name") != member["name"]:
+                updates["name"] = member["name"]
+            if existing.get("title") != member["title"]:
+                updates["title"] = member["title"]
+            if existing.get("role") != member["role"]:
+                updates["role"] = member["role"]
+            if updates:
+                await db.users.update_one({"email": member["email"]}, {"$set": updates})
+                logger.info(f"Updated seed user fields for {member['name']}: {', '.join(updates.keys())}")
 
 async def seed_nn_clients():
     """Seed demo clients for Nair & Nelliyatt practice."""

@@ -34,6 +34,15 @@ Build a comprehensive practice management system for "Nair & Nelliyatt Chartered
 - 403 PASSWORD_CHANGE_REQUIRED interceptor on both api.js and global axios (Bug fix 2026-10-07)
 - ProtectedRoute re-validates user on every route change (Bug fix 2026-10-07)
 
+## User Management (Completed 2026-10-07)
+- Partners can add new users via Settings > Firm & Users > "Add User"
+- Auto-generated temporary password shown once, user forced to change on first login
+- Users have notification_email and phone/WhatsApp fields for task/update alerts
+- Edit User modal includes notification contact fields
+- Team Members table shows Contact column
+- Admin account: srinivas.anup@gmail.com (Managing Partner)
+- Seed script updates existing users' name/title/role to stay in sync
+
 ## Prioritized Backlog
 
 ### P1 — Next Up
@@ -49,9 +58,10 @@ Build a comprehensive practice management system for "Nair & Nelliyatt Chartered
 - Security Phase 2 (lockout after failed logins, audit trail for resets)
 - Security Phase 3 (email/SMS codes, partner 2FA, re-evaluate Google sign-in)
 - Backend Refactoring (split server.py ~3800 lines into /routes/ modules)
+- Notification delivery via email/SMS using notification_email and phone fields
 
 ## Key Data Models
-- `users`: user_id, email, name, title, role, password, must_change_password, status
+- `users`: user_id, email, name, title, role, password, must_change_password, status, notification_email, phone
 - `client_audits`: audit_id, engagement_id, client_id, template_id, status, progress, flagged_count, answers
 - `user_sessions`: user_id, session_token, expires_at
 
@@ -61,4 +71,7 @@ Build a comprehensive practice management system for "Nair & Nelliyatt Chartered
 - POST /api/auth/change-password — forced + voluntary password change
 - POST /api/auth/forgot-password — request reset
 - POST /api/auth/admin-reset-password — partner-initiated reset
+- GET /api/settings/users — list all users (partner only)
+- POST /api/settings/users — create new user (partner only)
+- PATCH /api/settings/users/{user_id} — update user (partner only)
 - POST /api/audit/start, PATCH /api/audit/{id}/answer — audit workbook

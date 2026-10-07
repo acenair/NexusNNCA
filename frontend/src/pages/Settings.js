@@ -73,7 +73,11 @@ const Settings = () => {
   const [firmName, setFirmName] = useState('Nair & Nelliyatt Chartered Accountants');
   const [users, setUsers] = useState([]);
   const [editUser, setEditUser] = useState(null);
-  const [userForm, setUserForm] = useState({ role: '', title: '', email: '', new_password: '', date_of_joining: '' });
+  const [userForm, setUserForm] = useState({ role: '', title: '', email: '', new_password: '', date_of_joining: '', notification_email: '', phone: '' });
+
+  // Add User modal
+  const [showAddUser, setShowAddUser] = useState(false);
+  const [addUserForm, setAddUserForm] = useState({ name: '', email: '', role: 'staff', title: '', notification_email: '', phone: '' });
 
   // Billable Hours
   const [bhEntries, setBhEntries] = useState([]);
@@ -367,13 +371,13 @@ const Settings = () => {
 
   const openUserEdit = (u) => {
     setEditUser(u);
-    setUserForm({ role: u.role, title: u.title || '', email: u.email || '', new_password: '', date_of_joining: u.date_of_joining || '', client_id: u.client_id || '' });
+    setUserForm({ role: u.role, title: u.title || '', email: u.email || '', new_password: '', date_of_joining: u.date_of_joining || '', client_id: u.client_id || '', notification_email: u.notification_email || '', phone: u.phone || '' });
   };
 
   const saveUser = async () => {
     setSaving(true);
     try {
-      const payload = { role: userForm.role, title: userForm.title, date_of_joining: userForm.date_of_joining };
+      const payload = { role: userForm.role, title: userForm.title, date_of_joining: userForm.date_of_joining, notification_email: userForm.notification_email, phone: userForm.phone };
       if (userForm.email && userForm.email !== editUser.email) payload.email = userForm.email;
       if (userForm.new_password) payload.new_password = userForm.new_password;
       if (userForm.role === 'client' && userForm.client_id) payload.client_id = userForm.client_id;
@@ -382,6 +386,22 @@ const Settings = () => {
       setEditUser(null);
       loadSettings();
     } catch (err) { alert(err.response?.data?.detail || 'Failed'); }
+    finally { setSaving(false); }
+  };
+
+  const handleAddUser = async () => {
+    if (!addUserForm.name.trim() || !addUserForm.email.trim()) {
+      alert('Name and email are required');
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await axios.post(`${API}/settings/users`, addUserForm, { withCredentials: true });
+      setShowAddUser(false);
+      setAddUserForm({ name: '', email: '', role: 'staff', title: '', notification_email: '', phone: '' });
+      loadSettings();
+      setSecretReveal({ type: 'temp_password', value: res.data.temporary_password, name: addUserForm.name, email: addUserForm.email });
+    } catch (err) { alert(err.response?.data?.detail || 'Failed to create user'); }
     finally { setSaving(false); }
   };
 
@@ -476,6 +496,7 @@ const Settings = () => {
           <div className="nn-card" style={{ overflow: 'hidden' }}>
             <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--nn-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div><h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Team Members</h3><p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{users.length} members &middot; Manage roles, credentials & approvals</p></div>
+              <button onClick={() => setShowAddUser(true)} className="tbtn tbtn-gold" style={{ fontSize: 11, padding: '6px 14px', display: 'flex', alignItems: 'center', gap: 4 }} data-testid="add-user-btn"><Plus size={13} /> Add User</button>
             </div>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
@@ -486,6 +507,7 @@ const Settings = () => {
                     <th style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', textAlign: 'left', letterSpacing: 0.5 }}>Role</th>
                     <th style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', textAlign: 'left', letterSpacing: 0.5 }}>Status</th>
                     <th style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', textAlign: 'left', letterSpacing: 0.5 }}>Title</th>
+                    <th style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', textAlign: 'left', letterSpacing: 0.5 }}>Contact</th>
                     <th style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', textAlign: 'center', letterSpacing: 0.5 }}>Actions</th>
                   </tr>
                 </thead>
@@ -505,6 +527,14 @@ const Settings = () => {
                         )}
                       </td>
                       <td style={{ padding: '10px 16px', fontSize: 12, color: 'var(--text)' }}>{u.title || '—'}</td>
+                      <td style={{ padding: '10px 16px', fontSize: 11, color: 'var(--muted)' }}>
+                        {u.notification_email || u.phone ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            {u.notification_email && <span style={{ fontSize: 10 }}>{u.notification_email}</span>}
+                            {u.phone && <span style={{ fontSize: 10 }}>{u.phone}</span>}
+                          </div>
+                        ) : '—'}
+                      </td>
                       <td style={{ padding: '10px 16px', textAlign: 'center' }}>
                         {isPending ? (
                           <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
@@ -566,6 +596,14 @@ const Settings = () => {
                     <label style={labelStyle}>Date of Joining</label>
                     <input type="date" value={userForm.date_of_joining} onChange={(e) => setUserForm(p => ({ ...p, date_of_joining: e.target.value }))} style={inputStyle} data-testid="user-doj-input" />
                   </div>
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={labelStyle}>Notification Email</label>
+                    <input type="email" value={userForm.notification_email} onChange={(e) => setUserForm(p => ({ ...p, notification_email: e.target.value }))} placeholder="Alternate email for alerts..." style={inputStyle} data-testid="user-notification-email-input" />
+                  </div>
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={labelStyle}>Phone / WhatsApp</label>
+                    <input value={userForm.phone} onChange={(e) => setUserForm(p => ({ ...p, phone: e.target.value }))} placeholder="+971 50 123 4567" style={inputStyle} data-testid="user-phone-input" />
+                  </div>
                   <div>
                     <label style={labelStyle}>New Password (leave blank to keep current, min 10 chars)</label>
                     <input type="password" value={userForm.new_password} onChange={(e) => setUserForm(p => ({ ...p, new_password: e.target.value }))} placeholder="At least 10 characters..." style={inputStyle} data-testid="user-password-input" />
@@ -575,6 +613,53 @@ const Settings = () => {
                   <button className="tbtn tbtn-outline" onClick={() => setEditUser(null)}>Cancel</button>
                   <button className="tbtn tbtn-gold" onClick={saveUser} disabled={saving} data-testid="save-user-btn">{saving ? 'Saving...' : 'Save Changes'}</button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Add User Modal */}
+          {showAddUser && (
+            <div className="modal-overlay" onClick={() => !saving && setShowAddUser(false)} data-testid="add-user-modal">
+              <div className="modal-box" style={{ maxWidth: 440 }} onClick={(e) => e.stopPropagation()}>
+                <div className="modal-hdr">
+                  <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 16 }}>Add New User</h3>
+                  <button onClick={() => setShowAddUser(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex' }}><X size={18} /></button>
+                </div>
+                <div className="modal-body">
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={labelStyle}>Full Name *</label>
+                    <input value={addUserForm.name} onChange={(e) => setAddUserForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. John Smith" style={inputStyle} data-testid="add-user-name-input" />
+                  </div>
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={labelStyle}>Login Email *</label>
+                    <input type="email" value={addUserForm.email} onChange={(e) => setAddUserForm(p => ({ ...p, email: e.target.value }))} placeholder="user@nnadvisory.ae" style={inputStyle} data-testid="add-user-email-input" />
+                  </div>
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={labelStyle}>Role</label>
+                    <select value={addUserForm.role} onChange={(e) => setAddUserForm(p => ({ ...p, role: e.target.value }))} style={inputStyle} data-testid="add-user-role-select">
+                      <option value="staff">Staff</option>
+                      <option value="partner">Partner</option>
+                      <option value="client">Client</option>
+                    </select>
+                  </div>
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={labelStyle}>Title / Designation</label>
+                    <input value={addUserForm.title} onChange={(e) => setAddUserForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Senior Associate, Manager..." style={inputStyle} data-testid="add-user-title-input" />
+                  </div>
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={labelStyle}>Notification Email</label>
+                    <input type="email" value={addUserForm.notification_email} onChange={(e) => setAddUserForm(p => ({ ...p, notification_email: e.target.value }))} placeholder="Alternate email for task alerts..." style={inputStyle} data-testid="add-user-notification-email-input" />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Phone / WhatsApp</label>
+                    <input value={addUserForm.phone} onChange={(e) => setAddUserForm(p => ({ ...p, phone: e.target.value }))} placeholder="+971 50 123 4567" style={inputStyle} data-testid="add-user-phone-input" />
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button className="tbtn tbtn-outline" onClick={() => setShowAddUser(false)}>Cancel</button>
+                  <button className="tbtn tbtn-gold" onClick={handleAddUser} disabled={saving} data-testid="save-add-user-btn">{saving ? 'Creating...' : 'Create User'}</button>
+                </div>
+                <div style={{ padding: '0 20px 16px', fontSize: 10, color: 'var(--muted)' }}>A temporary password will be generated. Share it with the user — they will be forced to set a new password on first login.</div>
               </div>
             </div>
           )}
