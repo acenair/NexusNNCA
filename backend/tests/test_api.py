@@ -15,12 +15,24 @@ STAFF_EMAIL = "fazil@nnadvisory.ae"
 STAFF_PASSWORD = "nn123456"
 
 
+def _login_headers(email=PARTNER_EMAIL, password=PARTNER_PASSWORD):
+    response = requests.post(f"{BASE_URL}/api/auth/login", json={"email": email, "password": password}, timeout=20)
+    assert response.status_code == 200, response.text
+    return {"Authorization": f"Bearer {response.json()['session_token']}"}
+
+
 class TestHealthAndUsersList:
     """Basic health and users list tests"""
-    
-    def test_users_list_returns_11_users(self):
-        """Verify users-list endpoint returns all 11 seeded users"""
+
+    def test_users_list_requires_auth(self):
+        """SECURITY REGRESSION: users-list must NOT be readable without a session"""
         response = requests.get(f"{BASE_URL}/api/auth/users-list")
+        assert response.status_code == 401, f"Expected 401, got {response.status_code}"
+        print("✓ users-list rejects anonymous access (401)")
+
+    def test_users_list_returns_11_users(self):
+        """Verify users-list endpoint returns all 11 seeded users (authed)"""
+        response = requests.get(f"{BASE_URL}/api/auth/users-list", headers=_login_headers())
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
         
         users = response.json()
@@ -33,6 +45,17 @@ class TestHealthAndUsersList:
         assert len(staff) == 9, f"Expected 9 staff, got {len(staff)}"
         
         print(f"✓ Users list returns {len(users)} users (2 partners, 9 staff)")
+
+    def test_login_directory_is_public_but_email_free(self):
+        """SECURITY: public pre-auth directory exposes names/titles only, never emails/roles"""
+        response = requests.get(f"{BASE_URL}/api/auth/login-directory")
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}"
+        users = response.json()
+        assert len(users) >= 11
+        blob = response.text
+        assert "@nnadvisory.ae" not in blob, "login-directory must not leak emails"
+        assert "role" not in users[0], "login-directory must not leak roles"
+        print(f"✓ login-directory: {len(users)} names, no emails/roles")
 
 
 class TestAuthentication:

@@ -47,8 +47,12 @@ class TestAuth:
         print("✓ Invalid login rejected correctly")
     
     def test_users_list(self):
-        """Test getting users list"""
-        response = requests.get(f"{BASE_URL}/api/auth/users-list")
+        """Test getting users list (requires auth since security fix)"""
+        login = requests.post(f"{BASE_URL}/api/auth/login", json={
+            "email": "arjun@nnadvisory.ae", "password": "nn123456"
+        })
+        headers = {"Authorization": f"Bearer {login.json()['session_token']}"}
+        response = requests.get(f"{BASE_URL}/api/auth/users-list", headers=headers)
         assert response.status_code == 200
         data = response.json()
         assert len(data) >= 11  # At least 11 seeded users

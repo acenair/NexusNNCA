@@ -6,60 +6,31 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 const Login = () => {
-  const [step, setStep] = useState('select');
-  const [selectedUser, setSelectedUser] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [users, setUsers] = useState([]);
   const [pendingMsg, setPendingMsg] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    loadUsers();
     // Check for pending approval redirect
     if (location.state?.pendingApproval) {
       setPendingMsg(location.state.message || 'Your account is pending admin approval.');
     }
   }, [location.state]);
 
-  const loadUsers = async () => {
-    try {
-      const res = await axios.get(`${API}/auth/users-list`);
-      setUsers(res.data);
-    } catch (err) {
-      setUsers([
-        { name: 'Arjun Srinivas', email: 'arjun@nnadvisory.ae', role: 'partner', title: 'Managing Partner' },
-        { name: 'Sooraj Nelliyatt', email: 'sooraj@nnadvisory.ae', role: 'partner', title: 'Senior Partner' },
-        { name: 'Fazil', email: 'fazil@nnadvisory.ae', role: 'staff', title: 'Associate' },
-        { name: 'Subin', email: 'subin@nnadvisory.ae', role: 'staff', title: 'Associate' },
-        { name: 'Anju', email: 'anju@nnadvisory.ae', role: 'staff', title: 'Senior Associate' },
-        { name: 'Roshith', email: 'roshith@nnadvisory.ae', role: 'staff', title: 'Associate' },
-        { name: 'Thasleema', email: 'thasleema@nnadvisory.ae', role: 'staff', title: 'Senior Associate' },
-        { name: 'Jithin', email: 'jithin@nnadvisory.ae', role: 'staff', title: 'Associate' },
-        { name: 'Shamil A.', email: 'shamil@nnadvisory.ae', role: 'staff', title: 'Associate' },
-        { name: 'Akhil', email: 'akhil@nnadvisory.ae', role: 'staff', title: 'Associate' },
-        { name: 'Haritha', email: 'haritha@nnadvisory.ae', role: 'staff', title: 'Senior Associate' },
-      ]);
-    }
-  };
-
-  const partners = users.filter(u => u.role === 'partner');
-  const staff = users.filter(u => u.role === 'staff');
-  const clientUsers = users.filter(u => u.role === 'client');
-
   const handleLogin = async () => {
-    if (!selectedUser || !password) {
-      setError('Please select a user and enter password');
+    if (!email || !password) {
+      setError('Please enter your email and password');
       return;
     }
     setLoading(true);
     setError('');
     try {
-      const user = users.find(u => u.email === selectedUser);
       const res = await axios.post(`${API}/auth/login`, {
-        email: selectedUser,
+        email: email.trim().toLowerCase(),
         password: password,
       }, { withCredentials: true });
       if (res.data.session_token) {
@@ -119,90 +90,25 @@ const Login = () => {
             </div>
           )}
 
-          {/* Role Section Selection */}
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 11, fontWeight: 600, color: '#60718a', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', marginBottom: 6 }}>Select User</label>
-
-            {/* Partners */}
-            <div style={{ marginBottom: 8 }}>
-              <div style={{ fontSize: 9, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1, color: '#C9A84C', marginBottom: 4 }}>Partners</div>
-              <div style={{ display: 'flex', gap: 6 }}>
-                {partners.map((p) => (
-                  <button
-                    key={p.email}
-                    onClick={() => setSelectedUser(p.email)}
-                    style={{
-                      flex: 1, padding: '10px 8px', borderRadius: 8,
-                      border: selectedUser === p.email ? '2px solid #C9A84C' : '1.5px solid rgba(11,21,38,0.09)',
-                      background: selectedUser === p.email ? '#faf5e8' : '#fff',
-                      cursor: 'pointer', transition: 'all 0.15s', textAlign: 'center',
-                      fontFamily: 'DM Sans',
-                    }}
-                    data-testid={`user-${p.email.split('@')[0]}`}
-                  >
-                    <div style={{
-                      width: 28, height: 28, borderRadius: '50%', background: '#C9A84C', color: '#0B1526',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontWeight: 700, fontSize: 12, margin: '0 auto 4px',
-                    }}>
-                      {p.name.charAt(0)}
-                    </div>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: '#0B1526' }}>{p.name.split(' ')[0]}</div>
-                    <div style={{ fontSize: 9, color: '#60718a' }}>{p.title}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Staff */}
-            <div>
-              <div style={{ fontSize: 9, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1, color: '#60718a', marginBottom: 4 }}>Staff</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
-                {staff.map((s) => (
-                  <button
-                    key={s.email}
-                    onClick={() => setSelectedUser(s.email)}
-                    style={{
-                      padding: '7px 6px', borderRadius: 6,
-                      border: selectedUser === s.email ? '2px solid #C9A84C' : '1.5px solid rgba(11,21,38,0.09)',
-                      background: selectedUser === s.email ? '#faf5e8' : '#fff',
-                      cursor: 'pointer', transition: 'all 0.15s', textAlign: 'center',
-                      fontFamily: 'DM Sans',
-                    }}
-                    data-testid={`user-${s.email.split('@')[0]}`}
-                  >
-                    <div style={{ fontSize: 11, fontWeight: 500, color: '#0B1526' }}>{s.name}</div>
-                    <div style={{ fontSize: 9, color: '#60718a' }}>{s.title}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Clients */}
-            {clientUsers.length > 0 && (
-            <div>
-              <div style={{ fontSize: 9, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1, color: '#3b82f6', marginBottom: 4 }}>Clients</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
-                {clientUsers.map((c) => (
-                  <button
-                    key={c.email}
-                    onClick={() => setSelectedUser(c.email)}
-                    style={{
-                      padding: '7px 6px', borderRadius: 6,
-                      border: selectedUser === c.email ? '2px solid #3b82f6' : '1.5px solid rgba(11,21,38,0.09)',
-                      background: selectedUser === c.email ? '#eff6ff' : '#fff',
-                      cursor: 'pointer', transition: 'all 0.15s', textAlign: 'center',
-                      fontFamily: 'DM Sans',
-                    }}
-                    data-testid={`user-${c.email.split('@')[0]}`}
-                  >
-                    <div style={{ fontSize: 11, fontWeight: 500, color: '#0B1526' }}>{c.name}</div>
-                    <div style={{ fontSize: 9, color: '#60718a' }}>{c.title || 'Client'}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-            )}
+          {/* Email */}
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ fontSize: 11, fontWeight: 600, color: '#60718a', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', marginBottom: 6 }}>Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@nnadvisory.ae"
+              autoComplete="username"
+              autoFocus
+              onKeyDown={(e) => e.key === 'Enter' && password && handleLogin()}
+              style={{
+                width: '100%', padding: '10px 14px', borderRadius: 8,
+                border: '1.5px solid rgba(11,21,38,0.09)', fontSize: 13,
+                fontFamily: 'DM Sans', outline: 'none',
+                transition: 'border-color 0.15s', boxSizing: 'border-box',
+              }}
+              data-testid="email-input"
+            />
           </div>
 
           {/* Password */}
@@ -213,12 +119,13 @@ const Login = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter password"
+              autoComplete="current-password"
               onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
               style={{
                 width: '100%', padding: '10px 14px', borderRadius: 8,
                 border: '1.5px solid rgba(11,21,38,0.09)', fontSize: 13,
                 fontFamily: 'DM Sans', outline: 'none',
-                transition: 'border-color 0.15s',
+                transition: 'border-color 0.15s', boxSizing: 'border-box',
               }}
               data-testid="password-input"
             />

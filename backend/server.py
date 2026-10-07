@@ -165,9 +165,27 @@ async def login(req: LoginRequest):
     }
 
 @api_router.get("/auth/users-list")
-async def get_users_list():
+async def get_users_list(authorization: str = Header(None), session_token: str = Cookie(None)):
+    # SECURITY: was unauthenticated (leaked all staff emails/roles to the internet).
+    # Now requires a valid session; any authenticated user (staff/partner/client) may
+    # read names/titles for assignment pickers, but client-role users no longer see
+    # the full directory — only partners and staff do (clients get 403).
+    user = await get_current_user(authorization, session_token)
+    if user.get("role") == "client":
+        raise HTTPException(status_code=403, detail="Not available for this role")
     users = await db.users.find({"status": {"$ne": "pending_approval"}}, {"_id": 0, "password": 0}).to_list(100)
     return [{"name": u.get("name"), "email": u.get("email"), "role": u.get("role", "staff"), "title": u.get("title", "")} for u in users]
+
+@api_router.get("/auth/login-directory")
+async def get_login_directory():
+    # Public (pre-auth) endpoint for the Login page user-picker.
+    # Returns ONLY directory display fields — no emails, no roles, no titles —
+    # so an anonymous visitor cannot enumerate staff email addresses.
+    users = await db.users.find(
+        {"status": {"$ne": "pending_approval"}, "role": {"$in": ["partner", "staff"]}},
+        {"_id": 0, "password": 0}
+    ).to_list(100)
+    return [{"name": u.get("name"), "title": u.get("title", "")} for u in users]
 
 @api_router.post("/auth/session")
 async def create_session(session_id: str):
@@ -969,6 +987,13 @@ async def download_file(file_id: str, authorization: str = Header(None), session
     file_doc = await db.documents.find_one({"file_id": file_id, "is_deleted": {"$ne": True}}, {"_id": 0})
     if not file_doc:
         raise HTTPException(status_code=404, detail="File not found")
+    
+    # SECURITY: client-role users may only download documents belonging to
+    # their own linked client record (staff/partners keep full access).
+    if user.get("role") == "client":
+        user_client_id = user.get("client_id")
+        if not user_client_id or file_doc.get("client_id") != user_client_id:
+            raise HTTPException(status_code=403, detail="Not authorized to access this document")
     
     # Support both object storage and direct MongoDB storage
     if file_doc.get("storage_path"):
@@ -3590,11 +3615,37 @@ async def startup():
         logger.info("Storage initialized")
     except Exception as e:
         logger.error(f"Storage init failed: {e}")
+    await ensure_db_indexes()
     await seed_nn_users()
     await seed_nn_clients()
     await seed_nn_engagements()
     await seed_preset_workflows()
     await audit_workbook.seed_audit_template(db, logger)
+
+async def ensure_db_indexes():
+    """Create indexes for the hottest query paths (idempotent)."""
+    index_specs = {
+        "users": [("email", 1)],
+        "user_sessions": [("session_token", 1), ("user_id", 1)],
+        "activities": [("created_at", -1)],
+        "documents": [("file_id", 1), ("client_id", 1), ("is_deleted", 1)],
+        "tasks": [("client_id", 1), ("status", 1)],
+        "events": [("user_id", 1), ("start", -1)],
+        "service_engagements": [("client_id", 1), ("engagement_id", 1)],
+        "client_audits": [("engagement_id", 1), ("client_id", 1)],
+        "chat_messages": [("session_id", 1), ("user_id", 1)],
+        "clients": [("client_id", 1)],
+        "notifications": [("user_id", 1), ("created_at", -1)],
+    }
+    try:
+        existing = await db.list_collection_names()
+        for coll, keys in index_specs.items():
+            if coll not in existing:
+                continue
+            await db[coll].create_index(keys, background=True)
+        logger.info("Database indexes ensured")
+    except Exception as e:
+        logger.error(f"Index creation failed: {e}")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
