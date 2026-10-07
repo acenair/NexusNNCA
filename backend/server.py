@@ -25,9 +25,24 @@ from core import (
     STORAGE_URL, APP_NAME,
     init_storage, put_object, get_object,
     hash_password, verify_password, create_jwt_token,
-    get_current_user, require_partner, log_activity,
+    get_current_user, get_current_user_raw, require_partner, log_activity,
 )
 import audit_workbook
+import secrets
+import string
+
+MIN_PASSWORD_LENGTH = 10
+
+def _extract_token(authorization: Optional[str], session_token: Optional[str]) -> Optional[str]:
+    if authorization and authorization.startswith("Bearer "):
+        return authorization.split(" ")[1]
+    return session_token
+
+def _generate_temp_secret(length: int = 12, digits_only: bool = False) -> str:
+    if digits_only:
+        return ''.join(secrets.choice(string.digits) for _ in range(6))
+    alphabet = string.ascii_letters + string.digits
+    return ''.join(secrets.choice(alphabet) for _ in range(length))
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -161,7 +176,8 @@ async def login(req: LoginRequest):
         "title": user_doc.get("title"),
         "role": user_doc.get("role", "staff"),
         "picture": user_doc.get("picture"),
-        "session_token": session_token
+        "session_token": session_token,
+        "must_change_password": bool(user_doc.get("must_change_password"))
     }
 
 @api_router.get("/auth/users-list")
@@ -189,6 +205,10 @@ async def get_login_directory():
 
 @api_router.post("/auth/session")
 async def create_session(session_id: str):
+    # SECURITY: Google OAuth sign-in is disabled for now — it let a user skip
+    # email+password entirely, which also meant it could skip the forced
+    # password-change gate. Re-evaluate in a future phase if re-enabled.
+    raise HTTPException(status_code=410, detail="Google sign-in is temporarily disabled. Please use email and password.")
     # REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
     try:
         resp = requests.get(
@@ -245,20 +265,96 @@ async def create_session(session_id: str):
 
 @api_router.get("/auth/me")
 async def get_me(authorization: str = Header(None), session_token: str = Cookie(None)):
-    user = await get_current_user(authorization, session_token)
+    # Uses the ungated raw lookup so a user who must change their password
+    # can still load their identity (ProtectedRoute needs this to route them
+    # to the change-password screen instead of treating them as logged out).
+    user = await get_current_user_raw(authorization, session_token)
     return user
 
 @api_router.post("/auth/logout")
 async def logout(authorization: str = Header(None), session_token: str = Cookie(None)):
     # Prefer Authorization header over cookie (consistent with get_current_user)
-    token = None
-    if authorization and authorization.startswith("Bearer "):
-        token = authorization.split(" ")[1]
-    elif session_token:
-        token = session_token
+    token = _extract_token(authorization, session_token)
     if token:
         await db.user_sessions.delete_one({"session_token": token})
     return {"message": "Logged out"}
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+@api_router.post("/auth/change-password")
+async def change_password(req: ChangePasswordRequest, authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await get_current_user_raw(authorization, session_token)
+    full_user = await db.users.find_one({"user_id": user["user_id"]})
+    if not full_user or not verify_password(req.current_password, full_user.get("password", "")):
+        raise HTTPException(status_code=401, detail="Current password is incorrect")
+    if len(req.new_password) < MIN_PASSWORD_LENGTH:
+        raise HTTPException(status_code=400, detail=f"New password must be at least {MIN_PASSWORD_LENGTH} characters")
+    await db.users.update_one(
+        {"user_id": user["user_id"]},
+        {"$set": {"password": hash_password(req.new_password), "must_change_password": False, "password_updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    # Keep the session used to make this request alive; kill every other active session
+    current_token = _extract_token(authorization, session_token)
+    await db.user_sessions.delete_many({"user_id": user["user_id"], "session_token": {"$ne": current_token}})
+    await log_activity("Password changed", f"{full_user.get('name')} changed their password", user["user_id"])
+    return {"message": "Password updated successfully"}
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+@api_router.post("/auth/forgot-password")
+async def forgot_password(req: ForgotPasswordRequest):
+    user_doc = await db.users.find_one({"email": req.email.strip().lower()})
+    if user_doc and user_doc.get("status") != "pending_approval":
+        await db.users.update_one({"user_id": user_doc["user_id"]}, {"$set": {"password_reset_requested_at": datetime.now(timezone.utc).isoformat()}})
+    # SECURITY: identical response whether or not the account exists — never reveal that.
+    return {"message": "If an account exists for this email, a partner will be in touch shortly with a reset code."}
+
+class ResetPasswordRequest(BaseModel):
+    email: str
+    reset_code: str
+    new_password: str
+
+@api_router.post("/auth/reset-password")
+async def reset_password(req: ResetPasswordRequest):
+    user_doc = await db.users.find_one({"email": req.email.strip().lower()})
+    if not user_doc or not user_doc.get("password_reset_code_hash"):
+        raise HTTPException(status_code=400, detail="Invalid or expired reset code")
+    expires_at = user_doc.get("password_reset_code_expires_at")
+    expires_dt = datetime.fromisoformat(expires_at) if expires_at else None
+    if expires_dt and expires_dt.tzinfo is None:
+        expires_dt = expires_dt.replace(tzinfo=timezone.utc)
+    if not expires_dt or expires_dt < datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="Reset code has expired. Please request a new one.")
+    if not verify_password(req.reset_code.strip(), user_doc["password_reset_code_hash"]):
+        raise HTTPException(status_code=400, detail="Invalid or expired reset code")
+    if len(req.new_password) < MIN_PASSWORD_LENGTH:
+        raise HTTPException(status_code=400, detail=f"New password must be at least {MIN_PASSWORD_LENGTH} characters")
+
+    await db.users.update_one(
+        {"user_id": user_doc["user_id"]},
+        {
+            "$set": {"password": hash_password(req.new_password), "must_change_password": False, "password_updated_at": datetime.now(timezone.utc).isoformat()},
+            "$unset": {"password_reset_code_hash": "", "password_reset_code_expires_at": "", "password_reset_requested_at": ""},
+        }
+    )
+    # No pre-existing session to preserve here — kill everything and issue one fresh session.
+    await db.user_sessions.delete_many({"user_id": user_doc["user_id"]})
+    new_session_token = create_jwt_token(user_doc["user_id"])
+    await db.user_sessions.insert_one({
+        "user_id": user_doc["user_id"], "session_token": new_session_token,
+        "expires_at": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
+    await log_activity("Password reset via self-service code", f"{user_doc.get('name')} reset their password", user_doc["user_id"])
+    return {
+        "message": "Password updated. You're now signed in.",
+        "session_token": new_session_token,
+        "user_id": user_doc["user_id"], "email": user_doc["email"], "name": user_doc["name"],
+        "role": user_doc.get("role", "staff"),
+    }
 
 # ============= DASHBOARD ROUTES =============
 
@@ -1802,13 +1898,65 @@ async def update_user(user_id: str, req: UpdateUserRequest, authorization: str =
         update_data["email"] = req.email
     if req.date_of_joining is not None:
         update_data["date_of_joining"] = req.date_of_joining
-    if req.new_password and len(req.new_password) >= 6:
-        update_data["password"] = bcrypt.hashpw(req.new_password.encode(), bcrypt.gensalt()).decode()
+    password_changed = False
+    if req.new_password:
+        if len(req.new_password) < MIN_PASSWORD_LENGTH:
+            raise HTTPException(status_code=400, detail=f"Password must be at least {MIN_PASSWORD_LENGTH} characters")
+        update_data["password"] = hash_password(req.new_password)
+        update_data["must_change_password"] = True
+        update_data["password_updated_at"] = datetime.now(timezone.utc).isoformat()
+        password_changed = True
     if not update_data:
         raise HTTPException(status_code=400, detail="Nothing to update")
     await db.users.update_one({"user_id": user_id}, {"$set": update_data})
+    if password_changed:
+        await db.user_sessions.delete_many({"user_id": user_id})
     await log_activity("User updated", f"Updated {target.get('name', user_id)}: {', '.join(update_data.keys())}", user["user_id"])
     return {"message": f"User {target.get('name')} updated"}
+
+@api_router.post("/settings/users/{user_id}/reset-password")
+async def admin_reset_user_password(user_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
+    partner = await require_partner(authorization, session_token)
+    target = await db.users.find_one({"user_id": user_id})
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+    temp_password = _generate_temp_secret(12)
+    await db.users.update_one(
+        {"user_id": user_id},
+        {
+            "$set": {"password": hash_password(temp_password), "must_change_password": True, "password_updated_at": datetime.now(timezone.utc).isoformat()},
+            "$unset": {"password_reset_code_hash": "", "password_reset_code_expires_at": "", "password_reset_requested_at": ""},
+        }
+    )
+    await db.user_sessions.delete_many({"user_id": user_id})
+    await log_activity("Password reset by partner", f"{partner['name']} reset password for {target.get('name')}", partner["user_id"])
+    return {"temporary_password": temp_password, "user_name": target.get("name"), "user_email": target.get("email")}
+
+@api_router.get("/settings/password-reset-requests")
+async def get_pending_reset_requests(authorization: str = Header(None), session_token: str = Cookie(None)):
+    await require_partner(authorization, session_token)
+    users = await db.users.find(
+        {"password_reset_requested_at": {"$exists": True, "$ne": None}}, {"_id": 0, "password": 0}
+    ).sort("password_reset_requested_at", -1).to_list(50)
+    return [{"user_id": u["user_id"], "name": u.get("name"), "email": u.get("email"), "role": u.get("role"), "requested_at": u.get("password_reset_requested_at")} for u in users]
+
+@api_router.post("/settings/users/{user_id}/generate-reset-code")
+async def admin_generate_reset_code(user_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
+    partner = await require_partner(authorization, session_token)
+    target = await db.users.find_one({"user_id": user_id})
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+    code = _generate_temp_secret(digits_only=True)
+    expires_at = (datetime.now(timezone.utc) + timedelta(minutes=30)).isoformat()
+    await db.users.update_one(
+        {"user_id": user_id},
+        {
+            "$set": {"password_reset_code_hash": hash_password(code), "password_reset_code_expires_at": expires_at},
+            "$unset": {"password_reset_requested_at": ""},
+        }
+    )
+    await log_activity("Password reset code generated", f"{partner['name']} generated a reset code for {target.get('name')}", partner["user_id"])
+    return {"reset_code": code, "expires_at": expires_at, "user_name": target.get("name"), "user_email": target.get("email")}
 
 @api_router.patch("/settings/users/{user_id}/approve")
 async def approve_user(user_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
@@ -3621,6 +3769,17 @@ async def startup():
     await seed_nn_engagements()
     await seed_preset_workflows()
     await audit_workbook.seed_audit_template(db, logger)
+    await migrate_force_password_change()
+
+async def migrate_force_password_change():
+    """One-time rollout migration: flag every existing account to require a
+    password change on next login, replacing the shared placeholder password."""
+    marker = await db.settings.find_one({"type": "security_migration_v1"})
+    if marker:
+        return
+    result = await db.users.update_many({}, {"$set": {"must_change_password": True}})
+    await db.settings.insert_one({"type": "security_migration_v1", "applied_at": datetime.now(timezone.utc).isoformat()})
+    logger.info(f"Security migration v1: flagged {result.modified_count} existing users to require a password change")
 
 async def ensure_db_indexes():
     """Create indexes for the hottest query paths (idempotent)."""

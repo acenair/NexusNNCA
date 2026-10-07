@@ -48,6 +48,14 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     return <Navigate to="/login" replace />;
   }
 
+  // Forced password-change gate: applies to every role until resolved
+  if (user?.must_change_password && location.pathname !== '/change-password') {
+    return <Navigate to="/change-password" replace />;
+  }
+  if (!user?.must_change_password && location.pathname === '/change-password') {
+    return <Navigate to={(user?.role || 'staff') === 'client' ? '/client/documents' : '/app/dashboard'} replace />;
+  }
+
   // Role-based redirect: client users go to /client, staff/partner go to /app
   const userRole = user?.role || 'staff';
   if (allowedRoles && !allowedRoles.includes(userRole)) {

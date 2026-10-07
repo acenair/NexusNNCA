@@ -67,7 +67,10 @@ def create_jwt_token(user_id: str) -> str:
     payload = {"user_id": user_id, "exp": datetime.now(timezone.utc) + timedelta(days=7)}
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
-async def get_current_user(authorization: str = Header(None), session_token: str = Cookie(None)) -> dict:
+async def get_current_user_raw(authorization: str = Header(None), session_token: str = Cookie(None)) -> dict:
+    """Session + user lookup WITHOUT the must_change_password gate.
+    Used only by /auth/me, /auth/change-password so a user who must change
+    their password can still load their identity and submit the change."""
     token = None
     if authorization and authorization.startswith("Bearer "):
         token = authorization.split(" ")[1]
@@ -91,6 +94,12 @@ async def get_current_user(authorization: str = Header(None), session_token: str
     if user_doc.get("status") == "pending_approval":
         raise HTTPException(status_code=403, detail="Account pending approval")
     return user_doc
+
+async def get_current_user(authorization: str = Header(None), session_token: str = Cookie(None)) -> dict:
+    user = await get_current_user_raw(authorization, session_token)
+    if user.get("must_change_password"):
+        raise HTTPException(status_code=403, detail="PASSWORD_CHANGE_REQUIRED")
+    return user
 
 async def require_partner(authorization: str = Header(None), session_token: str = Cookie(None)) -> dict:
     user = await get_current_user(authorization, session_token)

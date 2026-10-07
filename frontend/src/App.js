@@ -4,6 +4,9 @@ import axios from 'axios';
 import '@/App.css';
 import LandingPage from '@/pages/LandingPage';
 import Login from '@/pages/Login';
+import ChangePassword from '@/pages/ChangePassword';
+import ForgotPassword from '@/pages/ForgotPassword';
+import ResetPassword from '@/pages/ResetPassword';
 import AuthCallback from '@/pages/AuthCallback';
 import Dashboard from '@/pages/Dashboard';
 import DeadlineTracker from '@/pages/DeadlineTracker';
@@ -62,6 +65,9 @@ function AppRouter() {
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
       <Route path="/auth-callback" element={<AuthCallback />} />
       <Route path="/app" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
         <Route index element={<Navigate to="/app/dashboard" replace />} />

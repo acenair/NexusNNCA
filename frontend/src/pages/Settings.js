@@ -52,6 +52,11 @@ const Settings = () => {
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
 
+  // Password reset
+  const [pendingResets, setPendingResets] = useState([]);
+  const [secretReveal, setSecretReveal] = useState(null); // { type: 'temp_password'|'reset_code', value, name, email, expires_at }
+  const [resetActionLoading, setResetActionLoading] = useState(null);
+
   // RBAC
   const [rbac, setRbac] = useState({ staff: {}, partner: {} });
 
@@ -156,18 +161,20 @@ const Settings = () => {
 
   const loadSettings = async () => {
     try {
-      const [rbacRes, storageRes, wfRes, firmRes, usersRes] = await Promise.all([
+      const [rbacRes, storageRes, wfRes, firmRes, usersRes, resetsRes] = await Promise.all([
         axios.get(`${API}/settings/rbac`, { withCredentials: true }),
         axios.get(`${API}/settings/storage`, { withCredentials: true }),
         axios.get(`${API}/settings/workflows`, { withCredentials: true }),
         axios.get(`${API}/settings/firm`, { withCredentials: true }),
         axios.get(`${API}/settings/users`, { withCredentials: true }),
+        axios.get(`${API}/settings/password-reset-requests`, { withCredentials: true }).catch(() => ({ data: [] })),
       ]);
       setRbac(rbacRes.data.config || { staff: {}, partner: {} });
       setStorage(storageRes.data.config || { provider: 'default', aws_s3: {}, google_drive: {}, onedrive: {} });
       setWorkflows(wfRes.data);
       setFirmName(firmRes.data.firm_name || 'Nair & Nelliyatt Chartered Accountants');
       setUsers(usersRes.data);
+      setPendingResets(resetsRes.data);
       // Load clients for linking
       try {
         const clientsRes = await axios.get(`${API}/clients`, { withCredentials: true });
@@ -177,6 +184,27 @@ const Settings = () => {
   };
 
   const showSave = (msg) => { setSaveMsg(msg); setTimeout(() => setSaveMsg(''), 2000); };
+
+  const handleAdminResetPassword = async (u) => {
+    if (!window.confirm(`Generate a new temporary password for ${u.name}? Their current password and active sessions will stop working immediately.`)) return;
+    setResetActionLoading(u.user_id);
+    try {
+      const res = await axios.post(`${API}/settings/users/${u.user_id}/reset-password`, {}, { withCredentials: true });
+      setSecretReveal({ type: 'temp_password', value: res.data.temporary_password, name: res.data.user_name, email: res.data.user_email });
+      loadSettings();
+    } catch (err) { alert(err.response?.data?.detail || 'Failed to reset password'); }
+    finally { setResetActionLoading(null); }
+  };
+
+  const handleGenerateResetCode = async (r) => {
+    setResetActionLoading(r.user_id);
+    try {
+      const res = await axios.post(`${API}/settings/users/${r.user_id}/generate-reset-code`, {}, { withCredentials: true });
+      setSecretReveal({ type: 'reset_code', value: res.data.reset_code, name: res.data.user_name, email: res.data.user_email, expires_at: res.data.expires_at });
+      loadSettings();
+    } catch (err) { alert(err.response?.data?.detail || 'Failed to generate reset code'); }
+    finally { setResetActionLoading(null); }
+  };
 
   // Load billable hours data
   const loadBillableHours = async () => {
@@ -420,6 +448,30 @@ const Settings = () => {
             </div>
           </div>
 
+          {/* Pending Password Reset Requests */}
+          {pendingResets.length > 0 && (
+            <div className="nn-card" style={{ overflow: 'hidden', marginBottom: 16, border: '1px solid rgba(245,158,11,0.3)' }} data-testid="pending-resets-card">
+              <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--nn-border)' }}>
+                <h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={14} color="#d97706" /> Pending Password Reset Requests</h3>
+                <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>These users requested a reset via "Forgot password". Relay the code to them by phone or WhatsApp.</p>
+              </div>
+              <div>
+                {pendingResets.map(r => (
+                  <div key={r.user_id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 20px', borderBottom: '1px solid var(--nn-border)' }} data-testid={`pending-reset-${r.user_id}`}>
+                    <div>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>{r.name}</span>
+                      <span style={{ fontSize: 11, color: 'var(--muted)', marginLeft: 8 }}>{r.email}</span>
+                      <span style={{ fontSize: 10, color: 'var(--light)', marginLeft: 8 }}>requested {new Date(r.requested_at).toLocaleString()}</span>
+                    </div>
+                    <button onClick={() => handleGenerateResetCode(r)} disabled={resetActionLoading === r.user_id} className="tbtn tbtn-gold" style={{ fontSize: 11, padding: '5px 12px' }} data-testid={`generate-code-${r.user_id}`}>
+                      {resetActionLoading === r.user_id ? 'Generating...' : 'Generate Code'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Users Table */}
           <div className="nn-card" style={{ overflow: 'hidden' }}>
             <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--nn-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -460,7 +512,12 @@ const Settings = () => {
                             <button onClick={async () => { if (window.confirm(`Reject and remove ${u.name}?`)) { await axios.patch(`${API}/settings/users/${u.user_id}/reject`, {}, { withCredentials: true }); loadSettings(); showSave('User rejected'); } }} className="tbtn" style={{ padding: '5px 10px', fontSize: 10, background: 'var(--red-bg)', color: 'var(--red)', border: 'none' }} data-testid={`reject-user-${u.user_id}`}>Reject</button>
                           </div>
                         ) : (
-                          <button onClick={() => openUserEdit(u)} className="tbtn" style={{ padding: '5px 10px', fontSize: 11, background: 'rgba(201,168,76,0.08)', color: 'var(--gold4)', border: 'none' }} data-testid={`edit-user-${u.user_id}`}><Edit2 size={11} /> Edit</button>
+                          <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
+                            <button onClick={() => openUserEdit(u)} className="tbtn" style={{ padding: '5px 10px', fontSize: 11, background: 'rgba(201,168,76,0.08)', color: 'var(--gold4)', border: 'none' }} data-testid={`edit-user-${u.user_id}`}><Edit2 size={11} /> Edit</button>
+                            <button onClick={() => handleAdminResetPassword(u)} disabled={resetActionLoading === u.user_id} className="tbtn" style={{ padding: '5px 10px', fontSize: 11, background: 'rgba(220,38,38,0.08)', color: '#dc2626', border: 'none' }} data-testid={`reset-password-${u.user_id}`}>
+                              {resetActionLoading === u.user_id ? '...' : 'Reset Password'}
+                            </button>
+                          </div>
                         )}
                       </td>
                     </tr>
@@ -510,13 +567,36 @@ const Settings = () => {
                     <input type="date" value={userForm.date_of_joining} onChange={(e) => setUserForm(p => ({ ...p, date_of_joining: e.target.value }))} style={inputStyle} data-testid="user-doj-input" />
                   </div>
                   <div>
-                    <label style={labelStyle}>New Password (leave blank to keep current)</label>
-                    <input type="password" value={userForm.new_password} onChange={(e) => setUserForm(p => ({ ...p, new_password: e.target.value }))} placeholder="Enter new password..." style={inputStyle} data-testid="user-password-input" />
+                    <label style={labelStyle}>New Password (leave blank to keep current, min 10 chars)</label>
+                    <input type="password" value={userForm.new_password} onChange={(e) => setUserForm(p => ({ ...p, new_password: e.target.value }))} placeholder="At least 10 characters..." style={inputStyle} data-testid="user-password-input" />
                   </div>
                 </div>
                 <div className="modal-footer">
                   <button className="tbtn tbtn-outline" onClick={() => setEditUser(null)}>Cancel</button>
                   <button className="tbtn tbtn-gold" onClick={saveUser} disabled={saving} data-testid="save-user-btn">{saving ? 'Saving...' : 'Save Changes'}</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* One-time Secret Reveal Modal (temp password or reset code) */}
+          {secretReveal && (
+            <div className="modal-overlay" onClick={() => setSecretReveal(null)} data-testid="secret-reveal-modal">
+              <div className="modal-box" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
+                <div className="modal-hdr">
+                  <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 16 }}>{secretReveal.type === 'temp_password' ? 'Temporary Password' : 'One-Time Reset Code'}</h3>
+                  <button onClick={() => setSecretReveal(null)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex' }}><X size={18} /></button>
+                </div>
+                <div style={{ padding: 20 }}>
+                  <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 14 }}>
+                    For <strong style={{ color: 'var(--text)' }}>{secretReveal.name}</strong> ({secretReveal.email}). Relay this to them directly by phone or WhatsApp — it's shown only once and won't be saved anywhere.
+                    {secretReveal.type === 'reset_code' && ' Expires in 30 minutes.'}
+                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderRadius: 'var(--rs)', background: 'var(--off)', border: '1px solid var(--nn-border)', marginBottom: 14 }}>
+                    <span style={{ fontSize: 20, fontWeight: 700, fontFamily: 'monospace', color: 'var(--text)', letterSpacing: 1, flex: 1 }} data-testid="secret-reveal-value">{secretReveal.value}</span>
+                    <button onClick={() => { navigator.clipboard.writeText(secretReveal.value); showSave('Copied to clipboard'); }} className="tbtn tbtn-outline" style={{ fontSize: 11, padding: '6px 10px' }} data-testid="copy-secret-btn">Copy</button>
+                  </div>
+                  <button onClick={() => setSecretReveal(null)} className="tbtn tbtn-gold" style={{ width: '100%' }} data-testid="secret-reveal-done-btn">Done</button>
                 </div>
               </div>
             </div>
