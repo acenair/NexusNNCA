@@ -436,3 +436,8 @@ h1, h2, h3, h4, h5, h6 {
 .af-movement > div { background: #f6fbfe; border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
 .af-movement span { display: block; font-size: 11px; color: var(--muted); }
 .af-movement b { font-size: 19px; letter-spacing: -0.4px; color: var(--text); }
+
+/* ===== Help guide ===== */
+.help-steps { margin: 14px 0 6px; padding-left: 20px; color: var(--ink); }
+.help-steps li { font-size: 13px; line-height: 1.7; margin-bottom: 8px; }
+.help-steps li::marker { color: var(--blue); font-weight: 700; }

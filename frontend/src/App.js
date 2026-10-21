@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import axios from 'axios';
 import '@/App.css';
 import LandingPage from '@/pages/LandingPage';
+import Help from '@/pages/Help';
 import Login from '@/pages/Login';
 import ChangePassword from '@/pages/ChangePassword';
 import ForgotPassword from '@/pages/ForgotPassword';
@@ -143,6 +144,7 @@ function AppRouter() {
         <Route path="leads" element={<Leads />} />
         <Route path="performance" element={<WorkPerformance />} />
         <Route path="reports" element={<Reports />} />
+      <Route path="help" element={<Help />} />
         <Route path="engagements/:engagementId" element={<EngagementDetail />} />
         <Route path="onboarding" element={<ClientOnboarding />} />
         <Route path="clients/:clientId/onboarding" element={<OnboardingTracker />} />
