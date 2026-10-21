@@ -181,3 +181,47 @@ async def get_client_timeline(client_id: str, authorization: str = Header(None),
 
     timeline.sort(key=parse_date, reverse=True)
     return {"client": client, "timeline": timeline}
+
+
+@router.get("/clients/{client_id}/overview360")
+async def get_client_overview360(client_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
+    """Auditflow Customers 360: one call returning everything the per-client
+    tabbed view needs (profile, engagements, invoices, tasks, documents, events)."""
+    user = await get_current_user(authorization, session_token)
+    client = await db.clients.find_one({"client_id": client_id}, {"_id": 0})
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    engs = await db.service_engagements.find(
+        {"client_id": client_id}, {"_id": 0, "checklist": 0}
+    ).sort("created_at", -1).to_list(200)
+    invoices = await db.invoices.find(
+        {"client_id": client_id}, {"_id": 0}
+    ).sort("created_at", -1).to_list(200)
+    tasks = await db.tasks.find(
+        {"client_id": client_id}, {"_id": 0}
+    ).sort("due_date", 1).to_list(200)
+    docs = await db.documents.find(
+        {"client_id": client_id, "is_deleted": {"$ne": True}},
+        {"_id": 0, "data": 0},
+    ).sort("created_at", -1).to_list(200)
+    events = await db.events.find(
+        {"client_id": client_id}, {"_id": 0}
+    ).sort("date", -1).to_list(100)
+    audits = await db.client_audits.find(
+        {"client_id": client_id}, {"_id": 0, "responses": 0}
+    ).sort("created_at", -1).to_list(50)
+
+    outstanding = sum(i.get("amount", 0) for i in invoices if not i.get("paid") and i.get("status") != "Cancelled")
+    paid = sum(i.get("amount", 0) for i in invoices if i.get("paid"))
+
+    return {
+        "client": client,
+        "engagements": engs,
+        "invoices": invoices,
+        "totals": {"outstanding": outstanding, "billed_total": paid + outstanding, "paid": paid},
+        "tasks": tasks,
+        "documents": docs,
+        "events": events,
+        "audits": audits,
+    }
