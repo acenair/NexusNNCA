@@ -31,6 +31,7 @@ import AMLFiling from '@/pages/AML/Filing';
 import AMLReports from '@/pages/AML/Reports';
 import AIAssistant from '@/pages/AIAssistant';
 import ClientMaster from '@/pages/ClientMaster';
+import Engagements from '@/pages/Engagements';
 import Customer360 from '@/pages/Customer360';
 import Documents from '@/pages/Documents';
 import Settings from '@/pages/Settings';
@@ -98,30 +99,30 @@ function AppRouter() {
         <Route path="reminders" element={<Reminders />} />
         
         {/* Audit */}
-        <Route path="audit/statutory" element={<StatutoryAudit />} />
-        <Route path="audit/internal" element={<InternalAudit />} />
-        <Route path="audit/stock" element={<StockAudit />} />
-        <Route path="audit/fraud" element={<FraudAudit />} />
+        <Route path="audit/statutory" element={<Engagements />} />
+        <Route path="audit/internal" element={<Engagements />} />
+        <Route path="audit/stock" element={<Engagements />} />
+        <Route path="audit/fraud" element={<Engagements />} />
         
         {/* VAT */}
-        <Route path="vat/registration" element={<VATRegistration />} />
-        <Route path="vat/filing" element={<VATFiling />} />
-        <Route path="vat/amendments" element={<VATAmendments />} />
+        <Route path="vat/registration" element={<Engagements />} />
+        <Route path="vat/filing" element={<Engagements />} />
+        <Route path="vat/amendments" element={<Engagements />} />
         
         {/* Corporate */}
-        <Route path="corporate/registration" element={<CorporateRegistration />} />
-        <Route path="corporate/tax" element={<CorporateTax />} />
-        <Route path="corporate/formation" element={<Formation />} />
-        <Route path="corporate/liquidation" element={<Liquidation />} />
+        <Route path="corporate/registration" element={<Engagements />} />
+        <Route path="corporate/tax" element={<Engagements />} />
+        <Route path="corporate/formation" element={<Engagements />} />
+        <Route path="corporate/liquidation" element={<Engagements />} />
         
         {/* Advisory */}
-        <Route path="advisory/valuation" element={<Valuation />} />
-        <Route path="advisory/due-diligence" element={<DueDiligence />} />
+        <Route path="advisory/valuation" element={<Engagements />} />
+        <Route path="advisory/due-diligence" element={<Engagements />} />
         
         {/* AML */}
-        <Route path="aml/review" element={<AMLReview />} />
-        <Route path="aml/filing" element={<AMLFiling />} />
-        <Route path="aml/reports" element={<AMLReports />} />
+        <Route path="aml/review" element={<Engagements />} />
+        <Route path="aml/filing" element={<Engagements />} />
+        <Route path="aml/reports" element={<Engagements />} />
         
         {/* AI Assistant */}
         <Route path="ai-assistant" element={<AIAssistant />} />
@@ -130,6 +131,7 @@ function AppRouter() {
         <Route path="settings" element={<Settings />} />
         <Route path="customers/:clientId" element={<Customer360 />} />
         <Route path="clients/:clientId/timeline" element={<ClientTimeline />} />
+        <Route path="engagements" element={<Engagements />} />
         <Route path="engagements/:engagementId" element={<EngagementDetail />} />
         <Route path="onboarding" element={<ClientOnboarding />} />
         <Route path="clients/:clientId/onboarding" element={<OnboardingTracker />} />

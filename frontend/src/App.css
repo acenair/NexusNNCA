@@ -417,3 +417,13 @@ h1, h2, h3, h4, h5, h6 {
 .af-profile-row span { color: var(--muted); }
 .af-profile-row b { color: var(--text); font-weight: 600; text-align: right; }
 @media (max-width: 760px) { .af-profile-grid { grid-template-columns: 1fr; } }
+
+/* Unified engagements */
+.af-chips { display: flex; gap: 6px; overflow: auto; margin: 16px 0 4px; padding-bottom: 4px; }
+.af-chips button { white-space: nowrap; border: 1px solid var(--nn-border); background: var(--white); color: #6b8799; padding: 8px 13px; border-radius: 999px; cursor: pointer; font-size: 12px; }
+.af-chips button[aria-selected="true"] { background: #0e6db4; border-color: #0e6db4; color: white; font-weight: 600; }
+.af-searchbox { display: flex; align-items: center; gap: 7px; background: #f4f9fc; border-radius: 8px; padding: 8px 11px; color: var(--muted); }
+.af-searchbox input { border: 0; background: transparent; outline: none; font-size: 12px; width: 160px; color: var(--text); }
+.af-formrow { display: flex; flex-direction: column; gap: 5px; margin: 12px 0; }
+.af-formrow label { font-size: 11px; color: var(--muted); }
+.af-formrow select, .af-formrow input { border: 1px solid var(--nn-border); border-radius: 8px; padding: 10px 12px; font-size: 13px; background: var(--white); color: var(--text); }

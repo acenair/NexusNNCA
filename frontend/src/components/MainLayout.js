@@ -241,46 +241,12 @@ const MainLayout = ({ user }) => {
       ]
     },
     {
-      title: 'Audit',
+      title: 'Engagements',
       items: [
-        { path: '/app/audit/statutory', label: 'Statutory Audit', icon: FileText, badge: '10' },
-        { path: '/app/audit/internal', label: 'Internal Audit', icon: Activity, badge: '3' },
-        { path: '/app/audit/stock', label: 'Stock Audit', icon: Receipt },
-        { path: '/app/audit/fraud', label: 'Fraud Audit', icon: Shield },
+        { path: '/app/engagements', label: 'Engagements', icon: Briefcase },
       ]
     },
-    {
-      title: 'VAT',
-      items: [
-        { path: '/app/vat/registration', label: 'Registration', icon: FileText },
-        { path: '/app/vat/filing', label: 'Filing', icon: Receipt, badge: '5' },
-        { path: '/app/vat/amendments', label: 'Amendments', icon: Activity },
-      ]
-    },
-    {
-      title: 'Corporate',
-      items: [
-        { path: '/app/corporate/registration', label: 'Registration', icon: Building2 },
-        { path: '/app/corporate/tax', label: 'Corporate Tax', icon: Receipt, badge: '5' },
-        { path: '/app/corporate/formation', label: 'Formation', icon: Briefcase },
-        { path: '/app/corporate/liquidation', label: 'Liquidation', icon: TrendingUp },
-      ]
-    },
-    {
-      title: 'Advisory',
-      items: [
-        { path: '/app/advisory/valuation', label: 'Valuation', icon: TrendingUp, badge: '2' },
-        { path: '/app/advisory/due-diligence', label: 'Due Diligence', icon: FileText, badge: '2' },
-      ]
-    },
-    {
-      title: 'AML',
-      items: [
-        { path: '/app/aml/review', label: 'Monthly Review', icon: Shield, badge: '3' },
-        { path: '/app/aml/filing', label: 'Filing', icon: Receipt },
-        { path: '/app/aml/reports', label: 'Monthly Reports', icon: FileText, badge: '3' },
-      ]
-    },
+
   ];
 
   const getPageTitle = () => {

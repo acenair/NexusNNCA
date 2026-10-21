@@ -1,0 +1,229 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { useOutletContext, Link, useSearchParams, useLocation } from 'react-router-dom';
+import axios from 'axios';
+import { Plus, Search } from 'lucide-react';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
+
+// Route path -> service_type preset (old deep links keep working)
+const ROUTE_PRESETS = {
+  '/app/audit/statutory': 'statutory_audit',
+  '/app/audit/internal': 'internal_audit',
+  '/app/audit/stock': 'stock_audit',
+  '/app/audit/fraud': 'fraud_audit',
+  '/app/vat/registration': 'vat_registration',
+  '/app/vat/filing': 'vat_filing',
+  '/app/vat/amendments': 'vat_amendments',
+  '/app/corporate/registration': 'corporate_registration',
+  '/app/corporate/tax': 'corporate_tax',
+  '/app/corporate/formation': 'company_formation',
+  '/app/corporate/liquidation': 'company_liquidation',
+  '/app/advisory/valuation': 'business_valuation',
+  '/app/advisory/due-diligence': 'due_diligence',
+  '/app/aml/review': 'aml_review',
+  '/app/aml/filing': 'aml_filing',
+  '/app/aml/reports': 'aml_reports',
+};
+
+const SERVICE_LABELS = {
+  statutory_audit: 'External Audit', internal_audit: 'Internal Audit', stock_audit: 'Stock Audit',
+  fraud_audit: 'Fraud Audit', vat_registration: 'VAT Registration', vat_filing: 'VAT Filing',
+  vat_amendments: 'VAT Amendments', corporate_registration: 'Corporate Registration',
+  corporate_tax: 'Corporate Tax', company_formation: 'Company Formation',
+  company_liquidation: 'Company Liquidation', business_valuation: 'Business Valuation',
+  due_diligence: 'Due Diligence', aml_review: 'AML Review', aml_filing: 'AML Filing',
+  aml_reports: 'AML Reports', accounting: 'Accounting', goaml: 'goAML',
+};
+
+const aed = (n) => 'AED ' + Number(n || 0).toLocaleString('en-US');
+const fmt = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+
+const Engagements = () => {
+  const { user } = useOutletContext();
+  const location = useLocation();
+  const [params, setParams] = useSearchParams();
+  const preset = params.get('service') || ROUTE_PRESETS[location.pathname] || '';
+
+  const [engs, setEngs] = useState([]);
+  const [clients, setClients] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [phaseFilter, setPhaseFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [showCreate, setShowCreate] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [form, setForm] = useState({ client_id: '', service_type: preset || 'statutory_audit', assigned_to: '', notes: '' });
+
+  const loadEngs = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(`${API}/service/engagements`, { withCredentials: true });
+      setEngs(Array.isArray(res.data) ? res.data : []);
+    } catch (err) { console.error(err); }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { loadEngs(); }, [loadEngs]);
+  useEffect(() => {
+    axios.get(`${API}/clients`, { withCredentials: true }).then(r => setClients(Array.isArray(r.data) ? r.data : [])).catch(() => {});
+    axios.get(`${API}/auth/users-list`, { withCredentials: true }).then(r => setUsers(Array.isArray(r.data) ? r.data : [])).catch(() => {});
+  }, []);
+
+  const serviceCounts = {};
+  engs.forEach(e => { serviceCounts[e.service_type] = (serviceCounts[e.service_type] || 0) + 1; });
+  const chips = Object.entries(SERVICE_LABELS)
+    .filter(([k]) => serviceCounts[k])
+    .sort((a, b) => serviceCounts[b[0]] - serviceCounts[a[0]]);
+
+  const phases = [...new Set(engs.map(e => e.phase).filter(Boolean))];
+
+  const filtered = engs.filter(e =>
+    (!preset || e.service_type === preset) &&
+    (!phaseFilter || e.phase === phaseFilter) &&
+    (!statusFilter || e.status.toLowerCase() === statusFilter.toLowerCase()) &&
+    (!search || (e.client_name || '').toLowerCase().includes(search.toLowerCase()))
+  );
+
+  const active = filtered.filter(e => e.status === 'Active').length;
+  const inReview = filtered.filter(e => e.phase === 'Review & Reporting').length;
+  const completed = filtered.filter(e => e.status === 'Completed').length;
+
+  const progressOf = (e) => {
+    const cl = e.checklist || [];
+    const total = cl.reduce((n, g) => n + (g.items?.length || 0), 0);
+    const done = cl.reduce((n, g) => n + (g.items?.filter(i => i.done).length || 0), 0);
+    return total ? Math.round((done / total) * 100) : 0;
+  };
+
+  const handleCreate = async () => {
+    if (!form.client_id) return;
+    setSubmitting(true);
+    try {
+      await axios.post(`${API}/service/engagements`, form, { withCredentials: true });
+      setShowCreate(false);
+      setForm({ client_id: '', service_type: preset || 'statutory_audit', assigned_to: '', notes: '' });
+      await loadEngs();
+    } catch (err) { console.error(err); alert(err.response?.data?.detail || 'Failed to create engagement'); }
+    setSubmitting(false);
+  };
+
+  const clearPreset = () => { const p = new URLSearchParams(params); p.delete('service'); setParams(p, { replace: true }); };
+
+  if (loading) return <div className="page-loading">Loading engagements…</div>;
+
+  return (
+    <div className="ov-wrap" data-testid="engagements-view">
+      <div className="ov-heading">
+        <div>
+          <div className="ov-eyebrow">SERVICE DELIVERY</div>
+          <h1>Engagements</h1>
+          <p>Every engagement across all service lines — one view, filter by service.</p>
+        </div>
+        <button className="af-btn-primary" data-testid="new-engagement-btn" onClick={() => setShowCreate(true)}><Plus size={14} style={{ marginRight: 4 }} /> New engagement</button>
+      </div>
+
+      {/* Stats strip */}
+      <div className="af-kpis" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+        <section className="af-card af-metric"><label>Engagements</label><b>{filtered.length}</b><small>{preset ? SERVICE_LABELS[preset] : 'All services'}</small></section>
+        <section className="af-card af-metric"><label>Active</label><b>{active}</b><small>In delivery now</small></section>
+        <section className="af-card af-metric"><label>Awaiting review</label><b>{inReview}</b><small>Review &amp; Reporting phase</small></section>
+        <section className="af-card af-metric"><label>Completed</label><b>{completed}</b><small>Closed out</small></section>
+      </div>
+
+      {/* Service chips */}
+      <div className="af-chips" role="tablist">
+        <button role="tab" aria-selected={!preset} onClick={clearPreset}>All ({engs.length})</button>
+        {chips.map(([k, label]) => (
+          <button key={k} role="tab" aria-selected={preset === k}
+            onClick={() => setParams({ service: k }, { replace: true })}>
+            {label} ({serviceCounts[k]})
+          </button>
+        ))}
+      </div>
+
+      {/* Filters + table */}
+      <section className="af-card">
+        <div className="af-cardhead">
+          <div><h2>{preset ? SERVICE_LABELS[preset] : 'All engagements'}</h2><div className="af-sub">{filtered.length} shown</div></div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <div className="af-searchbox"><Search size={13} />
+              <input placeholder="Search client…" value={search} onChange={e => setSearch(e.target.value)} aria-label="Search engagements by client" />
+            </div>
+            <select value={phaseFilter} onChange={e => setPhaseFilter(e.target.value)} aria-label="Filter by phase">
+              <option value="">All phases</option>
+              {phases.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} aria-label="Filter by status">
+              <option value="">All statuses</option>
+              <option value="Active">Active</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+        </div>
+        <div className="af-tablewrap">
+          <table className="af-table">
+            <thead><tr><th>CLIENT</th><th>SERVICE</th><th>PHASE</th><th>PROGRESS</th><th>ASSIGNED</th><th>STATUS</th><th>CREATED</th><th></th></tr></thead>
+            <tbody>
+              {filtered.map(e => {
+                const pct = progressOf(e);
+                return (
+                  <tr key={e.engagement_id}>
+                    <td><b>{e.client_name || '—'}</b></td>
+                    <td><span className="af-badge af-badge-blue">{SERVICE_LABELS[e.service_type] || e.service_type}</span></td>
+                    <td>{e.phase || '—'}</td>
+                    <td style={{ minWidth: 110 }}>
+                      <div className="af-track"><i style={{ width: pct + '%' }} /></div>
+                      <small style={{ color: 'var(--muted)', fontSize: 10 }}>{pct}%</small>
+                    </td>
+                    <td>{e.assigned_to_name || '—'}</td>
+                    <td><span className={`af-badge ${e.status === 'Completed' ? 'af-badge-green' : 'af-badge-blue'}`}>{e.status}</span></td>
+                    <td>{fmt(e.created_at)}</td>
+                    <td><Link className="af-link" to={`/app/engagements/${e.engagement_id}`} data-testid={`open-eng-${e.engagement_id}`}>Open ↗</Link></td>
+                  </tr>
+                );
+              })}
+              {filtered.length === 0 && <tr><td colSpan="8" className="af-empty">No engagements match. {preset ? 'Try the All filter.' : 'Create one with “New engagement”.'}</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* Create modal */}
+      {showCreate && (
+        <div className="af-modal" onClick={(e) => e.target === e.currentTarget && !submitting && setShowCreate(false)}>
+          <div className="af-dialog" data-testid="create-engagement-modal">
+            <button className="af-close" onClick={() => setShowCreate(false)}>×</button>
+            <h2>New engagement</h2>
+            <div className="af-formrow"><label>Client *</label>
+              <select value={form.client_id} onChange={e => setForm({ ...form, client_id: e.target.value })}>
+                <option value="">Select client…</option>
+                {clients.map(c => <option key={c.client_id} value={c.client_id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div className="af-formrow"><label>Service line</label>
+              <select value={form.service_type} onChange={e => setForm({ ...form, service_type: e.target.value })}>
+                {Object.entries(SERVICE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
+            </div>
+            <div className="af-formrow"><label>Assign to</label>
+              <select value={form.assigned_to} onChange={e => setForm({ ...form, assigned_to: e.target.value })}>
+                <option value="">Unassigned</option>
+                {users.filter(u => u.role !== 'client').map(u => <option key={u.user_id} value={u.user_id}>{u.name}</option>)}
+              </select>
+            </div>
+            <div className="af-formrow"><label>Notes</label>
+              <input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Optional context" />
+            </div>
+            <button className="af-btn-primary" style={{ width: '100%', marginTop: 10 }} onClick={handleCreate} disabled={submitting || !form.client_id} data-testid="create-engagement-submit">
+              {submitting ? 'Creating…' : 'Create engagement'}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Engagements;
