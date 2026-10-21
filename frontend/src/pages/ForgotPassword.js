@@ -34,7 +34,7 @@ const ForgotPassword = () => {
       <div style={{ width: 420, maxWidth: '90vw', position: 'relative', zIndex: 1 }}>
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <div style={{ width: 52, height: 52, borderRadius: 12, background: 'var(--gold)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#17354c', fontFamily: 'DM Serif Display', fontSize: 20, fontWeight: 700, marginBottom: 12 }}>N&N</div>
-          <h1 style={{ fontFamily: 'DM Serif Display', color: '#1599df', fontSize: 24, marginBottom: 4 }}>Nair & Nelliyatt</h1>
+          <h1 style={{ fontFamily: 'DM Serif Display', color: '#0e7ec4', fontSize: 24, marginBottom: 4 }}>Nair & Nelliyatt</h1>
           <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', letterSpacing: 1 }}>CHARTERED ACCOUNTANTS</p>
         </div>
 
@@ -43,8 +43,8 @@ const ForgotPassword = () => {
             <div data-testid="forgot-password-confirmation">
               <h2 style={{ fontFamily: 'DM Serif Display', fontSize: 18, color: '#17354c', marginBottom: 10 }}>Check with a Partner</h2>
               <p style={{ fontSize: 13, color: '#7891a4', lineHeight: 1.6, marginBottom: 20 }}>If an account exists for <strong>{email}</strong>, a partner will be in touch shortly (by phone or WhatsApp) with a one-time reset code. No email will be sent.</p>
-              <p style={{ fontSize: 12, color: '#7891a4', marginBottom: 16 }}>Already have a code? <span onClick={() => navigate('/reset-password')} style={{ color: '#1599df', fontWeight: 600, cursor: 'pointer' }} data-testid="have-code-link">Reset your password</span></p>
-              <button onClick={() => navigate('/login')} style={{ width: '100%', padding: '11px 0', borderRadius: 8, background: '#1599df', color: '#fff', fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'DM Sans' }} data-testid="back-to-login-btn">Back to Login</button>
+              <p style={{ fontSize: 12, color: '#7891a4', marginBottom: 16 }}>Already have a code? <span onClick={() => navigate('/reset-password')} style={{ color: '#0e7ec4', fontWeight: 600, cursor: 'pointer' }} data-testid="have-code-link">Reset your password</span></p>
+              <button onClick={() => navigate('/login')} style={{ width: '100%', padding: '11px 0', borderRadius: 8, background: '#0e7ec4', color: '#fff', fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'DM Sans' }} data-testid="back-to-login-btn">Back to Login</button>
             </div>
           ) : (
             <>
@@ -60,13 +60,13 @@ const ForgotPassword = () => {
               </div>
 
               <button onClick={handleSubmit} disabled={loading || !email}
-                style={{ width: '100%', padding: '11px 0', borderRadius: 8, background: loading ? '#3fadf0' : '#1599df', color: '#fff', fontSize: 14, fontWeight: 600, border: 'none', cursor: loading ? 'default' : 'pointer', fontFamily: 'DM Sans' }}
+                style={{ width: '100%', padding: '11px 0', borderRadius: 8, background: loading ? '#2e93d9' : '#0e7ec4', color: '#fff', fontSize: 14, fontWeight: 600, border: 'none', cursor: loading ? 'default' : 'pointer', fontFamily: 'DM Sans' }}
                 data-testid="forgot-password-submit-btn">
                 {loading ? 'Submitting...' : 'Request Reset'}
               </button>
 
               <p style={{ fontSize: 12, color: '#7891a4', textAlign: 'center', marginTop: 16 }}>
-                <span onClick={() => navigate('/login')} style={{ color: '#1599df', fontWeight: 600, cursor: 'pointer' }} data-testid="back-to-login-link">Back to Login</span>
+                <span onClick={() => navigate('/login')} style={{ color: '#0e7ec4', fontWeight: 600, cursor: 'pointer' }} data-testid="back-to-login-link">Back to Login</span>
               </p>
             </>
           )}

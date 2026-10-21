@@ -49,7 +49,7 @@ const ChangePassword = ({ user }) => {
       <div style={{ width: 420, maxWidth: '90vw', position: 'relative', zIndex: 1 }}>
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <div style={{ width: 52, height: 52, borderRadius: 12, background: 'var(--gold)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#17354c', fontFamily: 'DM Serif Display', fontSize: 20, fontWeight: 700, marginBottom: 12 }}>N&N</div>
-          <h1 style={{ fontFamily: 'DM Serif Display', color: '#1599df', fontSize: 24, marginBottom: 4 }}>Nair & Nelliyatt</h1>
+          <h1 style={{ fontFamily: 'DM Serif Display', color: '#0e7ec4', fontSize: 24, marginBottom: 4 }}>Nair & Nelliyatt</h1>
           <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', letterSpacing: 1 }}>CHARTERED ACCOUNTANTS</p>
         </div>
 
@@ -84,7 +84,7 @@ const ChangePassword = ({ user }) => {
           </div>
 
           <button onClick={handleSubmit} disabled={loading}
-            style={{ width: '100%', padding: '11px 0', borderRadius: 8, background: loading ? '#3fadf0' : '#1599df', color: '#fff', fontSize: 14, fontWeight: 600, border: 'none', cursor: loading ? 'default' : 'pointer', fontFamily: 'DM Sans' }}
+            style={{ width: '100%', padding: '11px 0', borderRadius: 8, background: loading ? '#2e93d9' : '#0e7ec4', color: '#fff', fontSize: 14, fontWeight: 600, border: 'none', cursor: loading ? 'default' : 'pointer', fontFamily: 'DM Sans' }}
             data-testid="change-password-submit-btn">
             {loading ? 'Updating...' : 'Set New Password'}
           </button>

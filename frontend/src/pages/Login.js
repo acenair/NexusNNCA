@@ -70,7 +70,7 @@ const Login = () => {
           }}>
             N&N
           </div>
-          <h1 style={{ fontFamily: 'DM Serif Display', color: '#1599df', fontSize: 24, marginBottom: 4 }}>Nair & Nelliyatt</h1>
+          <h1 style={{ fontFamily: 'DM Serif Display', color: '#0e7ec4', fontSize: 24, marginBottom: 4 }}>Nair & Nelliyatt</h1>
           <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', letterSpacing: 1 }}>CHARTERED ACCOUNTANTS</p>
         </div>
 
@@ -142,7 +142,7 @@ const Login = () => {
             disabled={loading}
             style={{
               width: '100%', padding: '11px 0', borderRadius: 8,
-              background: loading ? '#3fadf0' : '#1599df', color: '#fff',
+              background: loading ? '#2e93d9' : '#0e7ec4', color: '#fff',
               fontSize: 14, fontWeight: 600, border: 'none', cursor: loading ? 'default' : 'pointer',
               fontFamily: 'DM Sans', transition: 'all 0.15s',
             }}
@@ -152,7 +152,7 @@ const Login = () => {
           </button>
 
           <p style={{ fontSize: 12, color: '#7891a4', textAlign: 'center', marginTop: 16 }}>
-            <span onClick={() => navigate('/forgot-password')} style={{ color: '#1599df', fontWeight: 600, cursor: 'pointer' }} data-testid="forgot-password-link">Forgot password?</span>
+            <span onClick={() => navigate('/forgot-password')} style={{ color: '#0e7ec4', fontWeight: 600, cursor: 'pointer' }} data-testid="forgot-password-link">Forgot password?</span>
           </p>
 
           <p style={{ fontSize: 10, color: '#9db4c4', textAlign: 'center', marginTop: 14 }}>
