@@ -297,11 +297,11 @@ const MainLayout = ({ user }) => {
       {/* Logo */}
       <div style={{ padding: collapsed && !isMobile ? '16px 0' : '20px 20px 14px', borderBottom: '1px solid #e4eff6', display: 'flex', alignItems: 'center', justifyContent: collapsed && !isMobile ? 'center' : 'space-between' }}>
         {collapsed && !isMobile ? (
-          <div style={{ width: 36, height: 36, borderRadius: 8, background: '#1599df', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontFamily: 'DM Serif Display', fontWeight: 700, fontSize: 14, cursor: 'pointer' }} onClick={() => setCollapsed(false)} data-testid="sidebar-expand-btn">N</div>
+          <div style={{ width: 36, height: 36, borderRadius: 8, background: '#01457C', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontFamily: 'DM Serif Display', fontWeight: 700, fontSize: 14, cursor: 'pointer' }} onClick={() => setCollapsed(false)} data-testid="sidebar-expand-btn">N</div>
         ) : (
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 8, background: '#1599df', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontFamily: 'DM Serif Display', fontWeight: 700, fontSize: 16 }}>N&N</div>
+              <div style={{ width: 36, height: 36, borderRadius: 8, background: '#01457C', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontFamily: 'DM Serif Display', fontWeight: 700, fontSize: 16 }}>N&N</div>
               <div>
                 <div style={{ color: '#17354c', fontFamily: 'DM Serif Display', fontSize: 15, lineHeight: 1.2 }}>Nair & Nelliyatt</div>
                 <div style={{ fontSize: 10, color: 'var(--muted)', letterSpacing: 0.5 }}>Chartered Accountants</div>
@@ -323,7 +323,7 @@ const MainLayout = ({ user }) => {
           <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: 1.2, color: 'var(--muted)', marginBottom: 6 }}>Active Partners</div>
           <div style={{ display: 'flex', gap: 6 }}>
             {['Arjun S.', 'Sooraj N.'].map(n => (
-              <div key={n} style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#edf8ff', borderRadius: 6, padding: '4px 8px' }}>
+              <div key={n} style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#eaf3fb', borderRadius: 6, padding: '4px 8px' }}>
                 <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />
                 <span style={{ fontSize: 11, color: '#17354c' }}>{n}</span>
               </div>
@@ -346,13 +346,13 @@ const MainLayout = ({ user }) => {
               <div key={section.title} style={{ marginBottom: 4 }}>
                 <div
                   onClick={() => { setCollapsed(false); setExpandedSections(p => ({ ...p, [section.title]: true })); }}
-                  style={{ width: 42, height: 42, margin: '0 auto 2px', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.15s', background: hasActiveItem ? '#e8f6ff' : 'transparent', color: hasActiveItem ? '#098bd0' : 'rgba(105,131,152,0.8)', position: 'relative' }}
+                  style={{ width: 42, height: 42, margin: '0 auto 2px', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.15s', background: hasActiveItem ? '#e7f1fa' : 'transparent', color: hasActiveItem ? '#0e6db4' : 'rgba(105,131,152,0.8)', position: 'relative' }}
                   title={section.title}
                   data-testid={`section-icon-${section.title.toLowerCase()}`}
                 >
                   <SectionIcon size={18} />
                   {totalBadge > 0 && (
-                    <span style={{ position: 'absolute', top: 2, right: 2, width: 14, height: 14, borderRadius: '50%', background: '#098bd0', color: 'white', fontSize: 8, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{totalBadge}</span>
+                    <span style={{ position: 'absolute', top: 2, right: 2, width: 14, height: 14, borderRadius: '50%', background: '#0e6db4', color: 'white', fontSize: 8, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{totalBadge}</span>
                   )}
                 </div>
               </div>
@@ -373,11 +373,11 @@ const MainLayout = ({ user }) => {
                 data-testid={`section-toggle-${section.title.toLowerCase()}`}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <SectionIcon size={14} color={hasActiveItem ? '#098bd0' : 'rgba(105,131,152,0.7)'} />
-                  <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8, color: hasActiveItem ? '#098bd0' : 'var(--muted)' }}>{section.title}</span>
+                  <SectionIcon size={14} color={hasActiveItem ? '#0e6db4' : 'rgba(105,131,152,0.7)'} />
+                  <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8, color: hasActiveItem ? '#0e6db4' : 'var(--muted)' }}>{section.title}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  {totalBadge > 0 && <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 8, background: '#edf8ff', color: '#098bd0' }}>{totalBadge}</span>}
+                  {totalBadge > 0 && <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 8, background: '#eaf3fb', color: '#0e6db4' }}>{totalBadge}</span>}
                   {isExpanded ? <ChevronDown size={13} color="rgba(105,131,152,0.6)" /> : <ChevronRight size={13} color="rgba(105,131,152,0.6)" />}
                 </div>
               </button>
@@ -400,7 +400,7 @@ const MainLayout = ({ user }) => {
                           padding: '6px 10px', borderRadius: 6, fontSize: 13, textDecoration: 'none',
                           transition: 'all 0.15s', marginBottom: 1,
                           background: isActive ? 'var(--gold)' : 'transparent',
-                          color: isActive ? '#098bd0' : '#698398',
+                          color: isActive ? '#0e6db4' : '#698398',
                           fontWeight: isActive ? 600 : 400,
                         }}
                         data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
@@ -410,7 +410,7 @@ const MainLayout = ({ user }) => {
                           <span>{item.label}</span>
                         </div>
                         {item.badge && (
-                          <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 10, background: isActive ? '#098bd0' : '#edf8ff', color: isActive ? '#fff' : '#098bd0' }}>{item.badge}</span>
+                          <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 10, background: isActive ? '#0e6db4' : '#eaf3fb', color: isActive ? '#fff' : '#0e6db4' }}>{item.badge}</span>
                         )}
                       </Link>
                     );
@@ -427,19 +427,19 @@ const MainLayout = ({ user }) => {
         <div style={{ padding: collapsed && !isMobile ? '10px 6px' : '12px 14px', borderTop: '1px solid #e4eff6' }}>
           {collapsed && !isMobile ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-              <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#ddf2ff', color: '#098bd0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13 }}>{user.name?.charAt(0)}</div>
-              <button onClick={handleLogout} style={{ background: '#edf8ff', border: 'none', color: '#698398', cursor: 'pointer', padding: 6, borderRadius: 6, display: 'flex' }} data-testid="logout-btn"><LogOut size={14} /></button>
+              <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#dbe9f6', color: '#0e6db4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13 }}>{user.name?.charAt(0)}</div>
+              <button onClick={handleLogout} style={{ background: '#eaf3fb', border: 'none', color: '#698398', cursor: 'pointer', padding: 6, borderRadius: 6, display: 'flex' }} data-testid="logout-btn"><LogOut size={14} /></button>
             </div>
           ) : (
             <>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#ddf2ff', color: '#098bd0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13 }}>{user.name?.charAt(0)}</div>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#dbe9f6', color: '#0e6db4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13 }}>{user.name?.charAt(0)}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12, fontWeight: 600, color: '#17354c', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.name}</div>
-                  <div style={{ fontSize: 10, color: '#098bd0' }}>{user.title || user.role}</div>
+                  <div style={{ fontSize: 10, color: '#0e6db4' }}>{user.title || user.role}</div>
                 </div>
               </div>
-              <button onClick={handleLogout} style={{ width: '100%', padding: '6px 0', borderRadius: 6, background: '#edf8ff', border: 'none', color: '#698398', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, fontFamily: 'DM Sans, sans-serif' }} data-testid="logout-btn"><LogOut size={13} /> Logout</button>
+              <button onClick={handleLogout} style={{ width: '100%', padding: '6px 0', borderRadius: 6, background: '#eaf3fb', border: 'none', color: '#698398', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, fontFamily: 'DM Sans, sans-serif' }} data-testid="logout-btn"><LogOut size={13} /> Logout</button>
             </>
           )}
         </div>

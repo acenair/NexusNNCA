@@ -14,7 +14,7 @@ const PIPELINE_STAGES = [
   { key: 'draft', label: 'Draft sent', phases: ['Filing'] },
   { key: 'confirmed', label: 'Management confirmed', phases: ['Completion'] },
 ];
-const STAGE_COLORS = { awaiting: '#bfe9ff', progress: '#46b8f1', review: '#168ed2', draft: '#8acde9', confirmed: '#77cfc4' };
+const STAGE_COLORS = { awaiting: '#d8e9f7', progress: '#2e93d9', review: '#0b5e9b', draft: '#7fb9e0', confirmed: '#77cfc4' };
 
 const SERVICE_LABELS = {
   statutory_audit: 'External Audit', internal_audit: 'Internal Audit', stock_audit: 'Stock Audit',
