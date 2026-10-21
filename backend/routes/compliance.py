@@ -99,6 +99,20 @@ async def _sync_staff():
                     {"$set": {"due_date": val, "stage": "Renewal in progress" if expired else "Verified"}})
 
 
+SCOPE_CATEGORIES = {
+    "customers": ["Trade Licence", "Passport", "Emirates ID", "KYC Review", "UBO / Ownership", "Address / Supporting Records"],
+    "firm": ["Firm Trade Licence", "Tenancy / Lease", "Establishment Card", "Professional Indemnity", "Other Insurance", "Firm Registrations"],
+    "staff": ["Residence Visa", "Emirates ID", "Passport", "Medical Insurance", "Employment Records"],
+}
+STAGES_LIST = ["Not requested", "Requested", "Received", "Under review", "Verified", "Renewal in progress", "Not applicable"]
+
+
+@router.get("/compliance/categories")
+async def compliance_categories(authorization: str = Header(None), session_token: str = Cookie(None)):
+    await get_current_user(authorization, session_token)
+    return {"categories": SCOPE_CATEGORIES, "stages": STAGES_LIST}
+
+
 class ComplianceRecordIn(BaseModel):
     scope: str  # customers | firm | staff
     subject_name: str
@@ -112,6 +126,12 @@ class ComplianceRecordIn(BaseModel):
     stage: str = "Not requested"
     authority: Optional[str] = None
     notes: Optional[str] = None
+    issued_date: Optional[str] = None
+    verified_date: Optional[str] = None
+    verified_by: Optional[str] = None
+    followup_date: Optional[str] = None
+    location_note: Optional[str] = None
+    date_basis_none: Optional[bool] = False  # "no date tracked"
 
 
 class ComplianceUpdateIn(BaseModel):
@@ -124,6 +144,12 @@ class ComplianceUpdateIn(BaseModel):
     stage: Optional[str] = None
     authority: Optional[str] = None
     notes: Optional[str] = None
+    issued_date: Optional[str] = None
+    verified_date: Optional[str] = None
+    verified_by: Optional[str] = None
+    followup_date: Optional[str] = None
+    location_note: Optional[str] = None
+    date_basis_none: Optional[bool] = None
     change_reason: Optional[str] = None
 
 
@@ -144,7 +170,19 @@ async def create_record(rec: ComplianceRecordIn, authorization: str = Header(Non
     user = await get_current_user(authorization, session_token)
     if rec.scope not in ("customers", "firm", "staff"):
         raise HTTPException(status_code=400, detail="Invalid scope")
+    if rec.stage not in STAGES_LIST:
+        raise HTTPException(status_code=400, detail="Invalid stage")
+    today_s = datetime.now(timezone.utc).date().isoformat()
+    if rec.stage == "Verified" and (not rec.verified_date or not rec.verified_by):
+        raise HTTPException(status_code=422, detail="Verified records need a verification date and reviewer")
+    if rec.verified_date and rec.verified_date > today_s:
+        raise HTTPException(status_code=422, detail="Verification date cannot be in the future")
+    if rec.issued_date and rec.due_date and rec.date_basis == "expiry" and rec.issued_date > rec.due_date:
+        raise HTTPException(status_code=422, detail="Issue date must be on or before expiry")
     doc = rec.model_dump()
+    if doc.pop("date_basis_none", False):
+        doc["date_basis"] = "none"
+        doc["due_date"] = None
     doc.update({
         "record_id": f"cmp_{uuid.uuid4().hex[:12]}", "source": "manual", "history": [],
         "created_at": datetime.now(timezone.utc).isoformat(),
@@ -162,8 +200,22 @@ async def update_record(record_id: str, req: ComplianceUpdateIn, authorization: 
         raise HTTPException(status_code=404, detail="Record not found")
 
     updates = {k: v for k, v in req.model_dump().items() if v is not None and k != "change_reason"}
+    if updates.pop("date_basis_none", False):
+        updates["date_basis"] = "none"
+        updates["due_date"] = None
     change_reason = req.change_reason
     old_due = rec.get("due_date")
+    today_s = datetime.now(timezone.utc).date().isoformat()
+    new_stage = updates.get("stage", rec.get("stage"))
+    new_vdate = updates.get("verified_date", rec.get("verified_date"))
+    new_vby = updates.get("verified_by", rec.get("verified_by"))
+    if new_stage == "Verified" and (not new_vdate or not new_vby):
+        raise HTTPException(status_code=422, detail="Verified records need a verification date and reviewer")
+    if new_vdate and new_vdate > today_s:
+        raise HTTPException(status_code=422, detail="Verification date cannot be in the future")
+    if updates.get("date_basis") == "none" or (rec.get("date_basis") == "none" and "due_date" not in updates):
+        pass
+    history_entry = None
     history_entry = None
     if "due_date" in updates and updates["due_date"] != old_due:
         if old_due and not change_reason:
@@ -171,6 +223,18 @@ async def update_record(record_id: str, req: ComplianceUpdateIn, authorization: 
         history_entry = {
             "field": "due_date", "from": old_due, "to": updates["due_date"],
             "reason": change_reason or "Date set", "by": user.get("name"),
+            "at": datetime.now(timezone.utc).isoformat(),
+        }
+    elif "stage" in updates and updates["stage"] != rec.get("stage"):
+        history_entry = {
+            "field": "stage", "from": rec.get("stage"), "to": updates["stage"],
+            "reason": change_reason or "Stage updated", "by": user.get("name"),
+            "at": datetime.now(timezone.utc).isoformat(),
+        }
+    elif any(k in updates for k in ("verified_date", "verified_by")):
+        history_entry = {
+            "field": "verification", "from": rec.get("verified_date"), "to": new_vdate,
+            "reason": change_reason or "Verification recorded", "by": user.get("name"),
             "at": datetime.now(timezone.utc).isoformat(),
         }
 
