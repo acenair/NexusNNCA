@@ -31,6 +31,9 @@ const BillingWorkspace = ({ initialTab }) => {
   const [asDraft, setAsDraft] = useState(false);
   const [form, setForm] = useState({ client_id: '', service_name: 'External Audit', amount: '', date: new Date().toISOString().slice(0, 10), due_date: '', staff: '' });
   const [saving, setSaving] = useState(false);
+  const [invQ, setInvQ] = useState('');
+  const [rcptQ, setRcptQ] = useState('');
+  const [rcptStaff, setRcptStaff] = useState('');
   const [costFor, setCostFor] = useState(null);
   const [costRows, setCostRows] = useState([]);
   const isPartner = user?.role === 'partner';
@@ -183,6 +186,36 @@ const BillingWorkspace = ({ initialTab }) => {
 
   const S = summary;
   const staffNames = [...new Set(invoices.map(i => i.staff).filter(Boolean))];
+
+  // Period-based receivables movement (mockup: Opening + Billed − Credits − Collected = Closing)
+  const monthStart = `${month}-01`;
+  const creditBefore = (i, cut) => (i.credits || []).filter(c => (c.date || i.date) < cut).reduce((n, c) => n + c.amount, 0);
+  const openingOutstanding = invoices.filter(i => !i.cancelled && i.status !== 'Draft' && i.date && i.date < monthStart)
+    .reduce((n, i) => n + i.amount
+      - (i.receipts || []).filter(r => r.date < monthStart).reduce((a, r) => a + r.amount, 0)
+      - creditBefore(i, monthStart), 0);
+  const closingOutstanding = openingOutstanding + (S.billed_month || 0) - (S.credits_month || 0) - (S.collected_month || 0);
+
+  // Filtered collections + invoice search
+  const shownReceipts = monthReceipts
+    .filter(r => !rcptStaff || r.inv.staff === rcptStaff)
+    .filter(r => (r.receipt_id + ' ' + (r.inv.client_name || '') + ' ' + (r.inv.invoice_number || '') + ' ' + (r.inv.staff || '') + ' ' + (r.reference || '')).toLowerCase().includes(rcptQ.toLowerCase()));
+  const shownInv = shown.filter(i => (i.invoice_number + ' ' + i.client_name + ' ' + i.service_name + ' ' + (i.staff || '')).toLowerCase().includes(invQ.toLowerCase()));
+  const exportReceipts = () => {
+    const rows = [['Receipt', 'Receipt date', 'Customer', 'Invoice', 'Invoice month', 'Responsible staff', 'Method', 'Reference', 'Collected AED']];
+    shownReceipts.forEach(r => rows.push([r.receipt_id, r.date, r.inv.client_name, r.inv.invoice_number, (r.inv.date || '').slice(0, 7), r.inv.staff || '', r.method, r.reference || '', r.amount]));
+    const csv = rows.map(r => r.map(v => `"${String(v ?? '')}"`).join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    a.download = `collections-${month}.csv`;
+    a.click();
+  };
+  const previewReminder = () => {
+    const overdue = invoices.filter(i => !i.cancelled && i.status !== 'Draft' && statusOf(i) === 'Overdue');
+    if (!overdue.length) { alert('No overdue invoices — nothing to remind.'); return; }
+    const lines = overdue.slice(0, 8).map(i => `• ${i.invoice_number} · ${i.client_name} · ${aed(pendingOf(i))} (due ${fmt(i.due_date)})`);
+    alert(`Collection reminder PREVIEW — nothing is sent.\n\nDear client,\nPlease note the following outstanding invoices:\n\n${lines.join('\n')}\n\nTotal overdue: ${aed(S.overdue_total)} across ${S.overdue_count} invoice(s).\n\nKindly arrange settlement at your earliest convenience.\n\n— Nair & Nelliyatt Chartered Accountants`);
+  };
   const badge = (s) => s === 'Paid' ? 'af-badge-green' : s === 'Part paid' ? 'af-badge-blue' : s === 'Overdue' ? 'af-badge-red' : s === 'Cancelled' ? 'af-badge-grey' : 'af-badge-amber';
 
   return (
@@ -224,42 +257,59 @@ const BillingWorkspace = ({ initialTab }) => {
 
         {/* Receivables movement */}
         <section className="af-card" style={{ marginTop: 16 }}>
-          <div className="af-cardhead"><div><h2>Receivables movement</h2><div className="af-sub">Entire receivables ledger · {fmt(month + '-01')} – {fmt(new Date().toISOString().slice(0, 10))}</div></div></div>
+          <div className="af-cardhead"><div><h2>Receivables movement</h2><div className="af-sub">{fmt(monthStart)} – {fmt(new Date().toISOString().slice(0, 10))} · Entire receivables ledger, including older invoices</div></div></div>
           <div className="af-movement">
-            <div><span>Collected till date</span><b>{aed(S.collected_total)}</b></div>
-            <div><span>+ Billed till date</span><b>{aed(S.billed_total)}</b></div>
-            <div><span>− Credits issued</span><b>{aed(S.credits_total)}</b></div>
-            <div><span>= Pending till date</span><b>{aed(S.pending_total)}</b></div>
+            <div><span>Opening outstanding</span><b>{aed(openingOutstanding)}</b></div>
+            <div><span>+ Billed in month</span><b>{aed(S.billed_month)}</b></div>
+            <div><span>− Credits issued</span><b>{aed(S.credits_month)}</b></div>
+            <div><span>− Cash collected</span><b>{aed(S.collected_month)}</b></div>
+            <div><span>= Closing outstanding</span><b>{aed(closingOutstanding)}</b></div>
           </div>
         </section>
 
         {/* Collections */}
         <section className="af-card" style={{ marginTop: 16 }}>
-          <div className="af-cardhead"><div><h2>Collections during the month</h2><div className="af-sub">Dated receipts · includes collections against prior-month invoices</div></div></div>
+          <div className="af-cardhead"><div><h2>Collections during the month</h2><div className="af-sub">Dated receipts · includes collections against prior-month invoices</div></div>
+            {isPartner && <button className="af-btn" onClick={exportReceipts}>↓ Export collections</button>}
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+            <input value={rcptQ} onChange={e => setRcptQ(e.target.value)} placeholder="Search receipt, customer or invoice…" aria-label="Search collections"
+              style={{ flex: 1, minWidth: 200, padding: '9px 12px', borderRadius: 'var(--rs)', border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)' }} />
+            <select value={rcptStaff} onChange={e => setRcptStaff(e.target.value)} aria-label="Filter collections by staff">
+              <option value="">All responsible staff</option>
+              {staffNames.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
           <div className="af-tablewrap">
             <table className="af-table">
-              <thead><tr><th>RECEIPT / DATE</th><th>CUSTOMER / INVOICE</th><th>METHOD / REFERENCE</th><th>COLLECTED</th></tr></thead>
+              <thead><tr><th>RECEIPT / DATE</th><th>CUSTOMER / INVOICE</th><th>INVOICE MONTH</th><th>METHOD / REFERENCE</th><th>COLLECTED</th></tr></thead>
               <tbody>
-                {monthReceipts.map(r => (
-                  <tr key={r.receipt_id}>
-                    <td><b>{r.receipt_id}</b><small>{fmt(r.date)}</small></td>
-                    <td><b>{r.inv.client_name}</b><small>{r.inv.invoice_number} · {r.inv.staff}</small></td>
-                    <td>{r.method}<small>{r.reference}</small></td>
-                    <td><b>{aed(r.amount)}</b></td>
-                  </tr>
-                ))}
-                {monthReceipts.length === 0 && <tr><td colSpan="4" className="af-empty">No receipts recorded in this month.</td></tr>}
+                {shownReceipts.map(r => {
+                  const prior = (r.inv.date || '').slice(0, 7) !== month;
+                  return (
+                    <tr key={r.receipt_id}>
+                      <td><b>{r.receipt_id}</b><small>{fmt(r.date)}</small></td>
+                      <td><b>{r.inv.client_name}</b><small>{r.inv.invoice_number} · {r.inv.staff}</small></td>
+                      <td><span className={`af-badge ${prior ? 'af-badge-grey' : 'af-badge-green'}`}>{prior ? 'Prior month' : 'Current month'}</span><small>{fmt(r.inv.date)}</small></td>
+                      <td>{r.method}<small>{r.reference}</small></td>
+                      <td><b>{aed(r.amount)}</b></td>
+                    </tr>
+                  );
+                })}
+                {shownReceipts.length === 0 && <tr><td colSpan="5" className="af-empty">No collections match this period and filter.</td></tr>}
               </tbody>
             </table>
           </div>
-          <p className="af-note">{monthReceipts.length} receipts shown · Displayed collections: {aed(S.collected_month)}</p>
+          <p className="af-note">{shownReceipts.length} receipts shown of {monthReceipts.length} · Staff is the invoice owner · Displayed collections: {aed(shownReceipts.reduce((n, r) => n + r.amount, 0))}</p>
         </section>
 
         {/* Invoice summary */}
         <section className="af-card" style={{ marginTop: 16 }}>
           <div className="af-cardhead">
-            <div><h2>Invoice summary</h2><div className="af-sub">{shown.length} records · pending {aed(TABS_INV[invTab].reduce((n, i) => n + pendingOf(i), 0))} · all amounts AED</div></div>
+            <div><h2>Invoice summary</h2><div className="af-sub">{shownInv.length} records · pending {aed(TABS_INV[invTab].reduce((n, i) => n + pendingOf(i), 0))} · all amounts AED</div></div>
             <div style={{ display: 'flex', gap: 8 }}>
+              <input value={invQ} onChange={e => setInvQ(e.target.value)} placeholder="Search customer or invoice…" aria-label="Search invoices"
+                style={{ padding: '9px 12px', borderRadius: 'var(--rs)', border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', minWidth: 200 }} />
               <select value={staffFilter} onChange={e => setStaffFilter(e.target.value)} aria-label="Filter by staff">
                 <option value="">All responsible staff</option>
                 {staffNames.map(s => <option key={s} value={s}>{s}</option>)}
@@ -275,7 +325,7 @@ const BillingWorkspace = ({ initialTab }) => {
             <table className="af-table">
               <thead><tr><th>INVOICE / CUSTOMER</th><th>SERVICE / STAFF</th><th>DATE / DUE</th><th>BILLED</th><th>COLLECTED</th><th>CREDIT</th><th>PENDING</th><th>STATUS</th><th></th></tr></thead>
               <tbody>
-                {shown.slice(0, 60).map(i => {
+                {shownInv.slice(0, 60).map(i => {
                   const credits = (i.credits || []).reduce((n, c) => n + c.amount, 0);
                   return (
                     <tr key={i.invoice_id}>
@@ -298,7 +348,7 @@ const BillingWorkspace = ({ initialTab }) => {
                     </tr>
                   );
                 })}
-                {shown.length === 0 && <tr><td colSpan="10" className="af-empty">No invoices in this view.</td></tr>}
+                {shownInv.length === 0 && <tr><td colSpan="10" className="af-empty">No invoices in this view.</td></tr>}
               </tbody>
             </table>
           </div>
@@ -341,6 +391,7 @@ const BillingWorkspace = ({ initialTab }) => {
             {invoices.filter(i => !i.cancelled && statusOf(i) === 'Overdue').sort((a, b) => (a.due_date || '').localeCompare(b.due_date || '')).slice(0, 5).map(i => (
               <div className="af-mini" key={i.invoice_id}><span>{i.client_name}</span><b>{aed(pendingOf(i))} <small style={{ color: 'var(--muted)', fontWeight: 400 }}>· {i.invoice_number}</small></b></div>
             ))}
+            {isPartner && <button className="af-btn-primary" style={{ width: '100%', marginTop: 10 }} onClick={previewReminder}>Preview collection reminder</button>}
           </section>
           <section className="af-card">
             <div className="af-cardhead"><div><h2>Ageing</h2><div className="af-sub">Unpaid balances by days past due</div></div></div>
