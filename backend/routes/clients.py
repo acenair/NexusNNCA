@@ -92,6 +92,31 @@ class UpdateClientRequest(BaseModel):
     status: Optional[str] = None
     active_services: Optional[List[str]] = None
     relationship_manager_id: Optional[str] = None
+    # onboarding-master fields
+    contact_name: Optional[str] = None
+    contact_designation: Optional[str] = None
+    contact_phone: Optional[str] = None
+    contact_email: Optional[str] = None
+    secondary_contact: Optional[str] = None
+    corporate_tax_trn: Optional[str] = None
+    lead_source: Optional[str] = None
+    referred_by: Optional[str] = None
+    onboarding_stage: Optional[str] = None
+    emirate: Optional[str] = None
+    free_zone: Optional[str] = None
+    licensing_authority: Optional[str] = None
+    industry: Optional[str] = None
+    license_type: Optional[str] = None
+    license_expiry: Optional[str] = None
+    vat_registered: Optional[bool] = None
+    ct_registered: Optional[bool] = None
+    financial_year_end: Optional[str] = None
+    service_type: Optional[str] = None
+    audit_purpose: Optional[str] = None
+    audit_period: Optional[str] = None
+    previous_auditor: Optional[str] = None
+    fee_amount: Optional[float] = None
+    workdone_by: Optional[str] = None
 
 
 @router.patch("/clients/{client_id}")
