@@ -9,7 +9,7 @@ const API = `${BACKEND_URL}/api`;
 const aed = (n) => 'AED ' + Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 0 });
 const fmt = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
-const TABS = ['This month', 'All issued', 'Pending', 'Credit notes', 'Cancelled'];
+const TABS = ['This month', 'All issued', 'Pending', 'Drafts', 'Credit notes', 'Cancelled'];
 const AGEING_KEYS = [['current', 'Not yet due'], ['d30', '1–30 days past due'], ['d60', '31–60 days'], ['d90', '61–90 days'], ['p90', '90+ days']];
 
 const BillingWorkspace = ({ initialTab }) => {
@@ -28,6 +28,7 @@ const BillingWorkspace = ({ initialTab }) => {
   const [receiptFor, setReceiptFor] = useState(null);
   const [receipt, setReceipt] = useState({ amount: '', method: 'Bank transfer', reference: '', date: new Date().toISOString().slice(0, 10) });
   const [showCreate, setShowCreate] = useState(false);
+  const [asDraft, setAsDraft] = useState(false);
   const [form, setForm] = useState({ client_id: '', service_name: 'External Audit', amount: '', date: new Date().toISOString().slice(0, 10), due_date: '', staff: '' });
   const [saving, setSaving] = useState(false);
   const isPartner = user?.role === 'partner';
@@ -56,6 +57,7 @@ const BillingWorkspace = ({ initialTab }) => {
 
   const statusOf = (i) => {
     if (i.cancelled) return 'Cancelled';
+    if (i.status === 'Draft') return 'Draft';
     const due = i.amount - (i.amount_paid || 0) - (i.credits || []).reduce((n, c) => n + c.amount, 0);
     if (due <= 0.009) return 'Paid';
     if ((i.amount_paid || 0) > 0) return 'Part paid';
@@ -69,9 +71,10 @@ const BillingWorkspace = ({ initialTab }) => {
   const monthReceipts = receipts.filter(r => (r.date || '').slice(0, 7) === month);
 
   const TABS_INV = {
-    'This month': monthInvoices,
-    'All issued': invoices.filter(i => !i.cancelled),
-    'Pending': invoices.filter(i => !i.cancelled && pendingOf(i) > 0.009),
+    'This month': monthInvoices.filter(i => i.status !== 'Draft'),
+    'All issued': invoices.filter(i => !i.cancelled && i.status !== 'Draft'),
+    'Pending': invoices.filter(i => !i.cancelled && i.status !== 'Draft' && pendingOf(i) > 0.009),
+    'Drafts': invoices.filter(i => i.status === 'Draft'),
     'Credit notes': invoices.filter(i => (i.credits || []).length > 0),
     'Cancelled': invoices.filter(i => i.cancelled),
   };
@@ -79,7 +82,27 @@ const BillingWorkspace = ({ initialTab }) => {
     .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
   const readyToInvoice = engagements.filter(e => e.status === 'Active' && e.fee_amount > 0 &&
+    !(e.milestones || []).length &&
     !invoices.some(i => !i.cancelled && i.client_id === e.client_id && i.service_name === (e.service_type || '')));
+
+  // Milestone queue: each engagement's payment-terms milestones; a milestone is 'invoiced'
+  // when an issued invoice exists for that client+service at/above the milestone amount
+  const milestoneQueue = [];
+  engagements.filter(e => (e.milestones || []).length > 0).forEach(e => {
+    const clientIssued = invoices.filter(i => !i.cancelled && i.status !== 'Draft' && i.client_id === e.client_id);
+    const covered = clientIssued.reduce((n, i) => n + (i.amount || 0), 0);
+    let cum = 0;
+    e.milestones.forEach((ms, idx) => {
+      cum += ms.amount || 0;
+      milestoneQueue.push({
+        client_id: e.client_id, client_name: e.client_name, service_type: e.service_type,
+        assigned_to_name: e.assigned_to_name, payment_terms: (e.terms || {}).payment_terms || '',
+        fee: e.fee_amount, label: ms.label, amount: ms.amount,
+        kind: idx === 0 ? 'advance' : 'draft',
+        invoiced: covered >= cum - 0.009,
+      });
+    });
+  });
 
   const saveReceipt = async () => {
     setSaving(true);
@@ -94,8 +117,9 @@ const BillingWorkspace = ({ initialTab }) => {
   const createInvoice = async () => {
     setSaving(true);
     try {
-      await axios.post(`${API}/invoices`, { ...form, amount: parseFloat(form.amount) }, { withCredentials: true });
+      await axios.post(`${API}/invoices`, { ...form, amount: parseFloat(form.amount), status: asDraft ? 'Draft' : 'Unpaid' }, { withCredentials: true });
       setShowCreate(false);
+      setAsDraft(false);
       await load();
     } catch (err) { alert(err.response?.data?.detail || 'Failed'); }
     setSaving(false);
@@ -138,7 +162,7 @@ const BillingWorkspace = ({ initialTab }) => {
       </div>
 
       <div className="af-tabs" role="tablist">
-        {['Invoices & collections', 'Client Billing', 'Ageing'].map(t => (
+        {['Invoices & collections', 'Client Billing', 'Hourly Costing', 'Ageing'].map(t => (
           <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)}>{t}</button>
         ))}
       </div>
@@ -219,13 +243,18 @@ const BillingWorkspace = ({ initialTab }) => {
                       <td>{credits ? aed(credits) : '0'}</td>
                       <td><b>{aed(pendingOf(i))}</b></td>
                       <td><span className={`af-badge ${badge(statusOf(i))}`}>{statusOf(i)}</span></td>
-                      <td>{isPartner && !i.cancelled && pendingOf(i) > 0.009 && (
+                      <td>{isPartner && i.status === 'Draft' && (
+                        <button className="af-link" data-testid={`issue-${i.invoice_id}`} onClick={async () => {
+                          await axios.post(`${API}/invoices/${i.invoice_id}/issue`, {}, { withCredentials: true }); await load();
+                        }}>Issue →</button>
+                      )}</td>
+                      <td>{isPartner && !i.cancelled && i.status !== 'Draft' && pendingOf(i) > 0.009 && (
                         <button className="af-link" onClick={() => { setReceiptFor(i); setReceipt({ ...receipt, amount: pendingOf(i) }); }}>Record receipt</button>
                       )}</td>
                     </tr>
                   );
                 })}
-                {shown.length === 0 && <tr><td colSpan="9" className="af-empty">No invoices in this view.</td></tr>}
+                {shown.length === 0 && <tr><td colSpan="10" className="af-empty">No invoices in this view.</td></tr>}
               </tbody>
             </table>
           </div>
@@ -242,6 +271,13 @@ const BillingWorkspace = ({ initialTab }) => {
           </section>
           <section className="af-card">
             <div className="af-cardhead"><div><h2>Collection priorities</h2><div className="af-sub">Where follow-up matters most</div></div></div>
+            {(() => {
+              const next = invoices.filter(i => !i.cancelled && i.status !== 'Draft' && pendingOf(i) > 0.009)
+                .sort((a, b) => (a.due_date || '9999').localeCompare(b.due_date || '9999'))[0];
+              return next ? (
+                <div className="af-mini"><span>Next payment due</span><b>{fmt(next.due_date)} <small style={{ color: 'var(--muted)', fontWeight: 400 }}>· {next.client_name} · {aed(pendingOf(next))}</small></b></div>
+              ) : null;
+            })()}
             <div className="af-mini"><span><AlertTriangle size={12} style={{ verticalAlign: -2, color: 'var(--red)' }} /> Overdue</span><b className="af-red-text">{aed(S.overdue_total)} · {S.overdue_count} invoices</b></div>
             {invoices.filter(i => !i.cancelled && statusOf(i) === 'Overdue').sort((a, b) => (a.due_date || '').localeCompare(b.due_date || '')).slice(0, 5).map(i => (
               <div className="af-mini" key={i.invoice_id}><span>{i.client_name}</span><b>{aed(pendingOf(i))} <small style={{ color: 'var(--muted)', fontWeight: 400 }}>· {i.invoice_number}</small></b></div>
@@ -256,27 +292,67 @@ const BillingWorkspace = ({ initialTab }) => {
         </div>
       </>)}
 
-      {tab === 'Client Billing' && (
-        <section className="af-card">
-          <div className="af-cardhead"><div><h2>Ready to invoice</h2><div className="af-sub">Active engagements with an agreed fee and no invoice issued yet</div></div></div>
+      {tab === 'Client Billing' && (<>
+        <div className="af-kpis" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+          <section className="af-card af-metric"><label>Advance billing ready</label><b>{aed(milestoneQueue.filter(m => m.kind === 'advance' && !m.invoiced).reduce((n, m) => n + m.amount, 0))}</b><small>{milestoneQueue.filter(m => m.kind === 'advance' && !m.invoiced).length} milestones · engagement signed</small></section>
+          <section className="af-card af-metric"><label>Draft-stage billing ready</label><b>{aed(milestoneQueue.filter(m => m.kind === 'draft' && !m.invoiced).reduce((n, m) => n + m.amount, 0))}</b><small>{milestoneQueue.filter(m => m.kind === 'draft' && !m.invoiced).length} milestones · later milestones</small></section>
+          <section className="af-card af-metric"><label>Prepared invoice drafts</label><b>{aed(summary.drafts_total)}</b><small>{summary.drafts_count} drafts · not issued</small></section>
+        </div>
+        <section className="af-card" style={{ marginTop: 16 }}>
+          <div className="af-cardhead"><div><h2>Billing action queue</h2><div className="af-sub">Milestones from each engagement's payment terms · fee amounts exclude tax</div></div></div>
           <div className="af-tablewrap">
             <table className="af-table">
-              <thead><tr><th>CLIENT</th><th>SERVICE</th><th>ASSIGNED</th><th>AGREED FEE</th><th></th></tr></thead>
+              <thead><tr><th>CLIENT / ENGAGEMENT</th><th>MILESTONE</th><th>AGREED FEE</th><th>MILESTONE AMOUNT</th><th>STATUS</th><th></th></tr></thead>
               <tbody>
-                {readyToInvoice.map(e => (
-                  <tr key={e.engagement_id}>
-                    <td><b>{e.client_name}</b></td>
-                    <td>{e.service_type}</td>
-                    <td>{e.assigned_to_name || '—'}</td>
-                    <td><b>{aed(e.fee_amount)}</b></td>
-                    <td><button className="af-link" onClick={() => { setForm({ ...form, client_id: e.client_id, service_name: e.service_type, amount: String(e.fee_amount), staff: e.assigned_to_name || '' }); setShowCreate(true); }}>Prepare invoice →</button></td>
+                {milestoneQueue.map((m, idx) => (
+                  <tr key={idx}>
+                    <td><b>{m.client_name}</b><small>{m.service_type} · terms: {m.payment_terms}</small></td>
+                    <td>{m.label}</td>
+                    <td>{aed(m.fee)}</td>
+                    <td><b>{aed(m.amount)}</b></td>
+                    <td><span className={`af-badge ${m.invoiced ? 'af-badge-green' : 'af-badge-amber'}`}>{m.invoiced ? 'Invoiced' : 'Ready'}</span></td>
+                    <td>{!m.invoiced && <button className="af-link" onClick={() => { setForm({ ...form, client_id: m.client_id, service_name: m.service_type, amount: String(m.amount), staff: m.assigned_to_name || '' }); setAsDraft(true); setShowCreate(true); }}>Prepare draft →</button>}</td>
                   </tr>
                 ))}
-                {readyToInvoice.length === 0 && <tr><td colSpan="5" className="af-empty">No engagements waiting to be invoiced. 🎉</td></tr>}
+                {milestoneQueue.length === 0 && <tr><td colSpan="6" className="af-empty">No milestone plans yet — add payment terms (e.g. "50% Advance, 50% Draft Report") when creating engagements.</td></tr>}
               </tbody>
             </table>
           </div>
-          <p className="af-note">Billing readiness is based on agreed fees from the client master. Amounts exclude tax.</p>
+          <p className="af-note">No automatic invoice posting — drafts you prepare are separate records until issued. Ready-to-invoice without milestone plans: {readyToInvoice.length} engagement(s).</p>
+        </section>
+      </>)}
+
+      {tab === 'Hourly Costing' && (
+        <section className="af-card">
+          <div className="af-cardhead"><div><h2>Job time &amp; cost comparison</h2><div className="af-sub">Budgeted cost = allocated hrs × cost rate · Actual = logged hrs × rate</div></div></div>
+          <div className="af-tablewrap">
+            <table className="af-table">
+              <thead><tr><th>CLIENT / JOB</th><th>STATUS</th><th>ALLOCATED HRS</th><th>ACTUAL HRS</th><th>VARIANCE</th><th>BUDGET COST</th><th>ACTUAL COST</th><th>OUTCOME</th></tr></thead>
+              <tbody>
+                {engagements.filter(e => (e.allocated_hours || e.actual_hours)).map(e => {
+                  const alloc = e.allocated_hours || 0, act = e.actual_hours || 0;
+                  const rate = e.budget_cost_rate || 150;
+                  const varh = act - alloc;
+                  return (
+                    <tr key={e.engagement_id}>
+                      <td><b>{e.client_name}</b><small>{e.service_type}</small></td>
+                      <td>{e.status}</td>
+                      <td>{alloc || '—'}</td>
+                      <td>{act || '—'}</td>
+                      <td>{alloc ? `${varh >= 0 ? '+' : ''}${Math.round(varh)}h` : '—'}</td>
+                      <td>{alloc ? aed(alloc * rate) : '—'}</td>
+                      <td>{act ? aed(act * rate) : '—'}</td>
+                      <td>{alloc ? (act > alloc ? <span className="af-badge af-badge-red">Over allocated</span> : act === alloc ? <span className="af-badge af-badge-blue">Within allocation</span> : <span className="af-badge af-badge-green">Under allocated</span>) : '—'}</td>
+                    </tr>
+                  );
+                })}
+                {engagements.filter(e => (e.allocated_hours || e.actual_hours)).length === 0 && (
+                  <tr><td colSpan="8" className="af-empty">No hours recorded yet. Open an engagement to set allocated hours and log actual effort — the table activates as the time ledger fills.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <p className="af-note">Honest note: the firm has no per-job time ledger yet. Allocated hours come from the internal-audit planner; actual hours are logged per engagement until Attendance feeds a job-level ledger. Cost rate defaults to AED 150/hr.</p>
         </section>
       )}
 
@@ -349,7 +425,10 @@ const BillingWorkspace = ({ initialTab }) => {
                 {users.filter(u => u.role !== 'client').map(u => <option key={u.user_id} value={u.name}>{u.name}</option>)}
               </select>
             </div>
-            <button className="af-btn-primary" style={{ width: '100%' }} onClick={createInvoice} disabled={saving || !form.client_id || !form.amount} data-testid="create-invoice-submit">{saving ? 'Creating…' : 'Create invoice'}</button>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--muted)', margin: '10px 0' }}>
+              <input type="checkbox" checked={asDraft} onChange={e => setAsDraft(e.target.checked)} /> Save as draft (not issued — excluded from totals)
+            </label>
+            <button className="af-btn-primary" style={{ width: '100%' }} onClick={createInvoice} disabled={saving || !form.client_id || !form.amount} data-testid="create-invoice-submit">{saving ? 'Creating…' : (asDraft ? 'Save draft' : 'Create invoice')}</button>
           </div>
         </div>
       )}

@@ -30,8 +30,8 @@ class InvoiceRequest(BaseModel):
 @router.post("/invoices")
 async def create_invoice(req: InvoiceRequest, authorization: str = Header(None), session_token: str = Cookie(None)):
     user = await require_partner(authorization, session_token)
-    if req.status not in ("Paid", "Unpaid"):
-        raise HTTPException(status_code=400, detail="Status must be 'Paid' or 'Unpaid'")
+    if req.status not in ("Paid", "Unpaid", "Draft"):
+        raise HTTPException(status_code=400, detail="Status must be 'Paid', 'Unpaid' or 'Draft'")
     if req.amount < 0:
         raise HTTPException(status_code=400, detail="Amount must be non-negative")
     invoice_id = f"inv_{uuid.uuid4().hex[:12]}"
@@ -227,6 +227,21 @@ async def cancel_invoice(invoice_id: str, reason: str = "", authorization: str =
     return {"ok": True}
 
 
+@router.post("/invoices/{invoice_id}/issue")
+async def issue_draft(invoice_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
+    """Draft -> issued (Unpaid) with today's date if unset."""
+    user = await require_partner(authorization, session_token)
+    inv = await db.invoices.find_one({"invoice_id": invoice_id})
+    if not inv:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    if inv.get("status") != "Draft":
+        raise HTTPException(status_code=400, detail="Only drafts can be issued")
+    today = datetime.now(timezone.utc).date().isoformat()
+    await db.invoices.update_one({"invoice_id": invoice_id}, {"$set": {
+        "status": "Unpaid", "date": inv.get("date") or today, "issued_at": today}})
+    return {"ok": True}
+
+
 @router.get("/invoices/billing-summary")
 async def billing_summary(month: Optional[str] = None, authorization: str = Header(None), session_token: str = Cookie(None)):
     """Auditflow billing-workspace aggregates for the selected month (YYYY-MM)."""
@@ -235,7 +250,7 @@ async def billing_summary(month: Optional[str] = None, authorization: str = Head
     if not month:
         month = today[:7]
     invoices = await db.invoices.find({}, {"_id": 0}).to_list(2000)
-    live = [i for i in invoices if not i.get("cancelled")]
+    live = [i for i in invoices if not i.get("cancelled") and i.get("status") != "Draft"]
     credits_sum = lambda invs: sum(sum(c.get("amount", 0) for c in i.get("credits", [])) for i in invs)
     collected_in = lambda invs: sum(r.get("amount", 0) for i in invs for r in i.get("receipts", []) if (r.get("date") or "")[:7] == month)
 
@@ -285,6 +300,8 @@ async def billing_summary(month: Optional[str] = None, authorization: str = Head
         "overdue_total": sum(p for _, p in overdue),
         "overdue_count": len(overdue),
         "cancelled_total": sum(i.get("amount", 0) for i in invoices if i.get("cancelled")),
+        "drafts_total": sum(i.get("amount", 0) for i in invoices if i.get("status") == "Draft"),
+        "drafts_count": sum(1 for i in invoices if i.get("status") == "Draft"),
         "pending_by_staff": by_staff,
         "ageing": ageing,
         "status": "ok",

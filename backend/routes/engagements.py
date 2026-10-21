@@ -172,13 +172,19 @@ async def toggle_checklist_item(engagement_id: str, req: ToggleChecklistRequest,
 
 
 @router.patch("/service/engagements/{engagement_id}")
-async def update_service_engagement(engagement_id: str, status: Optional[str] = None, phase: Optional[str] = None, assigned_to: Optional[str] = None, assigned_to_name: Optional[str] = None, authorization: str = Header(None), session_token: str = Cookie(None)):
+async def update_service_engagement(engagement_id: str, status: Optional[str] = None, phase: Optional[str] = None, assigned_to: Optional[str] = None, assigned_to_name: Optional[str] = None, allocated_hours: Optional[float] = None, actual_hours: Optional[float] = None, budget_cost_rate: Optional[float] = None, authorization: str = Header(None), session_token: str = Cookie(None)):
     user = await get_current_user(authorization, session_token)
     update_data = {}
     if status:
         update_data["status"] = status
     if phase:
         update_data["phase"] = phase
+    if allocated_hours is not None:
+        update_data["allocated_hours"] = allocated_hours
+    if actual_hours is not None:
+        update_data["actual_hours"] = actual_hours
+    if budget_cost_rate is not None:
+        update_data["budget_cost_rate"] = budget_cost_rate
     if assigned_to:
         update_data["assigned_to"] = assigned_to
     if assigned_to_name:
