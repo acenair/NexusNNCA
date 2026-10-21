@@ -66,7 +66,7 @@ async def attendance_month(month: str, authorization: str = Header(None), sessio
     user = await get_current_user(authorization, session_token)
     staff = await _staff_list()
     days = _month_days(month)
-    holiday_set = {h["date"] for h in db.holidays.find({}, {"_id": 0, "date": 1})}
+    holiday_set = {h["date"] for h in await db.holidays.find({}, {"_id": 0, "date": 1}).to_list(200)}
     records = {}
     async for r in db.attendance.find({"date": {"$regex": f"^{month}"}}, {"_id": 0}):
         records[(r["user_id"], r["date"])] = r
