@@ -24,6 +24,31 @@ class CreateEngagementRequest(BaseModel):
     phase: Optional[str] = None
     notes: Optional[str] = None
     workflow_id: Optional[str] = None
+    # service-specific + commercial terms (from the firm's tracker workbooks)
+    return_frequency: Optional[str] = None
+    tax_period: Optional[str] = None
+    fta_due_date: Optional[str] = None
+    internal_target_date: Optional[str] = None
+    reminder_buffer_days: Optional[float] = None
+    accounting_frequency: Optional[str] = None
+    work_location: Optional[str] = None
+    target_completion_days: Optional[float] = None
+    audit_scope: Optional[str] = None
+    allocated_days: Optional[float] = None
+    field_visit_start: Optional[str] = None
+    field_visit_end: Optional[str] = None
+    closing_meeting_date: Optional[str] = None
+    report_due_date: Optional[str] = None
+    risk_classification: Optional[str] = None
+    goaml_status: Optional[str] = None
+    reporting_frequency: Optional[str] = None
+    returns_due_date: Optional[str] = None
+    sar_status: Optional[str] = None
+    audit_purpose: Optional[str] = None
+    audit_period: Optional[str] = None
+    payment_terms: Optional[str] = None
+    quoted_fee: Optional[float] = None
+    engagement_date: Optional[str] = None
 
 
 @router.post("/service/engagements")
@@ -49,6 +74,7 @@ async def create_service_engagement(req: CreateEngagementRequest, authorization:
         checklist = [{"group": g["group"], "items": [{"label": item, "done": False} for item in g["items"]]} for g in template]
 
     eng_id = f"eng_{uuid.uuid4().hex[:12]}"
+    from services.templates import milestones_from_terms
     eng_doc = {
         "engagement_id": eng_id,
         "service_type": req.service_type,
@@ -62,6 +88,23 @@ async def create_service_engagement(req: CreateEngagementRequest, authorization:
         "checklist": checklist,
         "workflow_id": req.workflow_id,
         "workflow_name": workflow_name,
+        "terms": {k: v for k, v in {
+            "return_frequency": req.return_frequency, "tax_period": req.tax_period,
+            "fta_due_date": req.fta_due_date, "internal_target_date": req.internal_target_date,
+            "reminder_buffer_days": req.reminder_buffer_days,
+            "accounting_frequency": req.accounting_frequency, "work_location": req.work_location,
+            "target_completion_days": req.target_completion_days,
+            "audit_scope": req.audit_scope, "allocated_days": req.allocated_days,
+            "field_visit_start": req.field_visit_start, "field_visit_end": req.field_visit_end,
+            "closing_meeting_date": req.closing_meeting_date, "report_due_date": req.report_due_date,
+            "risk_classification": req.risk_classification, "goaml_status": req.goaml_status,
+            "reporting_frequency": req.reporting_frequency, "returns_due_date": req.returns_due_date,
+            "sar_status": req.sar_status, "audit_purpose": req.audit_purpose,
+            "audit_period": req.audit_period, "payment_terms": req.payment_terms,
+            "engagement_date": req.engagement_date,
+        }.items() if v is not None},
+        "fee_amount": req.quoted_fee,
+        "milestones": milestones_from_terms(req.payment_terms or "", req.quoted_fee or 0),
         "created_by": user["user_id"],
         "created_by_name": user.get("name"),
         "created_at": datetime.now(timezone.utc).isoformat(),
@@ -70,6 +113,14 @@ async def create_service_engagement(req: CreateEngagementRequest, authorization:
     eng_doc.pop("_id", None)
     await log_activity("Engagement created", f"{req.service_type.replace('_',' ').title()} for {client['name']}", user["user_id"], req.client_id, client["name"])
     return eng_doc
+
+
+@router.get("/service/engagement-terms")
+async def engagement_terms(authorization: str = Header(None), session_token: str = Cookie(None)):
+    """Service-specific term definitions for the create dialog + detail view."""
+    await get_current_user(authorization, session_token)
+    from services.templates import SERVICE_TERMS, GENERAL_TERMS
+    return {"service_terms": SERVICE_TERMS, "general_terms": GENERAL_TERMS}
 
 
 @router.get("/service/engagements")

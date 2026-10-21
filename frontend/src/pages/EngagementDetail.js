@@ -166,6 +166,22 @@ const EngagementDetail = () => {
         </div>
       )}
 
+      {eng.terms && Object.keys(eng.terms).length > 0 && (
+              <div className="nn-card" style={{ margin: '0 20px 14px', padding: '16px 20px' }} data-testid="engagement-terms">
+                <div style={{ fontSize: 11, fontWeight: 650, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--gold)', marginBottom: 10 }}>Service &amp; commercial terms</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10 }}>
+                  {Object.entries(eng.terms).map(([k, v]) => (
+                    <div key={k}><span style={{ fontSize: 10, color: 'var(--muted)', display: 'block' }}>{k.replace(/_/g, ' ')}</span><b style={{ fontSize: 13 }}>{String(v)}</b></div>
+                  ))}
+                  {eng.fee_amount ? <div><span style={{ fontSize: 10, color: 'var(--muted)', display: 'block' }}>quoted fee</span><b style={{ fontSize: 13 }}>AED {Number(eng.fee_amount).toLocaleString()}</b></div> : null}
+                </div>
+                {(eng.milestones || []).length > 0 && (
+                  <div style={{ marginTop: 10, fontSize: 12, color: 'var(--muted)' }}>
+                    Billing milestones: {eng.milestones.map(ms => `${ms.label} ${ms.percent}% (AED ${Number(ms.amount).toLocaleString()})`).join(' - ')}
+                  </div>
+                )}
+              </div>
+            )}
       {activeTab === 'audit' && AUDIT_SERVICE_TYPES.includes(eng.service_type) ? (
         <AuditWorkbook engagementId={engagementId} clientId={eng.client_id} clientName={eng.client_name} />
       ) : (

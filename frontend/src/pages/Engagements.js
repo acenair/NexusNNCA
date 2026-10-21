@@ -54,6 +54,7 @@ const Engagements = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [termDefs, setTermDefs] = useState({ service_terms: {}, general_terms: [] });
   const [form, setForm] = useState({ client_id: '', service_type: preset || 'statutory_audit', assigned_to: '', notes: '' });
 
   const loadEngs = useCallback(async () => {
@@ -69,6 +70,7 @@ const Engagements = () => {
   useEffect(() => {
     axios.get(`${API}/clients`, { withCredentials: true }).then(r => setClients(Array.isArray(r.data) ? r.data : [])).catch(() => {});
     axios.get(`${API}/auth/users-list`, { withCredentials: true }).then(r => setUsers(Array.isArray(r.data) ? r.data : [])).catch(() => {});
+    axios.get(`${API}/service/engagement-terms`, { withCredentials: true }).then(r => setTermDefs(r.data)).catch(() => {});
   }, []);
 
   const serviceCounts = {};
@@ -101,7 +103,7 @@ const Engagements = () => {
     if (!form.client_id) return;
     setSubmitting(true);
     try {
-      await axios.post(`${API}/service/engagements`, form, { withCredentials: true });
+      await axios.post(`${API}/service/engagements`, { ...form, quoted_fee: form.quoted_fee ? parseFloat(form.quoted_fee) : null }, { withCredentials: true });
       setShowCreate(false);
       setForm({ client_id: '', service_type: preset || 'statutory_audit', assigned_to: '', notes: '' });
       await loadEngs();
@@ -213,6 +215,33 @@ const Engagements = () => {
                 {users.filter(u => u.role !== 'client').map(u => <option key={u.user_id} value={u.user_id}>{u.name}</option>)}
               </select>
             </div>
+
+            {termDefs.general_terms.map(t => (
+              <div className="af-formrow" key={t.key}>
+                <label>{t.label}</label>
+                <input type={t.type === 'number' ? 'number' : t.type === 'date' ? 'date' : 'text'}
+                  placeholder={t.placeholder || ''} value={form[t.key] || ''}
+                  onChange={e => setForm({ ...form, [t.key]: e.target.value })} />
+              </div>
+            ))}
+
+            {(termDefs.service_terms[form.service_type] || []).length > 0 && (
+              <>
+                <div className="af-sub" style={{ margin: '8px 0 2px', fontWeight: 650 }}>Service terms — {form.service_type.replace(/_/g, ' ')}</div>
+                {termDefs.service_terms[form.service_type].map(t => (
+                  <div className="af-formrow" key={t.key}>
+                    <label>{t.label}</label>
+                    {t.type === 'select'
+                      ? <select value={form[t.key] || ''} onChange={e => setForm({ ...form, [t.key]: e.target.value })}>
+                          <option value="">—</option>
+                          {t.options.map(o => <option key={o}>{o}</option>)}
+                        </select>
+                      : <input type={t.type} value={form[t.key] || ''} onChange={e => setForm({ ...form, [t.key]: e.target.value })} />}
+                  </div>
+                ))}
+              </>
+            )}
+
             <div className="af-formrow"><label>Notes</label>
               <input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Optional context" />
             </div>
