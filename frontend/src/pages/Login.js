@@ -14,12 +14,42 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [googleEnabled, setGoogleEnabled] = useState(false);
+  const [googleError, setGoogleError] = useState('');
+
   useEffect(() => {
     // Check for pending approval redirect
     if (location.state?.pendingApproval) {
       setPendingMsg(location.state.message || 'Your account is pending admin approval.');
     }
-  }, [location.state]);
+    // Google OAuth: show button if configured; complete login when redirected back
+    axios.get(`${API}/auth/google/status`).then(r => setGoogleEnabled(!!r.data?.enabled)).catch(() => {});
+    const qp = new URLSearchParams(window.location.search);
+    const gerr = qp.get('google_error');
+    if (gerr) {
+      const msgs = {
+        not_registered: 'This Google account is not registered. Ask a partner to add you, or use your password.',
+        domain_not_allowed: 'Only firm Google accounts (nairnelliyatt.com / nn-ca.com) can sign in here.',
+        pending_approval: 'Your account is pending partner approval.',
+        disabled: 'Google sign-in is not configured yet.',
+      };
+      setGoogleError(msgs[gerr] || 'Google sign-in failed. Please use your password.');
+      window.history.replaceState({}, '', '/login');
+    }
+    const tok = qp.get('token');
+    if (tok) {
+      // OAuth callback: validate the session server-side, then store it like a password login
+      axios.post(`${API}/auth/google/exchange?token=${encodeURIComponent(tok)}`, {}, { withCredentials: true })
+        .then(res => {
+          document.cookie = `session_token=${tok}; path=/; max-age=604800; secure; samesite=lax`;
+          localStorage.setItem('session_token', tok);
+          if (res.data.must_change_password) { navigate('/change-password'); }
+          else { navigate('/app/dashboard'); }
+        })
+        .catch(() => setGoogleError('Google sign-in session expired. Please try again.'));
+      window.history.replaceState({}, '', '/login');
+    }
+  }, [location.state, navigate]);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -82,7 +112,22 @@ const Login = () => {
           <h2 style={{ fontFamily: 'DM Serif Display', fontSize: 18, color: '#17354c', marginBottom: 4 }}>Welcome Back</h2>
           <p style={{ fontSize: 12, color: '#7891a4', marginBottom: 20 }}>Sign in to your practice management dashboard</p>
 
-          {pendingMsg && (
+          {googleError && (
+        <div style={{ background: 'var(--red-bg)', color: 'var(--red)', padding: '10px 14px', borderRadius: 8, fontSize: 12, marginBottom: 12 }} data-testid="google-error">
+          {googleError}
+        </div>
+      )}
+      {googleEnabled && (
+        <button
+          onClick={() => { window.location.href = `${API}/auth/google/start`; }}
+          style={{ width: '100%', padding: '11px 0', borderRadius: 8, background: 'var(--white)', color: 'var(--text)', fontSize: 13, fontWeight: 600, border: '1px solid var(--nn-border)', cursor: 'pointer', marginBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: 'DM Sans' }}
+          data-testid="google-signin-btn"
+        >
+          <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+          Continue with Google (firm account)
+        </button>
+      )}
+      {pendingMsg && (
             <div style={{ padding: '10px 14px', borderRadius: 8, background: 'rgba(245,158,11,0.08)', color: '#92400e', fontSize: 12, marginBottom: 14, fontWeight: 500, border: '1px solid rgba(245,158,11,0.2)' }} data-testid="pending-msg">
               {pendingMsg}
             </div>
