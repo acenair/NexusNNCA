@@ -40,6 +40,23 @@ class Client(BaseModel):
     status: str = "Active"
     created_at: str
     active_services: List[str] = []
+    # Auditflow data-foundation fields (from the firm's client master xlsx)
+    trade_name: Optional[str] = None
+    emirate: Optional[str] = None
+    free_zone: Optional[str] = None
+    licensing_authority: Optional[str] = None
+    industry: Optional[str] = None
+    license_type: Optional[str] = None
+    license_expiry: Optional[str] = None
+    vat_registered: Optional[bool] = None
+    ct_registered: Optional[bool] = None
+    financial_year_end: Optional[str] = None
+    service_type: Optional[str] = None
+    audit_purpose: Optional[str] = None
+    audit_period: Optional[str] = None
+    previous_auditor: Optional[str] = None
+    fee_amount: Optional[float] = None
+    workdone_by: Optional[str] = None
 
 
 class Task(BaseModel):
