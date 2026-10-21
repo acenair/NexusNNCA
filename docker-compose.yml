@@ -16,11 +16,11 @@ services:
     depends_on:
       mongo:
         condition: service_healthy
-    env_file: .env          # MONGO_URL, DB_NAME, JWT_SECRET, GEMINI_API_KEY, ...
+    env_file: .env
     environment:
       MONGO_URL: mongodb://mongo:27017
     volumes:
-      - uploads:/app/uploads   # local-disk document storage
+      - uploads:/app/uploads
     expose:
       - "8001"
 
@@ -29,9 +29,24 @@ services:
     restart: unless-stopped
     depends_on:
       - backend
+    expose:
+      - "80"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
     ports:
-      - "80:80"               # put Caddy/HTTPS in front or terminate TLS here
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
 
 volumes:
   mongo_data:
   uploads:
+  caddy_data:
+  caddy_config:

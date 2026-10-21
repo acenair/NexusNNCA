@@ -1,0 +1,5 @@
+# Replace with your real domain(s). Caddy auto-provisions Let's Encrypt HTTPS.
+# For testing with just the IP first: swap the first line for :80 (HTTP only).
+nairnelliyatt.com, www.nairnelliyatt.com {
+    reverse_proxy frontend:80
+}
