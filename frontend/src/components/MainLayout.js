@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { CalendarDays, LayoutDashboard, Clock, Calendar, Star, Bell, FileText, Activity, Receipt, Building2, Briefcase, TrendingUp, Shield, LogOut, Users, Mail, Plus, X, CheckCircle, ChevronDown, ChevronRight, Menu, PanelLeftClose, MessageSquare, Database, FolderOpen, Settings, ClipboardList, UserPlus, AlertTriangle } from 'lucide-react';
+import { FileBarChart, CalendarDays, LayoutDashboard, Clock, Calendar, Star, Bell, FileText, Activity, Receipt, Building2, Briefcase, TrendingUp, Shield, LogOut, Users, Mail, Plus, X, CheckCircle, ChevronDown, ChevronRight, Menu, PanelLeftClose, MessageSquare, Database, FolderOpen, Settings, ClipboardList, UserPlus, AlertTriangle } from 'lucide-react';
 import axios from 'axios';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -218,38 +218,39 @@ const MainLayout = ({ user }) => {
     finally { setSubmitting(false); }
   };
 
-  const sectionIcons = { Overview: LayoutDashboard, Audit: FileText, VAT: Receipt, Corporate: Building2, Advisory: TrendingUp, AML: Shield };
+  const sectionIcons = { Workspace: LayoutDashboard, 'Firm Management': Building2 };
 
   const menuSections = [
     {
-      title: 'Overview',
+      title: 'Workspace',
       items: [
-        { path: '/app/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { path: '/app/tasks', label: 'Tasks', icon: ClipboardList },
-        { path: '/app/deadlines', label: 'Deadline Tracker', icon: Clock, badge: '4' },
-        { path: '/app/calendar', label: 'Calendar', icon: Calendar },
-        { path: '/app/appreciation', label: 'Staff Appreciation', icon: Star, partnerOnly: true },
-        { path: '/app/reminders', label: 'Reminders', icon: Bell, badge: '5' },
-        { path: '/app/ai-assistant', label: 'AI Assistant', icon: MessageSquare },
-        { path: '/app/client-master', label: 'Client Master', icon: Database, managingPartnerOnly: true },
-        { path: '/app/onboarding', label: 'Client Onboarding', icon: UserPlus, partnerOnly: true },
-        { path: '/app/invoices', label: 'Invoices & Collections', icon: Receipt, partnerOnly: true },
-        { path: '/app/proposals', label: 'Proposals', icon: FileText, partnerOnly: true },
-        { path: '/app/leads', label: 'Lead Management', icon: TrendingUp, partnerOnly: true },
+        { path: '/app/dashboard', label: 'Overview', icon: LayoutDashboard },
+        { path: '/app/client-master', label: 'Customers', icon: Database, managingPartnerOnly: true },
+        { path: '/app/engagements', label: 'Engagements', icon: Briefcase },
+        { path: '/app/tasks', label: 'Task management', icon: ClipboardList },
+        { path: '/app/deadlines', label: 'Deadline Tracker', icon: Clock },
+        { path: '/app/calendar', label: 'Service calendar', icon: Calendar },
         { path: '/app/documents', label: 'Documents', icon: FolderOpen },
-        { path: '/app/compliance', label: 'Compliance Tracker', icon: Shield },
-        { path: '/app/attendance', label: 'Attendance & Leave', icon: CalendarDays },
-        { path: '/app/settings', label: 'Settings', icon: Settings, partnerOnly: true },
       ]
     },
     {
-      title: 'Engagements',
+      title: 'Firm Management',
       items: [
-        { path: '/app/engagements', label: 'Engagements', icon: Briefcase },
+        { path: '/app/invoices', label: 'Invoices & collections', icon: Receipt, partnerOnly: true },
+        { path: '/app/compliance', label: 'Compliance tracker', icon: Shield },
+        { path: '/app/attendance', label: 'Attendance & leave', icon: CalendarDays },
+        { path: '/app/leads', label: 'Lead management', icon: TrendingUp, partnerOnly: true },
+        { path: '/app/proposals', label: 'Proposals', icon: FileText, partnerOnly: true },
+        { path: '/app/performance', label: 'Work & performance', icon: Activity, partnerOnly: true },
+        { path: '/app/reports', label: 'Reports', icon: FileBarChart, partnerOnly: true },
+        { path: '/app/reminders', label: 'Reminders', icon: Bell },
+        { path: '/app/ai-assistant', label: 'AI Assistant', icon: MessageSquare },
+        { path: '/app/appreciation', label: 'Staff Appreciation', icon: Star, partnerOnly: true },
+        { path: '/app/onboarding', label: 'Client Onboarding', icon: UserPlus, partnerOnly: true },
+        { path: '/app/settings', label: 'Settings', icon: Settings, partnerOnly: true },
       ]
     },
-
-  ];
+];
 
   const getPageTitle = () => {
     for (const s of menuSections) for (const i of s.items) if (i.path === location.pathname) return i.label;
