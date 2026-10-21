@@ -33,6 +33,8 @@ import AIAssistant from '@/pages/AIAssistant';
 import ClientMaster from '@/pages/ClientMaster';
 import Engagements from '@/pages/Engagements';
 import BillingWorkspace from '@/pages/BillingWorkspace';
+import AttendanceLeave from '@/pages/AttendanceLeave';
+import Leads from '@/pages/Leads';
 import Compliance from '@/pages/Compliance';
 import Customer360 from '@/pages/Customer360';
 import Documents from '@/pages/Documents';
@@ -135,6 +137,8 @@ function AppRouter() {
         <Route path="clients/:clientId/timeline" element={<ClientTimeline />} />
         <Route path="engagements" element={<Engagements />} />
         <Route path="compliance" element={<Compliance />} />
+        <Route path="attendance" element={<AttendanceLeave />} />
+        <Route path="leads" element={<Leads />} />
         <Route path="engagements/:engagementId" element={<EngagementDetail />} />
         <Route path="onboarding" element={<ClientOnboarding />} />
         <Route path="clients/:clientId/onboarding" element={<OnboardingTracker />} />

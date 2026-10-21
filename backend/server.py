@@ -33,6 +33,8 @@ from routes import (
     drive,
     compliance,
     google_auth,
+    attendance,
+    leads,
 )
 
 app = FastAPI()
@@ -66,6 +68,8 @@ for router in (
     drive.router,
     compliance.router,
     google_auth.router,
+    attendance.router,
+    leads.router,
 ):
     app.include_router(router)
 

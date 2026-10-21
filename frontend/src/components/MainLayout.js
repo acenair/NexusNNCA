@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Clock, Calendar, Star, Bell, FileText, Activity, Receipt, Building2, Briefcase, TrendingUp, Shield, LogOut, Users, Mail, Plus, X, CheckCircle, ChevronDown, ChevronRight, Menu, PanelLeftClose, MessageSquare, Database, FolderOpen, Settings, ClipboardList, UserPlus, AlertTriangle } from 'lucide-react';
+import { CalendarDays, LayoutDashboard, Clock, Calendar, Star, Bell, FileText, Activity, Receipt, Building2, Briefcase, TrendingUp, Shield, LogOut, Users, Mail, Plus, X, CheckCircle, ChevronDown, ChevronRight, Menu, PanelLeftClose, MessageSquare, Database, FolderOpen, Settings, ClipboardList, UserPlus, AlertTriangle } from 'lucide-react';
 import axios from 'axios';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -235,8 +235,10 @@ const MainLayout = ({ user }) => {
         { path: '/app/onboarding', label: 'Client Onboarding', icon: UserPlus, partnerOnly: true },
         { path: '/app/invoices', label: 'Invoices & Collections', icon: Receipt, partnerOnly: true },
         { path: '/app/proposals', label: 'Proposals', icon: FileText, partnerOnly: true },
+        { path: '/app/leads', label: 'Lead Management', icon: TrendingUp, partnerOnly: true },
         { path: '/app/documents', label: 'Documents', icon: FolderOpen },
         { path: '/app/compliance', label: 'Compliance Tracker', icon: Shield },
+        { path: '/app/attendance', label: 'Attendance & Leave', icon: CalendarDays },
         { path: '/app/settings', label: 'Settings', icon: Settings, partnerOnly: true },
       ]
     },
