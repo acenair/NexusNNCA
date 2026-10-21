@@ -193,7 +193,7 @@ const CalendarPage = () => {
                     padding: '4px 4px', 
                     borderRight: (idx + 1) % 7 === 0 ? 'none' : '1px solid var(--nn-border)', 
                     borderBottom: '1px solid var(--nn-border)', 
-                    background: day && isToday(day) ? 'rgba(201,168,76,0.06)' : isSelected ? 'rgba(201,168,76,0.03)' : 'transparent',
+                    background: day && isToday(day) ? 'rgba(21,153,223,0.06)' : isSelected ? 'rgba(21,153,223,0.03)' : 'transparent',
                     cursor: day && dayEvents.length > 0 ? 'pointer' : 'default',
                   }}
                 >

@@ -132,7 +132,7 @@ const AuditWorkbook = ({ engagementId, clientId, clientName }) => {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>{audit.period}</h3>
-              <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 10px', borderRadius: 10, background: audit.status === 'completed' ? 'var(--green-bg)' : 'rgba(201,168,76,0.12)', color: audit.status === 'completed' ? 'var(--green)' : 'var(--gold4)' }} data-testid="audit-status-pill">{audit.status === 'completed' ? 'Completed' : 'In Progress'}</span>
+              <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 10px', borderRadius: 10, background: audit.status === 'completed' ? 'var(--green-bg)' : 'rgba(21,153,223,0.12)', color: audit.status === 'completed' ? 'var(--green)' : 'var(--gold4)' }} data-testid="audit-status-pill">{audit.status === 'completed' ? 'Completed' : 'In Progress'}</span>
               {audit.rolled_forward_from && <span style={{ fontSize: 10, color: 'var(--muted)' }}>Rolled forward</span>}
             </div>
             <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 3 }}>{questions_done}/{questions_total} questions answered</div>
@@ -170,7 +170,7 @@ const AuditWorkbook = ({ engagementId, clientId, clientName }) => {
                 style={{
                   width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6,
                   padding: '10px 14px', border: 'none', borderBottom: '1px solid var(--nn-border)',
-                  background: active ? 'rgba(201,168,76,0.08)' : 'transparent', cursor: 'pointer', textAlign: 'left',
+                  background: active ? 'rgba(21,153,223,0.08)' : 'transparent', cursor: 'pointer', textAlign: 'left',
                 }}
                 data-testid={`audit-section-tab-${sec.section_id}`}
               >

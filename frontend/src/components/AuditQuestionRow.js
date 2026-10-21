@@ -92,7 +92,7 @@ export const AuditQuestionRow = ({ auditId, question, response, onSaved }) => {
 
       {question.type === 'file_upload' && (
         <div style={{ paddingLeft: 26, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 6, border: '1px solid var(--gold)', background: 'rgba(201,168,76,0.06)', color: 'var(--gold4)', fontSize: 11, fontWeight: 600, cursor: 'pointer' }} data-testid={`audit-upload-btn-${question.code}`}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 6, border: '1px solid var(--gold)', background: 'rgba(21,153,223,0.06)', color: 'var(--gold4)', fontSize: 11, fontWeight: 600, cursor: 'pointer' }} data-testid={`audit-upload-btn-${question.code}`}>
             <Upload size={12} /> {uploading ? 'Uploading...' : response?.attachment_name ? 'Replace' : 'Attach File'}
             <input type="file" onChange={handleUpload} style={{ display: 'none' }} disabled={uploading} />
           </label>

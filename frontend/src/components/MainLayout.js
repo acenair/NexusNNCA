@@ -323,7 +323,7 @@ const MainLayout = ({ user }) => {
           <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: 1.2, color: 'var(--light)', marginBottom: 6 }}>Active Partners</div>
           <div style={{ display: 'flex', gap: 6 }}>
             {['Arjun S.', 'Sooraj N.'].map(n => (
-              <div key={n} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(201,168,76,0.08)', borderRadius: 6, padding: '4px 8px' }}>
+              <div key={n} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(21,153,223,0.08)', borderRadius: 6, padding: '4px 8px' }}>
                 <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />
                 <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)' }}>{n}</span>
               </div>
@@ -367,7 +367,7 @@ const MainLayout = ({ user }) => {
                 onClick={() => toggleSection(section.title)}
                 style={{
                   width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '7px 10px', borderRadius: 7, border: 'none', background: hasActiveItem ? 'rgba(201,168,76,0.06)' : 'transparent',
+                  padding: '7px 10px', borderRadius: 7, border: 'none', background: hasActiveItem ? 'rgba(21,153,223,0.06)' : 'transparent',
                   cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'DM Sans, sans-serif',
                 }}
                 data-testid={`section-toggle-${section.title.toLowerCase()}`}
@@ -377,7 +377,7 @@ const MainLayout = ({ user }) => {
                   <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8, color: hasActiveItem ? 'var(--gold)' : 'var(--light)' }}>{section.title}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  {totalBadge > 0 && <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 8, background: 'rgba(201,168,76,0.12)', color: 'var(--gold)' }}>{totalBadge}</span>}
+                  {totalBadge > 0 && <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 8, background: 'rgba(21,153,223,0.12)', color: 'var(--gold)' }}>{totalBadge}</span>}
                   {isExpanded ? <ChevronDown size={13} color="rgba(255,255,255,0.35)" /> : <ChevronRight size={13} color="rgba(255,255,255,0.35)" />}
                 </div>
               </button>
@@ -410,7 +410,7 @@ const MainLayout = ({ user }) => {
                           <span>{item.label}</span>
                         </div>
                         {item.badge && (
-                          <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 10, background: isActive ? 'var(--navy)' : 'rgba(201,168,76,0.15)', color: isActive ? 'var(--gold)' : 'var(--gold)' }}>{item.badge}</span>
+                          <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 10, background: isActive ? 'var(--navy)' : 'rgba(21,153,223,0.15)', color: isActive ? 'var(--gold)' : 'var(--gold)' }}>{item.badge}</span>
                         )}
                       </Link>
                     );
@@ -456,7 +456,7 @@ const MainLayout = ({ user }) => {
           width: sidebarWidth, minWidth: sidebarWidth, background: 'var(--navy)',
           borderRight: '1px solid rgba(255,255,255,0.055)',
           height: '100vh', overflowY: 'auto',
-          backgroundImage: 'linear-gradient(180deg,rgba(201,168,76,0.03) 0%,transparent 40%)',
+          backgroundImage: 'linear-gradient(180deg,rgba(21,153,223,0.03) 0%,transparent 40%)',
           transition: 'width 0.2s ease, min-width 0.2s ease',
           display: 'flex', flexDirection: 'column',
         }}
@@ -524,7 +524,7 @@ const MainLayout = ({ user }) => {
                   </div>
                   {notifPermission !== 'granted' && (
                     <div style={{ padding: '10px 16px', borderTop: '1px solid var(--nn-border)', background: 'var(--off)' }}>
-                      <button onClick={requestNotifPermission} style={{ width: '100%', padding: '8px', borderRadius: 'var(--rs)', border: '1px solid var(--gold)', background: 'rgba(201,168,76,0.06)', color: 'var(--gold4)', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans' }} data-testid="enable-push-btn">Enable Push Notifications</button>
+                      <button onClick={requestNotifPermission} style={{ width: '100%', padding: '8px', borderRadius: 'var(--rs)', border: '1px solid var(--gold)', background: 'rgba(21,153,223,0.06)', color: 'var(--gold4)', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans' }} data-testid="enable-push-btn">Enable Push Notifications</button>
                     </div>
                   )}
                   {notifPermission === 'granted' && (

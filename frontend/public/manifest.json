@@ -4,8 +4,8 @@
   "description": "Practice management system for Nair & Nelliyatt Chartered Accountants",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0B1526",
-  "theme_color": "#0B1526",
+  "background_color": "#17354c",
+  "theme_color": "#17354c",
   "orientation": "any",
   "icons": [
     {

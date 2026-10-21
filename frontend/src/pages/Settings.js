@@ -486,7 +486,7 @@ const Settings = () => {
             <button key={t.key} onClick={() => setTab(t.key)} style={{
               display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', borderRadius: 'var(--rs)',
               border: active ? '1px solid var(--gold)' : '1px solid var(--nn-border)',
-              background: active ? 'rgba(201,168,76,0.08)' : 'var(--white)',
+              background: active ? 'rgba(21,153,223,0.08)' : 'var(--white)',
               color: active ? 'var(--gold4)' : 'var(--muted)',
               fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans', transition: 'all 0.15s',
               flexShrink: 0, whiteSpace: 'nowrap',
@@ -560,7 +560,7 @@ const Settings = () => {
                     <tr key={u.user_id} style={{ borderBottom: '1px solid var(--nn-border)', background: isPending ? 'rgba(245,158,11,0.03)' : 'transparent' }} data-testid={`user-row-${u.user_id}`}>
                       <td style={{ padding: '10px 16px', fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>{u.name}</td>
                       <td style={{ padding: '10px 16px', fontSize: 11, color: 'var(--muted)', fontFamily: 'monospace' }}>{u.email}</td>
-                      <td style={{ padding: '10px 16px' }}><span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 10, background: u.role === 'partner' ? 'rgba(201,168,76,0.1)' : 'var(--blue-bg)', color: u.role === 'partner' ? 'var(--gold4)' : 'var(--blue, #3b82f6)' }}>{u.role}</span></td>
+                      <td style={{ padding: '10px 16px' }}><span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 10, background: u.role === 'partner' ? 'rgba(21,153,223,0.1)' : 'var(--blue-bg)', color: u.role === 'partner' ? 'var(--gold4)' : 'var(--blue, #3b82f6)' }}>{u.role}</span></td>
                       <td style={{ padding: '10px 16px' }}>
                         {isPending ? (
                           <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 10, background: 'rgba(245,158,11,0.1)', color: '#d97706' }}>Pending Approval</span>
@@ -585,7 +585,7 @@ const Settings = () => {
                           </div>
                         ) : (
                           <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
-                            <button onClick={() => openUserEdit(u)} className="tbtn" style={{ padding: '5px 10px', fontSize: 11, background: 'rgba(201,168,76,0.08)', color: 'var(--gold4)', border: 'none' }} data-testid={`edit-user-${u.user_id}`}><Edit2 size={11} /> Edit</button>
+                            <button onClick={() => openUserEdit(u)} className="tbtn" style={{ padding: '5px 10px', fontSize: 11, background: 'rgba(21,153,223,0.08)', color: 'var(--gold4)', border: 'none' }} data-testid={`edit-user-${u.user_id}`}><Edit2 size={11} /> Edit</button>
                             <button onClick={() => handleAdminResetPassword(u)} disabled={resetActionLoading === u.user_id} className="tbtn" style={{ padding: '5px 10px', fontSize: 11, background: 'rgba(220,38,38,0.08)', color: '#dc2626', border: 'none' }} data-testid={`reset-password-${u.user_id}`}>
                               {resetActionLoading === u.user_id ? '...' : 'Reset Password'}
                             </button>
@@ -1007,12 +1007,12 @@ const Settings = () => {
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <h4 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>{wf.name}</h4>
-                        {wf.is_preset && <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 6, background: 'rgba(201,168,76,0.08)', color: 'var(--gold4)', fontWeight: 600 }}>Preset</span>}
+                        {wf.is_preset && <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 6, background: 'rgba(21,153,223,0.08)', color: 'var(--gold4)', fontWeight: 600 }}>Preset</span>}
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{SERVICE_TYPES.find(t => t.key === wf.service_type)?.label || wf.service_type} &middot; {wf.steps?.length || 0} steps</div>
                     </div>
                     <div style={{ display: 'flex', gap: 6 }}>
-                      <button onClick={() => openWfEditor(wf)} className="tbtn" style={{ padding: '5px 10px', fontSize: 11, background: 'rgba(201,168,76,0.08)', color: 'var(--gold4)', border: 'none' }} data-testid={`edit-wf-${wf.workflow_id}`}><Edit2 size={11} /> Edit</button>
+                      <button onClick={() => openWfEditor(wf)} className="tbtn" style={{ padding: '5px 10px', fontSize: 11, background: 'rgba(21,153,223,0.08)', color: 'var(--gold4)', border: 'none' }} data-testid={`edit-wf-${wf.workflow_id}`}><Edit2 size={11} /> Edit</button>
                       {!wf.is_preset && <button onClick={() => deleteWorkflow(wf.workflow_id)} className="tbtn" style={{ padding: '5px 10px', fontSize: 11, background: 'var(--red-bg)', color: 'var(--red)', border: 'none' }} data-testid={`delete-wf-${wf.workflow_id}`}><Trash2 size={11} /></button>}
                     </div>
                   </div>
@@ -1065,7 +1065,7 @@ const Settings = () => {
                   onDrop={() => handleDrop(idx)}
                   style={{
                     display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 12px',
-                    background: dragIdx === idx ? 'rgba(201,168,76,0.06)' : 'var(--off)',
+                    background: dragIdx === idx ? 'rgba(21,153,223,0.06)' : 'var(--off)',
                     border: '1px solid var(--nn-border)', borderRadius: 'var(--rs)',
                     cursor: 'grab', transition: 'background 0.15s',
                   }}

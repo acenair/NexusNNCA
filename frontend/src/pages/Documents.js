@@ -187,7 +187,7 @@ const Documents = () => {
                             <span style={{ fontSize: 12, color: 'var(--text)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 220 }}>{d.original_filename}</span>
                           </div>
                         </td>
-                        <td style={{ padding: '8px 14px' }}><span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, background: 'rgba(201,168,76,0.08)', color: 'var(--gold4)', fontWeight: 500 }}>{d.document_type || 'Other'}</span></td>
+                        <td style={{ padding: '8px 14px' }}><span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, background: 'rgba(21,153,223,0.08)', color: 'var(--gold4)', fontWeight: 500 }}>{d.document_type || 'Other'}</span></td>
                         <td style={{ padding: '8px 14px', fontSize: 11, color: 'var(--muted)' }}>{formatSize(d.size)}</td>
                         <td style={{ padding: '8px 14px', fontSize: 11, color: 'var(--text)' }}>{d.uploaded_by_name || '—'}</td>
                         <td style={{ padding: '8px 14px', fontSize: 11, color: 'var(--muted)' }}>{d.created_at ? new Date(d.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</td>
@@ -248,7 +248,7 @@ const Documents = () => {
                         border: `2px dashed ${dragOver ? 'var(--gold)' : 'var(--nn-border)'}`,
                         borderRadius: 'var(--rs)', padding: '24px 16px', textAlign: 'center',
                         cursor: 'pointer', transition: 'all 0.15s',
-                        background: dragOver ? 'rgba(201,168,76,0.04)' : 'var(--off)',
+                        background: dragOver ? 'rgba(21,153,223,0.04)' : 'var(--off)',
                       }}
                       data-testid="upload-dropzone"
                     >

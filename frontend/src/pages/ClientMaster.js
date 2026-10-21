@@ -162,7 +162,7 @@ const ClientMaster = () => {
               ) : filtered.length === 0 ? (
                 <tr><td colSpan={9} style={{ ...tdStyle, textAlign: 'center', padding: 40, color: 'var(--muted)' }}>No clients match your filters</td></tr>
               ) : filtered.map(c => (
-                <tr key={c.client_id} style={{ transition: 'background 0.12s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(201,168,76,0.03)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'} data-testid={`client-row-${c.client_id}`}>
+                <tr key={c.client_id} style={{ transition: 'background 0.12s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(21,153,223,0.03)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'} data-testid={`client-row-${c.client_id}`}>
                   <td style={{ ...tdStyle, fontWeight: 600 }}>{c.name}</td>
                   <td style={tdStyle}>{c.entity_type}</td>
                   <td style={tdStyle}><span style={{ fontSize: 11, color: 'var(--muted)' }}>{c.jurisdiction || '—'}</span></td>
@@ -175,7 +175,7 @@ const ClientMaster = () => {
                   <td style={tdStyle}>
                     <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
                       {(c.active_services || []).map(svc => (
-                        <span key={svc} style={{ fontSize: 9, padding: '2px 6px', borderRadius: 4, background: 'rgba(201,168,76,0.08)', color: 'var(--gold4)', fontWeight: 500, whiteSpace: 'nowrap' }}>{svc}</span>
+                        <span key={svc} style={{ fontSize: 9, padding: '2px 6px', borderRadius: 4, background: 'rgba(21,153,223,0.08)', color: 'var(--gold4)', fontWeight: 500, whiteSpace: 'nowrap' }}>{svc}</span>
                       ))}
                       {(!c.active_services || c.active_services.length === 0) && <span style={{ fontSize: 11, color: 'var(--light)' }}>—</span>}
                     </div>
@@ -190,7 +190,7 @@ const ClientMaster = () => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                           <ClipboardCheck size={11} color={auditSummary[c.client_id].status === 'completed' ? 'var(--green)' : 'var(--gold4)'} />
                           <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text)' }}>{auditSummary[c.client_id].period}</span>
-                          <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 7px', borderRadius: 8, background: auditSummary[c.client_id].status === 'completed' ? 'var(--green-bg)' : 'rgba(201,168,76,0.12)', color: auditSummary[c.client_id].status === 'completed' ? 'var(--green)' : 'var(--gold4)' }}>
+                          <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 7px', borderRadius: 8, background: auditSummary[c.client_id].status === 'completed' ? 'var(--green-bg)' : 'rgba(21,153,223,0.12)', color: auditSummary[c.client_id].status === 'completed' ? 'var(--green)' : 'var(--gold4)' }}>
                             {auditSummary[c.client_id].status === 'completed' ? 'Completed' : 'In Progress'}
                           </span>
                         </div>
@@ -217,7 +217,7 @@ const ClientMaster = () => {
                     <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
                       <button onClick={() => navigate(`/app/clients/${c.client_id}/timeline`)} className="tbtn" style={{ padding: '5px 8px', fontSize: 10, background: 'var(--blue-bg)', color: 'var(--blue, #3b82f6)', border: 'none' }} data-testid={`timeline-${c.client_id}`}><Clock size={10} /> Timeline</button>
                       <button onClick={() => navigate(c.latest_onboarding_id ? `/app/clients/${c.client_id}/onboarding/${c.latest_onboarding_id}` : `/app/clients/${c.client_id}/onboarding`)} className="tbtn" style={{ padding: '5px 8px', fontSize: 10, background: 'var(--green-bg)', color: 'var(--green)', border: 'none' }} data-testid={`onboarding-tracker-${c.client_id}`}><ClipboardCheck size={10} /> Pipeline</button>
-                      <button onClick={() => openEdit(c)} className="tbtn" style={{ padding: '5px 8px', fontSize: 10, background: 'rgba(201,168,76,0.08)', color: 'var(--gold4)', border: 'none' }} data-testid={`edit-client-${c.client_id}`}><Edit2 size={10} /> Edit</button>
+                      <button onClick={() => openEdit(c)} className="tbtn" style={{ padding: '5px 8px', fontSize: 10, background: 'rgba(21,153,223,0.08)', color: 'var(--gold4)', border: 'none' }} data-testid={`edit-client-${c.client_id}`}><Edit2 size={10} /> Edit</button>
                     </div>
                   </td>
                 </tr>
@@ -284,7 +284,7 @@ const ClientMaster = () => {
                             style={{
                               padding: '4px 10px', borderRadius: 14, fontSize: 10, fontWeight: 500,
                               border: active ? '1px solid var(--gold)' : '1px solid var(--nn-border)',
-                              background: active ? 'rgba(201,168,76,0.1)' : 'var(--white)',
+                              background: active ? 'rgba(21,153,223,0.1)' : 'var(--white)',
                               color: active ? 'var(--gold4)' : 'var(--muted)',
                               cursor: 'pointer', fontFamily: 'DM Sans', transition: 'all 0.12s',
                             }}

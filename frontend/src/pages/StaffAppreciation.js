@@ -71,7 +71,7 @@ const StaffAppreciation = () => {
     <div className="fade-in" data-testid="staff-appreciation-view">
       {/* Hero Banner */}
       <div style={{
-        background: 'linear-gradient(135deg, var(--navy) 0%, var(--navy3) 60%, #1e3a6a 100%)',
+        background: 'linear-gradient(135deg, var(--navy) 0%, var(--navy3) 60%, #25507a 100%)',
         borderRadius: 'var(--rl)', padding: '24px 28px', marginBottom: 20,
         position: 'relative', overflow: 'hidden', boxShadow: 'var(--shadow)',
       }}>
