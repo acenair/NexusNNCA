@@ -92,7 +92,7 @@ const EngagementDetail = () => {
             <button onClick={() => navigate(-1)} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 6, padding: '6px 10px', cursor: 'pointer', color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11 }} data-testid="back-btn"><ArrowLeft size={14} /> Back</button>
             <button onClick={exportPdf} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 6, padding: '6px 10px', cursor: 'pointer', color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11 }} data-testid="export-pdf-btn"><Download size={14} /> Export PDF</button>
             {!editing && (
-              <button onClick={() => setEditing(true)} style={{ background: 'rgba(21,153,223,0.15)', border: 'none', borderRadius: 6, padding: '6px 10px', cursor: 'pointer', color: 'var(--gold)', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11 }} data-testid="edit-eng-btn"><Edit2 size={12} /> Edit</button>
+              <button onClick={() => setEditing(true)} style={{ background: 'rgba(14,109,180,0.15)', border: 'none', borderRadius: 6, padding: '6px 10px', cursor: 'pointer', color: 'var(--gold)', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11 }} data-testid="edit-eng-btn"><Edit2 size={12} /> Edit</button>
             )}
             {user?.role === 'partner' && eng.status !== 'Completed' && (
               <button onClick={bypassApprove} style={{ background: 'rgba(34,197,94,0.15)', border: 'none', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', color: 'var(--green)', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600 }} data-testid="bypass-approve-btn"><CheckCircle size={12} /> Quick Approve</button>
@@ -117,7 +117,7 @@ const EngagementDetail = () => {
                 <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--gold)', fontFamily: 'DM Serif Display' }}>{done}/{total}</div>
                 <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Steps</div>
               </div>
-              <span style={{ fontSize: 10, fontWeight: 600, padding: '4px 12px', borderRadius: 10, background: eng.status === 'Completed' ? 'var(--green-bg)' : 'rgba(21,153,223,0.12)', color: eng.status === 'Completed' ? 'var(--green)' : 'var(--gold)' }}>{eng.status}</span>
+              <span style={{ fontSize: 10, fontWeight: 600, padding: '4px 12px', borderRadius: 10, background: eng.status === 'Completed' ? 'var(--green-bg)' : 'rgba(14,109,180,0.12)', color: eng.status === 'Completed' ? 'var(--green)' : 'var(--gold)' }}>{eng.status}</span>
             </div>
           </div>
 
@@ -161,8 +161,8 @@ const EngagementDetail = () => {
       {/* Tab Switcher */}
       {AUDIT_SERVICE_TYPES.includes(eng.service_type) && (
         <div style={{ display: 'flex', gap: 6, marginBottom: 14 }} data-testid="engagement-tabs">
-          <button onClick={() => setActiveTab('checklist')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 'var(--rs)', border: activeTab === 'checklist' ? '1px solid var(--gold)' : '1px solid var(--nn-border)', background: activeTab === 'checklist' ? 'rgba(21,153,223,0.08)' : 'var(--white)', color: activeTab === 'checklist' ? 'var(--gold4)' : 'var(--muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }} data-testid="tab-checklist"><ListChecks size={14} /> Checklist</button>
-          <button onClick={() => setActiveTab('audit')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 'var(--rs)', border: activeTab === 'audit' ? '1px solid var(--gold)' : '1px solid var(--nn-border)', background: activeTab === 'audit' ? 'rgba(21,153,223,0.08)' : 'var(--white)', color: activeTab === 'audit' ? 'var(--gold4)' : 'var(--muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }} data-testid="tab-audit-workbook"><BookOpen size={14} /> Audit Workbook</button>
+          <button onClick={() => setActiveTab('checklist')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 'var(--rs)', border: activeTab === 'checklist' ? '1px solid var(--gold)' : '1px solid var(--nn-border)', background: activeTab === 'checklist' ? 'rgba(14,109,180,0.08)' : 'var(--white)', color: activeTab === 'checklist' ? 'var(--gold4)' : 'var(--muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }} data-testid="tab-checklist"><ListChecks size={14} /> Checklist</button>
+          <button onClick={() => setActiveTab('audit')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 'var(--rs)', border: activeTab === 'audit' ? '1px solid var(--gold)' : '1px solid var(--nn-border)', background: activeTab === 'audit' ? 'rgba(14,109,180,0.08)' : 'var(--white)', color: activeTab === 'audit' ? 'var(--gold4)' : 'var(--muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }} data-testid="tab-audit-workbook"><BookOpen size={14} /> Audit Workbook</button>
         </div>
       )}
 
@@ -193,7 +193,7 @@ const EngagementDetail = () => {
               </div>
               {/* Items */}
               {group.items.map((item, iIdx) => (
-                <div key={iIdx} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 20px 10px 52px', borderBottom: '1px solid var(--nn-border)', transition: 'background 0.1s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(21,153,223,0.02)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                <div key={iIdx} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 20px 10px 52px', borderBottom: '1px solid var(--nn-border)', transition: 'background 0.1s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(14,109,180,0.02)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                   <div
                     onClick={() => toggleChecklist(gIdx, iIdx, item.done)}
                     style={{ width: 20, height: 20, borderRadius: 5, flexShrink: 0, border: `2px solid ${item.done ? 'var(--green)' : 'var(--nn-border)'}`, background: item.done ? 'var(--green-bg)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.15s' }}

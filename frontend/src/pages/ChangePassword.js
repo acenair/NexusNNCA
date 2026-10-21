@@ -44,7 +44,7 @@ const ChangePassword = ({ user }) => {
       background: 'linear-gradient(135deg, #17354c 0%, #16374f 50%, #1c4260 100%)',
       position: 'relative', overflow: 'hidden',
     }} data-testid="change-password-page">
-      <div style={{ position: 'absolute', width: 600, height: 600, borderRadius: '50%', background: 'rgba(21,153,223,0.03)', top: '-200px', right: '-200px' }} />
+      <div style={{ position: 'absolute', width: 600, height: 600, borderRadius: '50%', background: 'rgba(14,109,180,0.03)', top: '-200px', right: '-200px' }} />
 
       <div style={{ width: 420, maxWidth: '90vw', position: 'relative', zIndex: 1 }}>
         <div style={{ textAlign: 'center', marginBottom: 28 }}>

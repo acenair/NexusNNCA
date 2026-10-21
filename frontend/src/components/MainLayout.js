@@ -367,7 +367,7 @@ const MainLayout = ({ user }) => {
                 onClick={() => toggleSection(section.title)}
                 style={{
                   width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '7px 10px', borderRadius: 7, border: 'none', background: hasActiveItem ? 'rgba(21,153,223,0.06)' : 'transparent',
+                  padding: '7px 10px', borderRadius: 7, border: 'none', background: hasActiveItem ? 'rgba(14,109,180,0.06)' : 'transparent',
                   cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'DM Sans, sans-serif',
                 }}
                 data-testid={`section-toggle-${section.title.toLowerCase()}`}
@@ -524,7 +524,7 @@ const MainLayout = ({ user }) => {
                   </div>
                   {notifPermission !== 'granted' && (
                     <div style={{ padding: '10px 16px', borderTop: '1px solid var(--nn-border)', background: 'var(--off)' }}>
-                      <button onClick={requestNotifPermission} style={{ width: '100%', padding: '8px', borderRadius: 'var(--rs)', border: '1px solid var(--gold)', background: 'rgba(21,153,223,0.06)', color: 'var(--gold4)', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans' }} data-testid="enable-push-btn">Enable Push Notifications</button>
+                      <button onClick={requestNotifPermission} style={{ width: '100%', padding: '8px', borderRadius: 'var(--rs)', border: '1px solid var(--gold)', background: 'rgba(14,109,180,0.06)', color: 'var(--gold4)', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans' }} data-testid="enable-push-btn">Enable Push Notifications</button>
                     </div>
                   )}
                   {notifPermission === 'granted' && (

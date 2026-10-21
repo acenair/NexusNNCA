@@ -135,7 +135,7 @@ const ServicePage = ({ title, subtitle, serviceType, stats }) => {
                     <div style={{ fontSize: 12, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{eng.client_name}</div>
                     <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)' }}>{eng.assigned_to_name || 'Unassigned'}</div>
                   </div>
-                  <span style={{ fontSize: 9, padding: '2px 8px', borderRadius: 8, background: eng.status === 'Completed' ? 'var(--green-bg)' : 'rgba(21,153,223,0.12)', color: eng.status === 'Completed' ? 'var(--green)' : 'var(--gold)', fontWeight: 600 }}>{eng.status}</span>
+                  <span style={{ fontSize: 9, padding: '2px 8px', borderRadius: 8, background: eng.status === 'Completed' ? 'var(--green-bg)' : 'rgba(14,109,180,0.12)', color: eng.status === 'Completed' ? 'var(--green)' : 'var(--gold)', fontWeight: 600 }}>{eng.status}</span>
                 </div>
 
                 {/* Progress Bar */}

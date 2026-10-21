@@ -115,7 +115,7 @@ const AIAssistant = () => {
                 style={{
                   padding: '10px 14px', borderBottom: '1px solid var(--nn-border)',
                   cursor: 'pointer', transition: 'background 0.12s',
-                  background: s.session_id === sessionId ? 'rgba(21,153,223,0.06)' : 'transparent',
+                  background: s.session_id === sessionId ? 'rgba(14,109,180,0.06)' : 'transparent',
                   display: 'flex', alignItems: 'flex-start', gap: 8,
                 }}
                 data-testid={`session-${s.session_id}`}

@@ -11,7 +11,7 @@ const typeConfig = {
   followup: { icon: Calendar, color: 'var(--blue, #3b82f6)', bg: 'var(--blue-bg)', label: 'Follow-up' },
   deadline: { icon: Calendar, color: 'var(--red)', bg: 'var(--red-bg)', label: 'Deadline' },
   document: { icon: FileText, color: 'var(--purple, #8b5cf6)', bg: 'var(--purple-bg)', label: 'Document' },
-  engagement: { icon: Briefcase, color: 'var(--gold4)', bg: 'rgba(21,153,223,0.08)', label: 'Engagement' },
+  engagement: { icon: Briefcase, color: 'var(--gold4)', bg: 'rgba(14,109,180,0.08)', label: 'Engagement' },
   activity: { icon: Activity, color: 'var(--muted)', bg: 'var(--off)', label: 'Activity' },
   event: { icon: Calendar, color: 'var(--green)', bg: 'var(--green-bg)', label: 'Event' },
 };
@@ -86,7 +86,7 @@ const ClientTimeline = () => {
           </div>
           {/* Type filter chips */}
           <div style={{ display: 'flex', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
-            <button onClick={() => setFilterType('')} style={{ padding: '4px 12px', borderRadius: 12, fontSize: 10, fontWeight: 600, border: !filterType ? '1px solid var(--gold)' : '1px solid rgba(255,255,255,0.12)', background: !filterType ? 'rgba(21,153,223,0.12)' : 'rgba(255,255,255,0.04)', color: !filterType ? 'var(--gold)' : 'rgba(255,255,255,0.5)', cursor: 'pointer', fontFamily: 'DM Sans' }} data-testid="filter-all">All ({timeline.length})</button>
+            <button onClick={() => setFilterType('')} style={{ padding: '4px 12px', borderRadius: 12, fontSize: 10, fontWeight: 600, border: !filterType ? '1px solid var(--gold)' : '1px solid rgba(255,255,255,0.12)', background: !filterType ? 'rgba(14,109,180,0.12)' : 'rgba(255,255,255,0.04)', color: !filterType ? 'var(--gold)' : 'rgba(255,255,255,0.5)', cursor: 'pointer', fontFamily: 'DM Sans' }} data-testid="filter-all">All ({timeline.length})</button>
             {Object.entries(typeCounts).map(([type, count]) => {
               const cfg = typeConfig[type] || typeConfig.activity;
               return (

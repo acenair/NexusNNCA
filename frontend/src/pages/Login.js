@@ -57,8 +57,8 @@ const Login = () => {
       position: 'relative', overflow: 'hidden',
     }} data-testid="login-page">
       {/* Decorative circle */}
-      <div style={{ position: 'absolute', width: 600, height: 600, borderRadius: '50%', background: 'rgba(21,153,223,0.03)', top: '-200px', right: '-200px' }} />
-      <div style={{ position: 'absolute', width: 400, height: 400, borderRadius: '50%', background: 'rgba(21,153,223,0.02)', bottom: '-150px', left: '-100px' }} />
+      <div style={{ position: 'absolute', width: 600, height: 600, borderRadius: '50%', background: 'rgba(14,109,180,0.03)', top: '-200px', right: '-200px' }} />
+      <div style={{ position: 'absolute', width: 400, height: 400, borderRadius: '50%', background: 'rgba(14,109,180,0.02)', bottom: '-150px', left: '-100px' }} />
 
       <div style={{ width: 420, maxWidth: '90vw', position: 'relative', zIndex: 1 }}>
         {/* Logo */}
