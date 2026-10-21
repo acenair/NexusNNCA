@@ -151,7 +151,7 @@ const VATRegistrationWorkflow = () => {
         { ...formData, status: 'Submitted to FTA', current_step: 6 },
         { withCredentials: true }
       );
-      navigate('/vat/registrations');
+      navigate('/app/vat/registrations');
     } catch (error) {
       console.error('Failed to submit:', error);
     } finally {

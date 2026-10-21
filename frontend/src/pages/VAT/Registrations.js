@@ -73,7 +73,7 @@ const VATRegistrations = () => {
         </div>
         <div className="flex gap-3">
           <Button 
-            onClick={() => navigate('/vat/registration-workflow')} 
+            onClick={() => navigate('/app/vat/registration-workflow')} 
             className="bg-green-600 hover:bg-green-700"
             data-testid="start-workflow-btn"
           >

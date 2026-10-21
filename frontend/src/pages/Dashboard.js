@@ -52,12 +52,12 @@ const Dashboard = () => {
   ];
 
   const serviceModules = [
-    { name: 'VAT Filing', desc: '5 returns due 28 Apr 2026', badge: '5 pending', badgeType: 'pill-red', path: '/vat/filing' },
-    { name: 'AML Compliance', desc: '3 monthly reports due 10 Apr', badge: '3 flagged', badgeType: 'pill-amber', path: '/aml/review' },
-    { name: 'Statutory Audit', desc: '10 engagements in progress', badge: '10 active', badgeType: 'pill-blue', path: '/audit/statutory' },
-    { name: 'Internal Audit', desc: '3 reports due 10 Apr 2026', badge: '3 reports', badgeType: 'pill-green', path: '/audit/internal' },
-    { name: 'Corporate Tax', desc: 'UAE CT returns and compliance', badge: '5 active', badgeType: 'pill-purple', path: '/corporate/tax' },
-    { name: 'Due Diligence', desc: 'Financial & legal pre-transaction', badge: '2 reports', badgeType: 'pill-teal', path: '/advisory/due-diligence' },
+    { name: 'VAT Filing', desc: '5 returns due 28 Apr 2026', badge: '5 pending', badgeType: 'pill-red', path: '/app/vat/filing' },
+    { name: 'AML Compliance', desc: '3 monthly reports due 10 Apr', badge: '3 flagged', badgeType: 'pill-amber', path: '/app/aml/review' },
+    { name: 'Statutory Audit', desc: '10 engagements in progress', badge: '10 active', badgeType: 'pill-blue', path: '/app/audit/statutory' },
+    { name: 'Internal Audit', desc: '3 reports due 10 Apr 2026', badge: '3 reports', badgeType: 'pill-green', path: '/app/audit/internal' },
+    { name: 'Corporate Tax', desc: 'UAE CT returns and compliance', badge: '5 active', badgeType: 'pill-purple', path: '/app/corporate/tax' },
+    { name: 'Due Diligence', desc: 'Financial & legal pre-transaction', badge: '2 reports', badgeType: 'pill-teal', path: '/app/advisory/due-diligence' },
   ];
 
   const calendarEvents = [
