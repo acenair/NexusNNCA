@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation, useOutletContext } from 'react-router-dom';
-import { ArrowLeft, Download, CheckCircle, Clock, GitBranch, User, Calendar, Edit2, Save, X, ListChecks, BookOpen } from 'lucide-react';
+import { ArrowLeft, Download, CheckCircle, Clock, GitBranch, User, Calendar, Edit2, Save, X, ListChecks, BookOpen, Plus, Trash2} from 'lucide-react';
 import axios from 'axios';
 import AuditWorkbook from './AuditWorkbook';
 
@@ -46,6 +46,19 @@ const EngagementDetail = () => {
       });
     } catch (e) { console.error(e); }
   };
+  const addItem = async (group, label) => {
+    if (!label.trim()) return;
+    try {
+      const res = await axios.post(`${API}/service/engagements/${eng.engagement_id}/checklist/items`, { group, label }, { withCredentials: true });
+      setEng({ ...eng, checklist: res.data.checklist });
+    } catch (e) { alert(e.response?.data?.detail || 'Failed to add item'); }
+  };
+  const removeItem = async (gIdx, iIdx) => {
+    try {
+      const res = await axios.delete(`${API}/service/engagements/${eng.engagement_id}/checklist/items/${gIdx}/${iIdx}`, { withCredentials: true });
+      setEng({ ...eng, checklist: res.data.checklist });
+    } catch (e) { alert(e.response?.data?.detail || 'Failed to remove item'); }
+  };
 
   const saveEdit = async () => {
     setSaving(true);
@@ -74,6 +87,7 @@ const EngagementDetail = () => {
     }
   };
 
+  const isPartner = user?.role === 'partner';
   if (loading) return <div className="fade-in nn-card" style={{ padding: 40, textAlign: 'center', color: 'var(--muted)' }}>Loading...</div>;
   if (!eng) return <div className="fade-in nn-card" style={{ padding: 40, textAlign: 'center', color: 'var(--muted)' }}>Engagement not found</div>;
 
@@ -219,8 +233,23 @@ const EngagementDetail = () => {
                   </div>
                   <span style={{ fontSize: 13, color: item.done ? 'var(--muted)' : 'var(--text)', textDecoration: item.done ? 'line-through' : 'none', flex: 1 }}>{item.label}</span>
                   {item.done && <span style={{ fontSize: 9, color: 'var(--green)', fontWeight: 600 }}>Done</span>}
+                  {isPartner && (
+                    <button onClick={() => removeItem(gIdx, iIdx)} title="Remove item"
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 2 }}
+                      data-testid={`remove-item-${gIdx}-${iIdx}`}
+                      onMouseEnter={e => e.currentTarget.style.color = 'var(--red)'}
+                      onMouseLeave={e => e.currentTarget.style.color = 'var(--muted)'}><Trash2 size={13} /></button>
+                  )}
                 </div>
               ))}
+              {isPartner && (
+                <div style={{ display: 'flex', gap: 8, padding: '10px 20px 10px 52px', alignItems: 'center' }} data-testid={`add-item-row-${gIdx}`}>
+                  <Plus size={13} color="var(--muted)" />
+                  <input placeholder="Add a task to this phase, press Enter…" data-testid={`add-item-input-${gIdx}`}
+                    onKeyDown={e => { if (e.key === 'Enter') { addItem(group.group, e.currentTarget.value); e.currentTarget.value = ''; } }}
+                    style={{ flex: 1, fontSize: 12, padding: '6px 10px', borderRadius: 6, border: '1px dashed var(--nn-border)', background: 'var(--white)', color: 'var(--text)', outline: 'none' }} />
+                </div>
+              )}
             </div>
           );
         })}

@@ -214,6 +214,52 @@ async def update_service_engagement(engagement_id: str, status: Optional[str] = 
     return {"message": "Engagement updated"}
 
 
+class ChecklistItemRequest(BaseModel):
+    group: str
+    label: str
+
+
+@router.post("/service/engagements/{engagement_id}/checklist/items")
+async def add_checklist_item(engagement_id: str, req: ChecklistItemRequest, authorization: str = Header(None), session_token: str = Cookie(None)):
+    """Add a checklist item to a group (creates the group if new). Partner only."""
+    user = await get_current_user(authorization, session_token)
+    if user.get("role") != "partner":
+        raise HTTPException(status_code=403, detail="Only partners can edit checklists")
+    if not req.label.strip():
+        raise HTTPException(status_code=422, detail="Item label is required")
+    eng = await db.service_engagements.find_one({"engagement_id": engagement_id}, {"_id": 0, "checklist": 1})
+    if not eng:
+        raise HTTPException(status_code=404, detail="Engagement not found")
+    checklist = eng.get("checklist", [])
+    for g in checklist:
+        if g["group"] == req.group:
+            g["items"].append({"label": req.label.strip(), "done": False})
+            break
+    else:
+        checklist.append({"group": req.group.strip(), "items": [{"label": req.label.strip(), "done": False}]})
+    await db.service_engagements.update_one({"engagement_id": engagement_id}, {"$set": {"checklist": checklist}})
+    return {"ok": True, "checklist": checklist}
+
+
+@router.delete("/service/engagements/{engagement_id}/checklist/items/{group_index}/{item_index}")
+async def remove_checklist_item(engagement_id: str, group_index: int, item_index: int, authorization: str = Header(None), session_token: str = Cookie(None)):
+    """Remove a checklist item; drops the group when it becomes empty. Partner only."""
+    user = await get_current_user(authorization, session_token)
+    if user.get("role") != "partner":
+        raise HTTPException(status_code=403, detail="Only partners can edit checklists")
+    eng = await db.service_engagements.find_one({"engagement_id": engagement_id}, {"_id": 0, "checklist": 1})
+    if not eng:
+        raise HTTPException(status_code=404, detail="Engagement not found")
+    checklist = eng.get("checklist", [])
+    if not (0 <= group_index < len(checklist)) or not (0 <= item_index < len(checklist[group_index]["items"])):
+        raise HTTPException(status_code=404, detail="Checklist item not found")
+    checklist[group_index]["items"].pop(item_index)
+    if not checklist[group_index]["items"]:
+        checklist.pop(group_index)
+    await db.service_engagements.update_one({"engagement_id": engagement_id}, {"$set": {"checklist": checklist}})
+    return {"ok": True, "checklist": checklist}
+
+
 @router.post("/service/engagements/{engagement_id}/approve")
 async def bypass_approve_engagement(engagement_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
     """Partner can directly approve all remaining checklist items and mark engagement as Completed."""

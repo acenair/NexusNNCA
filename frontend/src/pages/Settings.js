@@ -15,15 +15,31 @@ const SECTIONS = [
 ];
 
 const SERVICE_TYPES = [
-  { key: 'statutory_audit', label: 'Statutory Audit' },
+  { key: 'statutory_audit', label: 'External Audit' },
   { key: 'internal_audit', label: 'Internal Audit' },
-  { key: 'vat_filing', label: 'VAT Filing' },
+  { key: 'stock_audit', label: 'Stock Audit' },
+  { key: 'fraud_audit', label: 'Fraud Audit' },
   { key: 'vat_registration', label: 'VAT Registration' },
+  { key: 'vat_filing', label: 'VAT Filing' },
+  { key: 'vat_amendments', label: 'VAT Amendments' },
+  { key: 'corporate_registration', label: 'Corporate Registration' },
   { key: 'corporate_tax', label: 'Corporate Tax' },
-  { key: 'aml_review', label: 'AML Review' },
   { key: 'company_formation', label: 'Company Formation' },
+  { key: 'company_liquidation', label: 'Company Liquidation' },
+  { key: 'business_valuation', label: 'Business Valuation' },
   { key: 'due_diligence', label: 'Due Diligence' },
-  { key: 'valuation', label: 'Valuation' },
+  { key: 'aml_review', label: 'AML Review' },
+  { key: 'aml_filing', label: 'AML Filing' },
+  { key: 'aml_reports', label: 'AML Reports' },
+  { key: 'goaml', label: 'goAML' },
+  { key: 'accounting', label: 'Accounting' },
+  { key: 'bank_account_opening', label: 'Bank Account Opening' },
+  { key: 'transfer_pricing', label: 'Transfer Pricing' },
+  { key: 'attestation_services', label: 'Attestation Services' },
+  { key: 'mofa_services', label: 'MOFA Services' },
+  { key: 'dmcc_services', label: 'DMCC Services' },
+  { key: 'certification_services', label: 'Certification Services' },
+  { key: 'chamber_attestation', label: 'Chamber Attestation' },
 ];
 
 const STORAGE_PROVIDERS = [
