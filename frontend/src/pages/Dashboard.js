@@ -22,7 +22,7 @@ const SERVICE_LABELS = {
   accounting: 'Accounting', due_diligence: 'Due Diligence', valuation: 'Valuation',
 };
 
-const aed = (n) => 'AED ' + Number(n || 0).toLocaleString('en-US');
+const aed = (n) => 'AED ' + Math.round(Number(n || 0)).toLocaleString('en-US');
 
 const Dashboard = () => {
   const { user } = useOutletContext();
