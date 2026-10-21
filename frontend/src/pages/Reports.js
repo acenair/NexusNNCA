@@ -6,6 +6,8 @@ import { Download, FileSpreadsheet, Shield, Receipt, Users, ClipboardList, Trend
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
+const aed = (n) => 'AED ' + Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 0 });
+
 const Reports = () => {
   const { user } = useOutletContext();
   const navigate = useNavigate();
