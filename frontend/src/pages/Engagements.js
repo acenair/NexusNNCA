@@ -80,8 +80,7 @@ const Engagements = () => {
   const serviceCounts = {};
   engs.forEach(e => { serviceCounts[e.service_type] = (serviceCounts[e.service_type] || 0) + 1; });
   const chips = Object.entries(SERVICE_LABELS)
-    .filter(([k]) => serviceCounts[k])
-    .sort((a, b) => serviceCounts[b[0]] - serviceCounts[a[0]]);
+    .sort((a, b) => (serviceCounts[b[0]] || 0) - (serviceCounts[a[0]] || 0));
 
   const phases = [...new Set(engs.map(e => e.phase).filter(Boolean))];
 
@@ -143,8 +142,9 @@ const Engagements = () => {
         <button role="tab" aria-selected={!preset} onClick={clearPreset}>All ({engs.length})</button>
         {chips.map(([k, label]) => (
           <button key={k} role="tab" aria-selected={preset === k}
+            style={serviceCounts[k] ? undefined : { opacity: 0.55 }}
             onClick={() => setParams({ service: k }, { replace: true })}>
-            {label} ({serviceCounts[k]})
+            {label} ({serviceCounts[k] || 0})
           </button>
         ))}
       </div>
