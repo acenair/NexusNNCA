@@ -31,6 +31,7 @@ from routes import (
     push,
     admin,
     drive,
+    compliance,
 )
 
 app = FastAPI()
@@ -62,6 +63,7 @@ for router in (
     push.router,
     admin.router,
     drive.router,
+    compliance.router,
 ):
     app.include_router(router)
 

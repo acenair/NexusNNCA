@@ -237,6 +237,7 @@ const MainLayout = ({ user }) => {
         { path: '/app/ageing-report', label: 'Ageing Report', icon: AlertTriangle, partnerOnly: true },
         { path: '/app/proposals', label: 'Proposals', icon: FileText, partnerOnly: true },
         { path: '/app/documents', label: 'Documents', icon: FolderOpen },
+        { path: '/app/compliance', label: 'Compliance Tracker', icon: Shield },
         { path: '/app/settings', label: 'Settings', icon: Settings, partnerOnly: true },
       ]
     },

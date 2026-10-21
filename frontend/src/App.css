@@ -427,3 +427,6 @@ h1, h2, h3, h4, h5, h6 {
 .af-formrow { display: flex; flex-direction: column; gap: 5px; margin: 12px 0; }
 .af-formrow label { font-size: 11px; color: var(--muted); }
 .af-formrow select, .af-formrow input { border: 1px solid var(--nn-border); border-radius: 8px; padding: 10px 12px; font-size: 13px; background: var(--white); color: var(--text); }
+
+.af-metric-alert { border-color: #f3c1c1; background: #fffafa; }
+.af-badge-grey { background: #eef3f7; color: #6b8799; }
