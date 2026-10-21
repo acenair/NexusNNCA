@@ -1,3 +1,3 @@
-:80 {
+app.nairnelliyatt.com {
     reverse_proxy frontend:80
 }
