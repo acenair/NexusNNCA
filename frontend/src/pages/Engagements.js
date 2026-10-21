@@ -34,6 +34,10 @@ const SERVICE_LABELS = {
   company_liquidation: 'Company Liquidation', business_valuation: 'Business Valuation',
   due_diligence: 'Due Diligence', aml_review: 'AML Review', aml_filing: 'AML Filing',
   aml_reports: 'AML Reports', accounting: 'Accounting', goaml: 'goAML',
+  bank_account_opening: 'Bank Account Opening', transfer_pricing: 'Transfer Pricing',
+  attestation_services: 'Attestation Services', mofa_services: 'MOFA Services',
+  dmcc_services: 'DMCC Services', certification_services: 'Certification Services',
+  chamber_attestation: 'Chamber Attestation',
 };
 
 const aed = (n) => 'AED ' + Number(n || 0).toLocaleString('en-US');

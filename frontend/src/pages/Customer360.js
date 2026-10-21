@@ -58,7 +58,13 @@ const Customer360 = () => {
     ['Financial year end', fmt(c.financial_year_end)], ['Service type', c.service_type],
     ['Audit purpose', c.audit_purpose], ['Audit period', c.audit_period],
     ['Previous auditor', c.previous_auditor], ['Fee (AED)', c.fee_amount ? aed(c.fee_amount) : '—'],
-    ['Handled by', c.workdone_by], ['AML risk rating', c.aml_risk_rating || 'Low'],
+    ['Corporate tax TRN', c.corporate_tax_trn], ['Handled by', c.workdone_by],
+    ['Lead source', c.lead_source], ['Referred by', c.referred_by],
+    ['Onboarding stage', c.onboarding_stage || 'Completed'],
+    ['Primary contact', c.contact_name ? `${c.contact_name}${c.contact_designation ? ' · ' + c.contact_designation : ''}` : null],
+    ['Contact phone / email', [c.contact_phone, c.contact_email].filter(Boolean).join(' · ') || null],
+    ['Secondary contact', c.secondary_contact],
+    ['AML risk rating', c.aml_risk_rating || 'Low'],
     ['Status', c.status],
   ];
 

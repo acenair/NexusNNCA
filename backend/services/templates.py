@@ -90,6 +90,37 @@ CHECKLIST_TEMPLATES = {
         {"group": "Licensing", "items": ["Licence application submitted", "Approvals obtained", "Licence issued"]},
         {"group": "Completion", "items": ["Establishment card", "Bank account intro", "Documents handed over"]},
     ],
+    "bank_account_opening": [
+        {"group": "Documentation", "items": ["Licence & shareholder docs collected", "KYC completed", "Bank selection confirmed"]},
+        {"group": "Application", "items": ["Bank application submitted", "Compliance queries answered"]},
+        {"group": "Completion", "items": ["Account opened", "Internet banking activated", "Client notified"]},
+    ],
+    "transfer_pricing": [
+        {"group": "Analysis", "items": ["Related party transactions mapped", "Benchmarking study", "Disclosure requirements review"]},
+        {"group": "Documentation", "items": ["Local file prepared", "Master file reference", "Disclosure form preparation"]},
+        {"group": "Reporting", "items": ["Review", "Filed", "Client notified"]},
+    ],
+    "attestation_services": [
+        {"group": "Collection", "items": ["Documents received", "Notary requirements confirmed"]},
+        {"group": "Processing", "items": ["Notary / MOFA submission", "Translation arranged"]},
+        {"group": "Completion", "items": ["Attested documents delivered", "Archived"]},
+    ],
+    "mofa_services": [
+        {"group": "Processing", "items": ["MOFA submission", "Fees paid", "Status tracked"]},
+        {"group": "Completion", "items": ["MOFA attestation received", "Delivered to client"]},
+    ],
+    "dmcc_services": [
+        {"group": "Application", "items": ["DMCC portal application", "Supporting docs", "Fees paid"]},
+        {"group": "Completion", "items": ["Approval received", "Documents collected", "Client notified"]},
+    ],
+    "certification_services": [
+        {"group": "Processing", "items": ["Certification request reviewed", "Issuing body confirmed", "Application submitted"]},
+        {"group": "Completion", "items": ["Certificate received", "Delivered", "Archived"]},
+    ],
+    "chamber_attestation": [
+        {"group": "Processing", "items": ["Chamber submission", "Supporting documents", "Fees paid"]},
+        {"group": "Completion", "items": ["Chamber attestation received", "Delivered", "Archived"]},
+    ],
     "company_liquidation": [
         {"group": "Preparation", "items": ["Shareholder resolution", "Liquidator appointment", "Debt settlement plan"]},
         {"group": "Process", "items": ["FTA de-registration", "Employee final dues", "Licence cancellation application"]},

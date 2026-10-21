@@ -57,6 +57,16 @@ class Client(BaseModel):
     previous_auditor: Optional[str] = None
     fee_amount: Optional[float] = None
     workdone_by: Optional[str] = None
+    # onboarding-master fields (Audit_CRM_Onboarding_Template)
+    contact_name: Optional[str] = None
+    contact_designation: Optional[str] = None
+    contact_phone: Optional[str] = None
+    contact_email: Optional[str] = None
+    secondary_contact: Optional[str] = None
+    corporate_tax_trn: Optional[str] = None
+    lead_source: Optional[str] = None
+    referred_by: Optional[str] = None
+    onboarding_stage: Optional[str] = None
 
 
 class Task(BaseModel):
