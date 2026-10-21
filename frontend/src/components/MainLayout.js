@@ -295,16 +295,16 @@ const MainLayout = ({ user }) => {
   const sidebarContent = (isMobile) => (
     <>
       {/* Logo */}
-      <div style={{ padding: collapsed && !isMobile ? '16px 0' : '20px 20px 14px', borderBottom: '1px solid rgba(255,255,255,0.055)', display: 'flex', alignItems: 'center', justifyContent: collapsed && !isMobile ? 'center' : 'space-between' }}>
+      <div style={{ padding: collapsed && !isMobile ? '16px 0' : '20px 20px 14px', borderBottom: '1px solid #e4eff6', display: 'flex', alignItems: 'center', justifyContent: collapsed && !isMobile ? 'center' : 'space-between' }}>
         {collapsed && !isMobile ? (
-          <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--navy)', fontFamily: 'DM Serif Display', fontWeight: 700, fontSize: 14, cursor: 'pointer' }} onClick={() => setCollapsed(false)} data-testid="sidebar-expand-btn">N</div>
+          <div style={{ width: 36, height: 36, borderRadius: 8, background: '#1599df', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontFamily: 'DM Serif Display', fontWeight: 700, fontSize: 14, cursor: 'pointer' }} onClick={() => setCollapsed(false)} data-testid="sidebar-expand-btn">N</div>
         ) : (
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--navy)', fontFamily: 'DM Serif Display', fontWeight: 700, fontSize: 16 }}>N&N</div>
+              <div style={{ width: 36, height: 36, borderRadius: 8, background: '#1599df', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontFamily: 'DM Serif Display', fontWeight: 700, fontSize: 16 }}>N&N</div>
               <div>
-                <div style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 15, lineHeight: 1.2 }}>Nair & Nelliyatt</div>
-                <div style={{ fontSize: 10, color: 'var(--light)', letterSpacing: 0.5 }}>Chartered Accountants</div>
+                <div style={{ color: '#17354c', fontFamily: 'DM Serif Display', fontSize: 15, lineHeight: 1.2 }}>Nair & Nelliyatt</div>
+                <div style={{ fontSize: 10, color: 'var(--muted)', letterSpacing: 0.5 }}>Chartered Accountants</div>
               </div>
             </div>
             {!isMobile && (
@@ -319,13 +319,13 @@ const MainLayout = ({ user }) => {
 
       {/* Partners - hide when collapsed */}
       {(!collapsed || isMobile) && (
-        <div style={{ padding: '10px 20px', borderBottom: '1px solid rgba(255,255,255,0.055)' }}>
-          <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: 1.2, color: 'var(--light)', marginBottom: 6 }}>Active Partners</div>
+        <div style={{ padding: '10px 20px', borderBottom: '1px solid #e4eff6' }}>
+          <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: 1.2, color: 'var(--muted)', marginBottom: 6 }}>Active Partners</div>
           <div style={{ display: 'flex', gap: 6 }}>
             {['Arjun S.', 'Sooraj N.'].map(n => (
-              <div key={n} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(21,153,223,0.08)', borderRadius: 6, padding: '4px 8px' }}>
+              <div key={n} style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#edf8ff', borderRadius: 6, padding: '4px 8px' }}>
                 <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)' }}>{n}</span>
+                <span style={{ fontSize: 11, color: '#17354c' }}>{n}</span>
               </div>
             ))}
           </div>
@@ -346,13 +346,13 @@ const MainLayout = ({ user }) => {
               <div key={section.title} style={{ marginBottom: 4 }}>
                 <div
                   onClick={() => { setCollapsed(false); setExpandedSections(p => ({ ...p, [section.title]: true })); }}
-                  style={{ width: 42, height: 42, margin: '0 auto 2px', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.15s', background: hasActiveItem ? 'var(--gold)' : 'transparent', color: hasActiveItem ? 'var(--navy)' : 'rgba(255,255,255,0.5)', position: 'relative' }}
+                  style={{ width: 42, height: 42, margin: '0 auto 2px', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.15s', background: hasActiveItem ? '#e8f6ff' : 'transparent', color: hasActiveItem ? '#098bd0' : 'rgba(105,131,152,0.8)', position: 'relative' }}
                   title={section.title}
                   data-testid={`section-icon-${section.title.toLowerCase()}`}
                 >
                   <SectionIcon size={18} />
                   {totalBadge > 0 && (
-                    <span style={{ position: 'absolute', top: 2, right: 2, width: 14, height: 14, borderRadius: '50%', background: 'var(--gold)', color: 'var(--navy)', fontSize: 8, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{totalBadge}</span>
+                    <span style={{ position: 'absolute', top: 2, right: 2, width: 14, height: 14, borderRadius: '50%', background: '#098bd0', color: 'white', fontSize: 8, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{totalBadge}</span>
                   )}
                 </div>
               </div>
@@ -373,12 +373,12 @@ const MainLayout = ({ user }) => {
                 data-testid={`section-toggle-${section.title.toLowerCase()}`}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <SectionIcon size={14} color={hasActiveItem ? 'var(--gold)' : 'rgba(255,255,255,0.45)'} />
-                  <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8, color: hasActiveItem ? 'var(--gold)' : 'var(--light)' }}>{section.title}</span>
+                  <SectionIcon size={14} color={hasActiveItem ? '#098bd0' : 'rgba(105,131,152,0.7)'} />
+                  <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8, color: hasActiveItem ? '#098bd0' : 'var(--muted)' }}>{section.title}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  {totalBadge > 0 && <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 8, background: 'rgba(21,153,223,0.12)', color: 'var(--gold)' }}>{totalBadge}</span>}
-                  {isExpanded ? <ChevronDown size={13} color="rgba(255,255,255,0.35)" /> : <ChevronRight size={13} color="rgba(255,255,255,0.35)" />}
+                  {totalBadge > 0 && <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 8, background: '#edf8ff', color: '#098bd0' }}>{totalBadge}</span>}
+                  {isExpanded ? <ChevronDown size={13} color="rgba(105,131,152,0.6)" /> : <ChevronRight size={13} color="rgba(105,131,152,0.6)" />}
                 </div>
               </button>
 
@@ -400,7 +400,7 @@ const MainLayout = ({ user }) => {
                           padding: '6px 10px', borderRadius: 6, fontSize: 13, textDecoration: 'none',
                           transition: 'all 0.15s', marginBottom: 1,
                           background: isActive ? 'var(--gold)' : 'transparent',
-                          color: isActive ? 'var(--navy)' : 'rgba(255,255,255,0.6)',
+                          color: isActive ? '#098bd0' : '#698398',
                           fontWeight: isActive ? 600 : 400,
                         }}
                         data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
@@ -410,7 +410,7 @@ const MainLayout = ({ user }) => {
                           <span>{item.label}</span>
                         </div>
                         {item.badge && (
-                          <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 10, background: isActive ? 'var(--navy)' : 'rgba(21,153,223,0.15)', color: isActive ? 'var(--gold)' : 'var(--gold)' }}>{item.badge}</span>
+                          <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 10, background: isActive ? '#098bd0' : '#edf8ff', color: isActive ? '#fff' : '#098bd0' }}>{item.badge}</span>
                         )}
                       </Link>
                     );
@@ -424,22 +424,22 @@ const MainLayout = ({ user }) => {
 
       {/* User Footer */}
       {user && (
-        <div style={{ padding: collapsed && !isMobile ? '10px 6px' : '12px 14px', borderTop: '1px solid rgba(255,255,255,0.055)' }}>
+        <div style={{ padding: collapsed && !isMobile ? '10px 6px' : '12px 14px', borderTop: '1px solid #e4eff6' }}>
           {collapsed && !isMobile ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-              <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--gold)', color: 'var(--navy)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13 }}>{user.name?.charAt(0)}</div>
-              <button onClick={handleLogout} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'var(--light)', cursor: 'pointer', padding: 6, borderRadius: 6, display: 'flex' }} data-testid="logout-btn"><LogOut size={14} /></button>
+              <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#ddf2ff', color: '#098bd0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13 }}>{user.name?.charAt(0)}</div>
+              <button onClick={handleLogout} style={{ background: '#edf8ff', border: 'none', color: '#698398', cursor: 'pointer', padding: 6, borderRadius: 6, display: 'flex' }} data-testid="logout-btn"><LogOut size={14} /></button>
             </div>
           ) : (
             <>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--gold)', color: 'var(--navy)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13 }}>{user.name?.charAt(0)}</div>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#ddf2ff', color: '#098bd0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13 }}>{user.name?.charAt(0)}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.name}</div>
-                  <div style={{ fontSize: 10, color: 'var(--gold)' }}>{user.title || user.role}</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#17354c', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.name}</div>
+                  <div style={{ fontSize: 10, color: '#098bd0' }}>{user.title || user.role}</div>
                 </div>
               </div>
-              <button onClick={handleLogout} style={{ width: '100%', padding: '6px 0', borderRadius: 6, background: 'rgba(255,255,255,0.05)', border: 'none', color: 'var(--light)', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, fontFamily: 'DM Sans, sans-serif' }} data-testid="logout-btn"><LogOut size={13} /> Logout</button>
+              <button onClick={handleLogout} style={{ width: '100%', padding: '6px 0', borderRadius: 6, background: '#edf8ff', border: 'none', color: '#698398', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, fontFamily: 'DM Sans, sans-serif' }} data-testid="logout-btn"><LogOut size={13} /> Logout</button>
             </>
           )}
         </div>
@@ -453,10 +453,10 @@ const MainLayout = ({ user }) => {
       <aside
         className="sidebar-desktop"
         style={{
-          width: sidebarWidth, minWidth: sidebarWidth, background: 'var(--navy)',
-          borderRight: '1px solid rgba(255,255,255,0.055)',
+          width: sidebarWidth, minWidth: sidebarWidth, background: 'var(--white)',
+          borderRight: '1px solid #e4eff6',
           height: '100vh', overflowY: 'auto',
-          backgroundImage: 'linear-gradient(180deg,rgba(21,153,223,0.03) 0%,transparent 40%)',
+          
           transition: 'width 0.2s ease, min-width 0.2s ease',
           display: 'flex', flexDirection: 'column',
         }}
@@ -469,7 +469,7 @@ const MainLayout = ({ user }) => {
       {mobileOpen && (
         <div className="sidebar-mobile-overlay" style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex' }} data-testid="mobile-sidebar-overlay">
           <div onClick={() => setMobileOpen(false)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(2px)' }} />
-          <aside style={{ width: 280, background: 'var(--navy)', height: '100vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 1, boxShadow: '4px 0 24px rgba(0,0,0,0.3)' }}>
+          <aside style={{ width: 280, background: 'var(--white)', height: '100vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 1, boxShadow: '4px 0 24px rgba(0,0,0,0.3)' }}>
             {sidebarContent(true)}
           </aside>
         </div>
