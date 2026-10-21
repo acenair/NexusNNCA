@@ -3,6 +3,7 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci --legacy-peer-deps || npm install --legacy-peer-deps
 COPY . .
+ENV REACT_APP_BACKEND_URL=
 RUN npm run build
 
 FROM nginx:1.27-alpine
