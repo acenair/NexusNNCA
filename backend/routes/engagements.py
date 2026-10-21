@@ -1,5 +1,5 @@
 """Routes / engagements — extracted from server.py without behavior changes."""
-from fastapi import APIRouter
+from fastapi import APIRouter, Body, Cookie
 from pydantic import BaseModel
 from services.templates import CHECKLIST_TEMPLATES
 from fastapi import Cookie
@@ -172,9 +172,28 @@ async def toggle_checklist_item(engagement_id: str, req: ToggleChecklistRequest,
 
 
 @router.patch("/service/engagements/{engagement_id}")
-async def update_service_engagement(engagement_id: str, status: Optional[str] = None, phase: Optional[str] = None, assigned_to: Optional[str] = None, assigned_to_name: Optional[str] = None, allocated_hours: Optional[float] = None, actual_hours: Optional[float] = None, budget_cost_rate: Optional[float] = None, authorization: str = Header(None), session_token: str = Cookie(None)):
+async def update_service_engagement(engagement_id: str, status: Optional[str] = None, phase: Optional[str] = None, assigned_to: Optional[str] = None, assigned_to_name: Optional[str] = None, allocated_hours: Optional[float] = None, actual_hours: Optional[float] = None, budget_cost_rate: Optional[float] = None, payload: Optional[dict] = Body(default=None), authorization: str = Header(None), session_token: str = Cookie(None)):
     user = await get_current_user(authorization, session_token)
     update_data = {}
+    if payload and "staff_costs" in payload:
+        # Per-staff hourly costing: [{name, allocated_hours, actual_hours, remaining_hours, budget_rate, actual_rate}]
+        rows = payload.get("staff_costs")
+        if not isinstance(rows, list):
+            raise HTTPException(status_code=422, detail="staff_costs must be a list")
+        cleaned = []
+        for r in rows:
+            if not isinstance(r, dict) or not str(r.get("name", "")).strip():
+                raise HTTPException(status_code=422, detail="Each staff row needs a name")
+            try:
+                nums = {k: float(r.get(k) or 0) for k in ("allocated_hours", "actual_hours", "remaining_hours", "budget_rate", "actual_rate")}
+            except (TypeError, ValueError):
+                raise HTTPException(status_code=422, detail="Staff hours/rates must be numbers")
+            if any(v < 0 for v in nums.values()):
+                raise HTTPException(status_code=422, detail="Staff hours/rates cannot be negative")
+            cleaned.append({"name": str(r["name"]).strip()[:120], **nums})
+        if not cleaned:
+            raise HTTPException(status_code=422, detail="Add at least one staff allocation")
+        update_data["staff_costs"] = cleaned
     if status:
         update_data["status"] = status
     if phase:

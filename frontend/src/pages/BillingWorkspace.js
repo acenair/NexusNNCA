@@ -31,6 +31,8 @@ const BillingWorkspace = ({ initialTab }) => {
   const [asDraft, setAsDraft] = useState(false);
   const [form, setForm] = useState({ client_id: '', service_name: 'External Audit', amount: '', date: new Date().toISOString().slice(0, 10), due_date: '', staff: '' });
   const [saving, setSaving] = useState(false);
+  const [costFor, setCostFor] = useState(null);
+  const [costRows, setCostRows] = useState([]);
   const isPartner = user?.role === 'partner';
 
   const load = useCallback(async () => {
@@ -65,6 +67,48 @@ const BillingWorkspace = ({ initialTab }) => {
     return 'Unpaid';
   };
   const pendingOf = (i) => Math.max(0, i.amount - (i.amount_paid || 0) - (i.credits || []).reduce((n, c) => n + c.amount, 0));
+
+  // Per-staff hourly costing (mockup: allocated vs actual hours & internal cost per staff member)
+  const costSummary = (e) => {
+    const sc = e.staff_costs || [];
+    if (sc.length) {
+      const t = { alloc: 0, act: 0, rem: 0, budget: 0, actual: 0, forecast: 0, hasStaff: true };
+      sc.forEach(s => {
+        t.alloc += s.allocated_hours || 0; t.act += s.actual_hours || 0; t.rem += s.remaining_hours || 0;
+        t.budget += (s.allocated_hours || 0) * (s.budget_rate || 0);
+        t.actual += (s.actual_hours || 0) * (s.actual_rate || 0);
+        t.forecast += ((s.actual_hours || 0) + (s.remaining_hours || 0)) * (s.actual_rate || 0);
+      });
+      return t;
+    }
+    const rate = e.budget_cost_rate || 150;
+    return { alloc: e.allocated_hours || 0, act: e.actual_hours || 0, rem: 0, budget: (e.allocated_hours || 0) * rate, actual: (e.actual_hours || 0) * rate, forecast: (e.actual_hours || 0) * rate, hasStaff: false };
+  };
+  const costOutcome = (e, t) => {
+    if (e.status !== 'Completed') return (t.forecast > t.budget || (t.alloc && (t.act + t.rem) > t.alloc)) ? 'Forecast overrun' : 'Forecast within budget';
+    if (t.act > t.alloc) return 'Over allocated';
+    if (t.act === t.alloc) return 'Within allocation';
+    return 'Under allocated';
+  };
+  const costingEngagements = engagements.filter(e => (e.staff_costs || []).length || e.allocated_hours || e.actual_hours);
+  const costTotals = costingEngagements.map(e => ({ e, t: costSummary(e) }));
+  const completedCost = costTotals.filter(({ e }) => e.status === 'Completed');
+  const ongoingCost = costTotals.filter(({ e }) => e.status !== 'Completed');
+  const openCostEditor = (e) => {
+    setCostFor(e);
+    setCostRows((e.staff_costs || []).length ? e.staff_costs.map(s => ({ ...s })) : [{ name: e.assigned_to_name || '', allocated_hours: e.allocated_hours || 0, actual_hours: e.actual_hours || 0, remaining_hours: 0, budget_rate: e.budget_cost_rate || 150, actual_rate: e.budget_cost_rate || 150 }]);
+  };
+  const saveCost = async () => {
+    setSaving(true);
+    try {
+      await axios.patch(`${API}/service/engagements/${costFor.engagement_id}`, { staff_costs: costRows }, { withCredentials: true });
+      setCostFor(null);
+      await load();
+    } catch (err) { alert(err.response?.data?.detail || 'Failed'); }
+    setSaving(false);
+  };
+
+  const cancelledInvoices = invoices.filter(i => i.cancelled);
 
   const monthInvoices = invoices.filter(i => (i.date || '').slice(0, 7) === month);
   const receipts = invoices.flatMap(i => (i.receipts || []).map(r => ({ ...r, inv: i }))).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
@@ -261,7 +305,22 @@ const BillingWorkspace = ({ initialTab }) => {
         </section>
 
         {/* Pending by staff + priorities */}
-        <div className="af-grid af-grid-3" style={{ marginTop: 16 }}>
+        <div className="af-grid af-grid-2" style={{ marginTop: 16, gridTemplateColumns: 'repeat(2, 1fr)' }}>
+          <section className="af-card">
+            <div className="af-cardhead"><div><h2>Credit notes</h2><div className="af-sub">Cumulative · reduce outstanding balances</div></div></div>
+            {invoices.filter(i => (i.credits || []).length).map(i => (i.credits || []).map((c, ci) => (
+              <div className="af-mini" key={i.invoice_id + '-' + ci}><span>{i.client_name}<small style={{ display: 'block', color: 'var(--muted)' }}>Against {i.invoice_number}{c.reason ? ` · ${c.reason}` : ''}</small></span><b>{aed(c.amount)}</b></div>
+            )))}
+            <div className="af-mini af-stage-total"><span>Total credits</span><b>{aed(S.credits_total)}</b></div>
+          </section>
+          <section className="af-card">
+            <div className="af-cardhead"><div><h2>Cancelled invoices</h2><div className="af-sub">Excluded from all totals · no collectible balance</div></div></div>
+            {cancelledInvoices.map(i => (
+              <div className="af-mini" key={i.invoice_id}><span>{i.invoice_number} · {i.client_name}<small style={{ display: 'block', color: 'var(--muted)' }}>{i.staff || '—'}{i.cancel_reason ? ` · Reason: ${i.cancel_reason}` : ''}</small></span><b>{aed(i.amount)}</b></div>
+            ))}
+            {cancelledInvoices.length === 0 && <p className="af-note">No cancelled invoices.</p>}
+            <div className="af-mini af-stage-total"><span>Total cancelled</span><b>{aed(cancelledInvoices.reduce((n, i) => n + i.amount, 0))}</b></div>
+          </section>
           <section className="af-card">
             <div className="af-cardhead"><div><h2>Pending by staff</h2><div className="af-sub">Till date · click-free view</div></div></div>
             {Object.entries(S.pending_by_staff || {}).sort((a, b) => b[1].pending - a[1].pending).map(([s, v]) => (
@@ -323,37 +382,50 @@ const BillingWorkspace = ({ initialTab }) => {
       </>)}
 
       {tab === 'Hourly Costing' && (
-        <section className="af-card">
-          <div className="af-cardhead"><div><h2>Job time &amp; cost comparison</h2><div className="af-sub">Budgeted cost = allocated hrs × cost rate · Actual = logged hrs × rate</div></div></div>
+        <>
+        <div className="af-kpis" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+          <section className="af-card af-metric"><label>Allocated hours</label><b>{Math.round(costTotals.reduce((n, { t }) => n + t.alloc, 0))} hrs</b><small>{costTotals.length} jobs in this view</small></section>
+          <section className="af-card af-metric"><label>Actual hours</label><b>{Math.round(costTotals.reduce((n, { t }) => n + t.act, 0))} hrs</b><small>Recorded effort to date</small></section>
+          <section className="af-card af-metric"><label>Budgeted internal cost</label><b>{aed(costTotals.reduce((n, { t }) => n + t.budget, 0))}</b><small>Staff-specific budget cost rates</small></section>
+          <section className="af-card af-metric"><label>Actual internal cost</label><b>{aed(costTotals.reduce((n, { t }) => n + t.actual, 0))}</b><small>Incl. incomplete jobs</small></section>
+        </div>
+        <div className="af-kpis" style={{ gridTemplateColumns: 'repeat(2, 1fr)', marginTop: 12 }}>
+          <section className="af-card af-metric"><label>Completed job performance</label><b>{completedCost.length} completed</b><small>Net hour variance {(() => { const v = completedCost.reduce((n, { t }) => n + (t.act - t.alloc), 0); return `${v >= 0 ? '+' : ''}${Math.round(v)}h`; })()} · net cost {aed(completedCost.reduce((n, { t }) => n + (t.actual - t.budget), 0))}</small></section>
+          <section className="af-card af-metric"><label>In-progress cost forecast</label><b>{aed(ongoingCost.reduce((n, { t }) => n + t.forecast, 0))}</b><small>{ongoingCost.length} ongoing · {Math.round(ongoingCost.reduce((n, { t }) => n + t.rem, 0))}h remaining effort</small></section>
+        </div>
+        <section className="af-card" style={{ marginTop: 16 }}>
+          <div className="af-cardhead"><div><h2>Job time &amp; cost comparison</h2><div className="af-sub">Budget = Σ allocated hrs × budget rate · Actual = Σ actual hrs × actual rate · positive variance = over</div></div></div>
           <div className="af-tablewrap">
             <table className="af-table">
-              <thead><tr><th>CLIENT / JOB</th><th>STATUS</th><th>ALLOCATED HRS</th><th>ACTUAL HRS</th><th>VARIANCE</th><th>BUDGET COST</th><th>ACTUAL COST</th><th>OUTCOME</th></tr></thead>
+              <thead><tr><th>CLIENT / JOB</th><th>STATUS</th><th>ALLOCATED HRS</th><th>ACTUAL HRS</th><th>VARIANCE</th><th>BUDGET COST</th><th>ACTUAL COST</th><th>OUTCOME</th><th></th></tr></thead>
               <tbody>
-                {engagements.filter(e => (e.allocated_hours || e.actual_hours)).map(e => {
-                  const alloc = e.allocated_hours || 0, act = e.actual_hours || 0;
-                  const rate = e.budget_cost_rate || 150;
-                  const varh = act - alloc;
+                {costTotals.map(({ e, t }) => {
+                  const vh = t.act - t.alloc;
+                  const outcome = costOutcome(e, t);
+                  const oc = outcome === 'Over allocated' || outcome === 'Forecast overrun' ? 'af-badge-red' : outcome === 'Under allocated' || outcome === 'Forecast within budget' ? 'af-badge-green' : 'af-badge-blue';
                   return (
                     <tr key={e.engagement_id}>
-                      <td><b>{e.client_name}</b><small>{e.service_type}</small></td>
+                      <td><b>{e.client_name}</b><small>{e.service_type}{t.hasStaff ? ` · ${e.staff_costs.length} staff allocations` : ''}</small></td>
                       <td>{e.status}</td>
-                      <td>{alloc || '—'}</td>
-                      <td>{act || '—'}</td>
-                      <td>{alloc ? `${varh >= 0 ? '+' : ''}${Math.round(varh)}h` : '—'}</td>
-                      <td>{alloc ? aed(alloc * rate) : '—'}</td>
-                      <td>{act ? aed(act * rate) : '—'}</td>
-                      <td>{alloc ? (act > alloc ? <span className="af-badge af-badge-red">Over allocated</span> : act === alloc ? <span className="af-badge af-badge-blue">Within allocation</span> : <span className="af-badge af-badge-green">Under allocated</span>) : '—'}</td>
+                      <td>{t.alloc || '—'}</td>
+                      <td>{t.act || '—'}</td>
+                      <td>{t.alloc ? `${vh >= 0 ? '+' : ''}${Math.round(vh)}h` : '—'}</td>
+                      <td>{t.alloc ? aed(t.budget) : '—'}</td>
+                      <td>{t.act ? aed(t.actual) : '—'}</td>
+                      <td><span className={`af-badge ${oc}`}>{outcome}</span></td>
+                      <td>{isPartner && <button className="af-link" onClick={() => openCostEditor(e)}>Staff breakdown / edit</button>}</td>
                     </tr>
                   );
                 })}
-                {engagements.filter(e => (e.allocated_hours || e.actual_hours)).length === 0 && (
-                  <tr><td colSpan="8" className="af-empty">No hours recorded yet. Open an engagement to set allocated hours and log actual effort — the table activates as the time ledger fills.</td></tr>
+                {costTotals.length === 0 && (
+                  <tr><td colSpan="9" className="af-empty">No hours recorded yet. Open a job's staff breakdown to add allocations — the table activates as the costing fills.</td></tr>
                 )}
               </tbody>
             </table>
           </div>
-          <p className="af-note">Honest note: the firm has no per-job time ledger yet. Allocated hours come from the internal-audit planner; actual hours are logged per engagement until Attendance feeds a job-level ledger. Cost rate defaults to AED 150/hr.</p>
+          <p className="af-note">Honest note: the firm has no per-job time ledger yet — allocated and actual hours are manual entries per staff member until Attendance feeds a job-level ledger. Budget and actual rates can differ; internal costs only, not customer billing.</p>
         </section>
+        </>
       )}
 
       {tab === 'Ageing' && (
@@ -429,6 +501,36 @@ const BillingWorkspace = ({ initialTab }) => {
               <input type="checkbox" checked={asDraft} onChange={e => setAsDraft(e.target.checked)} /> Save as draft (not issued — excluded from totals)
             </label>
             <button className="af-btn-primary" style={{ width: '100%' }} onClick={createInvoice} disabled={saving || !form.client_id || !form.amount} data-testid="create-invoice-submit">{saving ? 'Creating…' : (asDraft ? 'Save draft' : 'Create invoice')}</button>
+          </div>
+        </div>
+      )}
+
+      {/* Staff breakdown / hourly costing editor */}
+      {costFor && (
+        <div className="af-modal" onClick={(e) => e.target === e.currentTarget && !saving && setCostFor(null)}>
+          <div className="af-dialog" style={{ maxWidth: 860 }} data-testid="cost-modal">
+            <button className="af-close" onClick={() => setCostFor(null)}>×</button>
+            <h2>Job hourly costing</h2>
+            <p className="af-sub">{costFor.client_name} · {costFor.service_type} · internal cost rates (not customer billing)</p>
+            <div className="af-tablewrap">
+              <table className="af-table">
+                <thead><tr><th>STAFF / ROLE</th><th>ALLOCATED HRS</th><th>ACTUAL HRS</th><th>REMAINING HRS</th><th>BUDGET AED/HR</th><th>ACTUAL AED/HR</th><th></th></tr></thead>
+                <tbody>
+                  {costRows.map((s, idx) => (
+                    <tr key={idx}>
+                      <td><input value={s.name} onChange={e => setCostRows(costRows.map((r, k) => k === idx ? { ...r, name: e.target.value } : r))} placeholder="Name · role" /></td>
+                      {['allocated_hours', 'actual_hours', 'remaining_hours', 'budget_rate', 'actual_rate'].map(k => (
+                        <td key={k}><input type="number" min="0" step="0.5" style={{ width: 90 }} value={s[k] ?? 0} onChange={e => setCostRows(costRows.map((r, ki) => ki === idx ? { ...r, [k]: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 } : r))} /></td>
+                      ))}
+                      <td><button className="af-link" onClick={() => setCostRows(costRows.filter((_, k) => k !== idx))}>Remove</button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <button className="af-link" style={{ marginTop: 8 }} onClick={() => setCostRows([...costRows, { name: '', allocated_hours: 0, actual_hours: 0, remaining_hours: 0, budget_rate: 150, actual_rate: 150 }])}>+ Add staff allocation</button>
+            <p className="af-note">Completed jobs should have zero remaining hours. Budget and actual rates can differ — the comparison reflects both time and rate changes. No invoice or accounting entry is affected.</p>
+            <button className="af-btn-primary" style={{ width: '100%' }} onClick={saveCost} disabled={saving || !costRows.length}>{saving ? 'Saving…' : 'Save hours & costs'}</button>
           </div>
         </div>
       )}
