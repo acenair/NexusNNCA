@@ -76,11 +76,13 @@ const Dashboard = () => {
   const totalActive = active.length;
 
   const thisMonth = today.toISOString().slice(0, 7);
-  const monthInvoices = invoices.filter(i => (i.date_issued || i.created_at || '').slice(0, 7) === thisMonth && i.status !== 'Cancelled');
+  const pendingOf = (i) => Math.max(0, (i.amount || 0) - (i.amount_paid || 0) - (i.credits || []).reduce((n, c) => n + (c.amount || 0), 0));
+  const live = invoices.filter(i => !i.cancelled);
+  const monthInvoices = live.filter(i => (i.date || '').slice(0, 7) === thisMonth);
   const billed = monthInvoices.reduce((n, i) => n + (i.amount || 0), 0);
-  const collected = invoices.filter(i => i.paid && (i.paid_at || i.date_issued || '').slice(0, 7) === thisMonth).reduce((n, i) => n + (i.amount || 0), 0);
-  const outstanding = invoices.filter(i => !i.paid && i.status !== 'Cancelled').reduce((n, i) => n + (i.amount || 0), 0);
-  const overdueInv = invoices.filter(i => !i.paid && i.due_date && i.due_date < today.toISOString().slice(0, 10) && i.status !== 'Cancelled').reduce((n, i) => n + (i.amount || 0), 0);
+  const collected = live.reduce((n, i) => n + (i.receipts || []).filter(r => (r.date || '').slice(0, 7) === thisMonth).reduce((n, r) => n + (r.amount || 0), 0), 0);
+  const outstanding = live.reduce((n, i) => n + pendingOf(i), 0);
+  const overdueInv = live.filter(i => pendingOf(i) > 0.009 && i.due_date && i.due_date < today.toISOString().slice(0, 10)).reduce((n, i) => n + pendingOf(i), 0);
 
   const openTasks = tasks.filter(t => t.status !== 'Completed');
   const dueSoon = openTasks.filter(t => t.due_date && t.due_date <= in7.toISOString().slice(0, 10)).sort((a, b) => (a.due_date || '').localeCompare(b.due_date || ''));
@@ -93,8 +95,8 @@ const Dashboard = () => {
     const key = d.toISOString().slice(0, 7);
     chartMonths.push({
       label: d.toLocaleDateString('en-GB', { month: 'short' }),
-      billed: invoices.filter(i => (i.date_issued || i.created_at || '').slice(0, 7) === key && i.status !== 'Cancelled').reduce((n, i) => n + (i.amount || 0), 0),
-      collected: invoices.filter(i => i.paid && (i.paid_at || i.date_issued || '').slice(0, 7) === key).reduce((n, i) => n + (i.amount || 0), 0),
+      billed: invoices.filter(i => !i.cancelled && (i.date || '').slice(0, 7) === key).reduce((n, i) => n + (i.amount || 0), 0),
+      collected: invoices.reduce((n, i) => n + (i.receipts || []).filter(r => (r.date || '').slice(0, 7) === key).reduce((n, r) => n + (r.amount || 0), 0), 0),
     });
   }
   const maxChart = Math.max(...chartMonths.map(m => Math.max(m.billed, m.collected)), 1);

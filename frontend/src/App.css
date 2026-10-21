@@ -430,3 +430,9 @@ h1, h2, h3, h4, h5, h6 {
 
 .af-metric-alert { border-color: #f3c1c1; background: #fffafa; }
 .af-badge-grey { background: #eef3f7; color: #6b8799; }
+
+.af-btn { background: var(--white); border: 1px solid var(--nn-border); color: var(--text); padding: 9px 13px; border-radius: 8px; cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; }
+.af-movement { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.af-movement > div { background: #f6fbfe; border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.af-movement span { display: block; font-size: 11px; color: var(--muted); }
+.af-movement b { font-size: 19px; letter-spacing: -0.4px; color: var(--text); }

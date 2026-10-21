@@ -32,6 +32,7 @@ import AMLReports from '@/pages/AML/Reports';
 import AIAssistant from '@/pages/AIAssistant';
 import ClientMaster from '@/pages/ClientMaster';
 import Engagements from '@/pages/Engagements';
+import BillingWorkspace from '@/pages/BillingWorkspace';
 import Compliance from '@/pages/Compliance';
 import Customer360 from '@/pages/Customer360';
 import Documents from '@/pages/Documents';
@@ -138,8 +139,8 @@ function AppRouter() {
         <Route path="onboarding" element={<ClientOnboarding />} />
         <Route path="clients/:clientId/onboarding" element={<OnboardingTracker />} />
         <Route path="clients/:clientId/onboarding/:onboardingId" element={<OnboardingTracker />} />
-        <Route path="invoices" element={<Invoices />} />
-        <Route path="ageing-report" element={<AgeingReport />} />
+        <Route path="invoices" element={<BillingWorkspace />} />
+        <Route path="ageing-report" element={<BillingWorkspace />} />
         <Route path="proposals" element={<Proposals />} />
       </Route>
       {/* Client Portal Routes */}
