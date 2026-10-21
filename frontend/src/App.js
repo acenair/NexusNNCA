@@ -31,6 +31,7 @@ import AMLFiling from '@/pages/AML/Filing';
 import AMLReports from '@/pages/AML/Reports';
 import AIAssistant from '@/pages/AIAssistant';
 import ClientMaster from '@/pages/ClientMaster';
+import Customer360 from '@/pages/Customer360';
 import Documents from '@/pages/Documents';
 import Settings from '@/pages/Settings';
 import MyTasks from '@/pages/MyTasks';
@@ -127,6 +128,7 @@ function AppRouter() {
         <Route path="client-master" element={<ClientMaster />} />
         <Route path="documents" element={<Documents />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="customers/:clientId" element={<Customer360 />} />
         <Route path="clients/:clientId/timeline" element={<ClientTimeline />} />
         <Route path="engagements/:engagementId" element={<EngagementDetail />} />
         <Route path="onboarding" element={<ClientOnboarding />} />

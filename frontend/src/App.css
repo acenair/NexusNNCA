@@ -407,3 +407,13 @@ h1, h2, h3, h4, h5, h6 {
   .af-kpis { grid-template-columns: repeat(2, 1fr); }
   .af-grid-65, .af-grid-3 { grid-template-columns: 1fr; }
 }
+
+/* Customer 360 */
+.af-tabs { display: flex; gap: 6px; overflow: auto; margin: 18px 0 14px; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+.af-tabs button { white-space: nowrap; border: 0; background: transparent; color: #6b8799; padding: 10px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+.af-tabs button[aria-selected="true"] { background: var(--surface); color: var(--gold); font-weight: 650; }
+.af-profile-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 28px; }
+.af-profile-row { display: flex; justify-content: space-between; gap: 14px; padding: 11px 0; border-bottom: 1px solid var(--line); font-size: 12px; }
+.af-profile-row span { color: var(--muted); }
+.af-profile-row b { color: var(--text); font-weight: 600; text-align: right; }
+@media (max-width: 760px) { .af-profile-grid { grid-template-columns: 1fr; } }
