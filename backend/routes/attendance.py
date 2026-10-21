@@ -27,9 +27,9 @@ def _require_partner(user):
     return user
 
 
-def _staff_list():
+async def _staff_list():
     q = {"role": {"$nin": ["client"]}, "status": {"$ne": "pending_approval"}}
-    return list(db.users.find(q, {"_id": 0, "password": 0, "user_sessions": 0}).sort("name", 1))
+    return await db.users.find(q, {"_id": 0, "password": 0, "user_sessions": 0}).sort("name", 1).to_list(200)
 
 
 def _month_days(month: str):
@@ -64,7 +64,7 @@ def _day_kind(day, is_holiday: bool) -> str:
 @router.get("/attendance/month")
 async def attendance_month(month: str, authorization: str = Header(None), session_token: str = Cookie(None)):
     user = await get_current_user(authorization, session_token)
-    staff = _staff_list()
+    staff = await _staff_list()
     days = _month_days(month)
     holiday_set = {h["date"] for h in db.holidays.find({}, {"_id": 0, "date": 1})}
     records = {}
@@ -156,7 +156,7 @@ async def request_leave(req: LeaveRequest, authorization: str = Header(None), se
         "leave_type": req.leave_type, "reason": req.reason, "status": "Pending",
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
-    db.leave_requests.insert_one(doc)
+    await db.leave_requests.insert_one(doc)
     doc.pop("_id", None)
     return doc
 
@@ -168,7 +168,7 @@ async def list_leave(year: Optional[str] = None, authorization: str = Header(Non
     if year:
         q["from_date"] = {"$regex": f"^{year}"}
     rows = await db.leave_requests.find(q, {"_id": 0}).sort("from_date", -1).to_list(1000)
-    users = {u["user_id"]: u["name"] for u in db.users.find({}, {"_id": 0, "user_id": 1, "name": 1})}
+    users = {u["user_id"]: u["name"] for u in await db.users.find({}, {"_id": 0, "user_id": 1, "name": 1}).to_list(200)}
     for r in rows:
         r["name"] = users.get(r["user_id"], "—")
     # monthly leave taken per staff (approved only) for the mockup's year grid
@@ -200,7 +200,7 @@ async def decide_leave(leave_id: str, status: str, authorization: str = Header(N
 async def add_holiday(date: str, name: str, authorization: str = Header(None), session_token: str = Cookie(None)):
     user = await get_current_user(authorization, session_token)
     _require_partner(user)
-    db.holidays.update_one({"date": date}, {"$set": {"date": date, "name": name}}, upsert=True)
+    await db.holidays.update_one({"date": date}, {"$set": {"date": date, "name": name}}, upsert=True)
     return {"ok": True}
 
 
