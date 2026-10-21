@@ -129,7 +129,7 @@ const Proposals = () => {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontFamily: 'DM Serif Display', fontSize: 22, color: 'var(--text)', marginBottom: 4 }}>Proposals</h1>
+          <h1 style={{ fontFamily: 'DM Sans', fontSize: 22, color: 'var(--text)', marginBottom: 4 }}>Proposals</h1>
           <p style={{ fontSize: 13, color: 'var(--muted)' }}>Create and track client proposals</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -226,7 +226,7 @@ const Proposals = () => {
         <div className="modal-overlay" onClick={() => !saving && setShowModal(false)}>
           <div className="modal-box" style={{ maxWidth: 580 }} onClick={e => e.stopPropagation()}>
             <div className="modal-hdr">
-              <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 16 }}>{editProposal ? 'Edit Proposal' : 'New Proposal'}</h3>
+              <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Sans', fontSize: 16 }}>{editProposal ? 'Edit Proposal' : 'New Proposal'}</h3>
               <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex' }}><X size={18} /></button>
             </div>
             <div className="modal-body" style={{ maxHeight: '65vh', overflowY: 'auto' }}>
@@ -279,7 +279,7 @@ const Proposals = () => {
         <div className="modal-overlay" onClick={() => !saving && setShowTemplateModal(false)}>
           <div className="modal-box" style={{ maxWidth: 500 }} onClick={e => e.stopPropagation()}>
             <div className="modal-hdr">
-              <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 16 }}>New Proposal Template</h3>
+              <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Sans', fontSize: 16 }}>New Proposal Template</h3>
               <button onClick={() => setShowTemplateModal(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex' }}><X size={18} /></button>
             </div>
             <div className="modal-body" style={{ maxHeight: '60vh', overflowY: 'auto' }}>

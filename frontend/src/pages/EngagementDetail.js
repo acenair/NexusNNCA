@@ -100,7 +100,7 @@ const EngagementDetail = () => {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
             <div>
-              <h2 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 18 }}>{eng.service_type?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</h2>
+              <h2 style={{ color: 'var(--gold)', fontFamily: 'DM Sans', fontSize: 18 }}>{eng.service_type?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</h2>
               <div style={{ display: 'flex', gap: 14, marginTop: 6, flexWrap: 'wrap' }}>
                 <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', gap: 4 }}><User size={11} /> {eng.client_name}</span>
                 <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', gap: 4 }}><Clock size={11} /> Phase: {eng.phase}</span>
@@ -110,11 +110,11 @@ const EngagementDetail = () => {
             </div>
             <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 24, fontWeight: 700, color: progress === 100 ? 'var(--green)' : 'var(--gold)', fontFamily: 'DM Serif Display' }}>{progress}%</div>
+                <div style={{ fontSize: 24, fontWeight: 700, color: progress === 100 ? 'var(--green)' : 'var(--gold)', fontFamily: 'DM Sans' }}>{progress}%</div>
                 <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Progress</div>
               </div>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--gold)', fontFamily: 'DM Serif Display' }}>{done}/{total}</div>
+                <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--gold)', fontFamily: 'DM Sans' }}>{done}/{total}</div>
                 <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Steps</div>
               </div>
               <span style={{ fontSize: 10, fontWeight: 600, padding: '4px 12px', borderRadius: 10, background: eng.status === 'Completed' ? 'var(--green-bg)' : 'rgba(14,109,180,0.12)', color: eng.status === 'Completed' ? 'var(--green)' : 'var(--gold)' }}>{eng.status}</span>
@@ -132,7 +132,7 @@ const EngagementDetail = () => {
       {editing && (
         <div className="nn-card" style={{ padding: '16px 20px', marginBottom: 16 }} data-testid="edit-panel">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <h3 style={{ fontSize: 13, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Edit Engagement</h3>
+            <h3 style={{ fontSize: 13, fontFamily: 'DM Sans', color: 'var(--text)' }}>Edit Engagement</h3>
             <button onClick={() => setEditing(false)} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer' }}><X size={16} /></button>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
@@ -187,7 +187,7 @@ const EngagementDetail = () => {
       ) : (
       <div className="nn-card" style={{ overflow: 'hidden' }} data-testid="engagement-checklist">
         <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--nn-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Checklist</h3>
+          <h3 style={{ fontSize: 14, fontFamily: 'DM Sans', color: 'var(--text)' }}>Checklist</h3>
           <span style={{ fontSize: 11, color: 'var(--muted)' }}>Assigned to: {eng.assigned_to_name || '—'}</span>
         </div>
         {eng.checklist?.map((group, gIdx) => {

@@ -82,7 +82,7 @@ const Reminders = () => {
                 <Icon size={20} style={{ color: 'var(--gold)' }} />
               </div>
               <div>
-                <h2 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 18, margin: 0 }}>{r.title}</h2>
+                <h2 style={{ color: 'var(--gold)', fontFamily: 'DM Sans', fontSize: 18, margin: 0 }}>{r.title}</h2>
                 <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                   <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 10px', borderRadius: 10, background: sev.bg, color: sev.color, textTransform: 'uppercase' }}>
                     {r.type}
@@ -159,7 +159,7 @@ const Reminders = () => {
                 <Bell size={18} color="var(--amber)" />
               </div>
               <div>
-                <h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Compliance Reminders</h3>
+                <h3 style={{ fontSize: 14, fontFamily: 'DM Sans', color: 'var(--text)' }}>Compliance Reminders</h3>
                 <p style={{ fontSize: 11, color: 'var(--muted)' }}>{reminders.length} active alerts &middot; {urgentCount} overdue</p>
               </div>
             </div>
@@ -224,7 +224,7 @@ const Reminders = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {/* Stats */}
           <div className="nn-card" style={{ padding: '14px 16px' }}>
-            <h3 style={{ fontSize: 13, fontFamily: 'DM Serif Display', color: 'var(--text)', marginBottom: 10 }}>Summary</h3>
+            <h3 style={{ fontSize: 13, fontFamily: 'DM Sans', color: 'var(--text)', marginBottom: 10 }}>Summary</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: 12, color: 'var(--red)', fontWeight: 500 }}>Overdue</span>
@@ -244,7 +244,7 @@ const Reminders = () => {
           {/* Quick Links */}
           <div className="nn-card">
             <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--nn-border)' }}>
-              <h3 style={{ fontSize: 13, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Quick Links</h3>
+              <h3 style={{ fontSize: 13, fontFamily: 'DM Sans', color: 'var(--text)' }}>Quick Links</h3>
             </div>
             {[
               { label: 'Deadline Tracker', path: '/app/deadlines', icon: Clock },
@@ -263,7 +263,7 @@ const Reminders = () => {
 
           {/* Type Breakdown */}
           <div className="nn-card" style={{ padding: '14px 16px' }}>
-            <h3 style={{ fontSize: 13, fontFamily: 'DM Serif Display', color: 'var(--text)', marginBottom: 10 }}>By Type</h3>
+            <h3 style={{ fontSize: 13, fontFamily: 'DM Sans', color: 'var(--text)', marginBottom: 10 }}>By Type</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {['task', 'event', 'engagement'].map(type => {
                 const count = reminders.filter(r => r.type === type).length;

@@ -124,7 +124,7 @@ const Documents = () => {
       <div className="nn-card" style={{ overflow: 'hidden', marginBottom: 16 }}>
         <div style={{ background: 'linear-gradient(135deg, var(--navy) 0%, var(--navy3) 100%)', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
           <div>
-            <h2 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 18 }}>Document Checklist</h2>
+            <h2 style={{ color: 'var(--gold)', fontFamily: 'DM Sans', fontSize: 18 }}>Document Checklist</h2>
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>{documents.length} documents uploaded</div>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -160,7 +160,7 @@ const Documents = () => {
             <div style={{ padding: '10px 16px', background: 'var(--off)', borderBottom: '1px solid var(--nn-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--gold)' }} />
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', fontFamily: 'DM Serif Display' }}>{cid === 'unlinked' ? 'Unlinked Documents' : clientName(cid)}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', fontFamily: 'DM Sans' }}>{cid === 'unlinked' ? 'Unlinked Documents' : clientName(cid)}</span>
               </div>
               <span style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 600 }}>{docs.length} file{docs.length !== 1 ? 's' : ''}</span>
             </div>
@@ -212,7 +212,7 @@ const Documents = () => {
         <div className="modal-overlay" onClick={() => !uploading && setShowUpload(false)} data-testid="upload-modal">
           <div className="modal-box" style={{ maxWidth: 500 }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-hdr">
-              <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 16 }}>Upload Document</h3>
+              <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Sans', fontSize: 16 }}>Upload Document</h3>
               <button onClick={() => setShowUpload(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex' }} data-testid="close-upload-modal"><X size={18} /></button>
             </div>
             {uploadSuccess ? (

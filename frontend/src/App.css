@@ -54,8 +54,8 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'DM Serif Display', serif;
-  font-weight: 400;
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 600;
 }
 
 .App {

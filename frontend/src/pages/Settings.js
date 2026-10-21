@@ -447,7 +447,7 @@ const Settings = () => {
   };
 
   if (user?.role !== 'partner') {
-    return <div className="fade-in" style={{ padding: 40, textAlign: 'center' }} data-testid="settings-denied"><h2 style={{ fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Access Restricted</h2><p style={{ fontSize: 13, color: 'var(--muted)' }}>Settings are available to Partners only.</p></div>;
+    return <div className="fade-in" style={{ padding: 40, textAlign: 'center' }} data-testid="settings-denied"><h2 style={{ fontFamily: 'DM Sans', color: 'var(--text)' }}>Access Restricted</h2><p style={{ fontSize: 13, color: 'var(--muted)' }}>Settings are available to Partners only.</p></div>;
   }
 
   const inputStyle = { width: '100%', padding: '8px 10px', borderRadius: 'var(--rs)', border: '1px solid var(--nn-border)', fontSize: 12, fontFamily: 'DM Sans, sans-serif', outline: 'none', background: 'var(--white)', color: 'var(--text)' };
@@ -470,7 +470,7 @@ const Settings = () => {
       <div className="nn-card" style={{ overflow: 'hidden', marginBottom: 16 }}>
         <div style={{ background: 'linear-gradient(135deg, var(--navy) 0%, var(--navy3) 100%)', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <h2 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 18 }}>Firm Settings</h2>
+            <h2 style={{ color: 'var(--gold)', fontFamily: 'DM Sans', fontSize: 18 }}>Firm Settings</h2>
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>Manage access, storage integrations & workflows</div>
           </div>
           {saveMsg && <span style={{ fontSize: 12, color: 'var(--green)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}><CheckCircle size={14} /> {saveMsg}</span>}
@@ -501,7 +501,7 @@ const Settings = () => {
           {/* Firm Name */}
           <div className="nn-card" style={{ overflow: 'hidden', marginBottom: 16 }}>
             <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--nn-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div><h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Firm Identity</h3><p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>Change the parent firm name displayed across the application</p></div>
+              <div><h3 style={{ fontSize: 14, fontFamily: 'DM Sans', color: 'var(--text)' }}>Firm Identity</h3><p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>Change the parent firm name displayed across the application</p></div>
               <button className="tbtn tbtn-gold" onClick={saveFirmName} disabled={saving} data-testid="save-firm-name"><Save size={13} /> Save</button>
             </div>
             <div style={{ padding: '16px 20px' }}>
@@ -514,7 +514,7 @@ const Settings = () => {
           {pendingResets.length > 0 && (
             <div className="nn-card" style={{ overflow: 'hidden', marginBottom: 16, border: '1px solid rgba(245,158,11,0.3)' }} data-testid="pending-resets-card">
               <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--nn-border)' }}>
-                <h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={14} color="#d97706" /> Pending Password Reset Requests</h3>
+                <h3 style={{ fontSize: 14, fontFamily: 'DM Sans', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={14} color="#d97706" /> Pending Password Reset Requests</h3>
                 <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>These users requested a reset via "Forgot password". Relay the code to them by phone or WhatsApp.</p>
               </div>
               <div>
@@ -537,7 +537,7 @@ const Settings = () => {
           {/* Users Table */}
           <div className="nn-card" style={{ overflow: 'hidden' }}>
             <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--nn-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div><h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Team Members</h3><p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{users.length} members &middot; Manage roles, credentials & approvals</p></div>
+              <div><h3 style={{ fontSize: 14, fontFamily: 'DM Sans', color: 'var(--text)' }}>Team Members</h3><p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{users.length} members &middot; Manage roles, credentials & approvals</p></div>
               <button onClick={() => setShowAddUser(true)} className="tbtn tbtn-gold" style={{ fontSize: 11, padding: '6px 14px', display: 'flex', alignItems: 'center', gap: 4 }} data-testid="add-user-btn"><Plus size={13} /> Add User</button>
             </div>
             <div style={{ overflowX: 'auto' }}>
@@ -605,7 +605,7 @@ const Settings = () => {
             <div className="modal-overlay" onClick={() => !saving && setEditUser(null)} data-testid="edit-user-modal">
               <div className="modal-box" style={{ maxWidth: 600 }} onClick={(e) => e.stopPropagation()}>
                 <div className="modal-hdr">
-                  <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 16 }}>Edit: {editUser.name}</h3>
+                  <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Sans', fontSize: 16 }}>Edit: {editUser.name}</h3>
                   <button onClick={() => setEditUser(null)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex' }}><X size={18} /></button>
                 </div>
                 <div className="modal-body" style={{ maxHeight: '65vh', overflowY: 'auto' }}>
@@ -756,7 +756,7 @@ const Settings = () => {
             <div className="modal-overlay" onClick={() => !saving && setShowAddUser(false)} data-testid="add-user-modal">
               <div className="modal-box" style={{ maxWidth: 440 }} onClick={(e) => e.stopPropagation()}>
                 <div className="modal-hdr">
-                  <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 16 }}>Add New User</h3>
+                  <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Sans', fontSize: 16 }}>Add New User</h3>
                   <button onClick={() => setShowAddUser(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex' }}><X size={18} /></button>
                 </div>
                 <div className="modal-body">
@@ -803,7 +803,7 @@ const Settings = () => {
             <div className="modal-overlay" onClick={() => setSecretReveal(null)} data-testid="secret-reveal-modal">
               <div className="modal-box" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
                 <div className="modal-hdr">
-                  <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 16 }}>{secretReveal.type === 'temp_password' ? 'Temporary Password' : 'One-Time Reset Code'}</h3>
+                  <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Sans', fontSize: 16 }}>{secretReveal.type === 'temp_password' ? 'Temporary Password' : 'One-Time Reset Code'}</h3>
                   <button onClick={() => setSecretReveal(null)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex' }}><X size={18} /></button>
                 </div>
                 <div style={{ padding: 20 }}>
@@ -827,7 +827,7 @@ const Settings = () => {
       {tab === 'rbac' && (
         <div className="nn-card" style={{ overflow: 'hidden' }}>
           <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--nn-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div><h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Section Access by Role</h3><p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>Toggle which sections each role can access</p></div>
+            <div><h3 style={{ fontSize: 14, fontFamily: 'DM Sans', color: 'var(--text)' }}>Section Access by Role</h3><p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>Toggle which sections each role can access</p></div>
             <button className="tbtn tbtn-gold" onClick={saveRbac} disabled={saving} data-testid="save-rbac"><Save size={13} /> {saving ? 'Saving...' : 'Save Changes'}</button>
           </div>
           <div style={{ overflowX: 'auto' }}>
@@ -879,7 +879,7 @@ const Settings = () => {
         <div data-testid="per-user-access-tab">
           <div style={{ background: 'var(--white)', border: '1px solid var(--nn-border)', borderRadius: 'var(--rl)', overflow: 'hidden' }}>
             <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--nn-border)' }}>
-              <h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Per-User Sidebar Access</h3>
+              <h3 style={{ fontSize: 14, fontFamily: 'DM Sans', color: 'var(--text)' }}>Per-User Sidebar Access</h3>
               <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>Toggle sidebar sections for individual staff. Unchecked sections will be hidden from that user's sidebar.</p>
             </div>
             <div style={{ overflowX: 'auto' }}>
@@ -1006,7 +1006,7 @@ const Settings = () => {
                   <div style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <h4 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>{wf.name}</h4>
+                        <h4 style={{ fontSize: 14, fontFamily: 'DM Sans', color: 'var(--text)' }}>{wf.name}</h4>
                         {wf.is_preset && <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 6, background: 'rgba(14,109,180,0.08)', color: 'var(--gold4)', fontWeight: 600 }}>Preset</span>}
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{SERVICE_TYPES.find(t => t.key === wf.service_type)?.label || wf.service_type} &middot; {wf.steps?.length || 0} steps</div>
@@ -1036,7 +1036,7 @@ const Settings = () => {
       {tab === 'workflows' && editWf && (
         <div className="nn-card" style={{ overflow: 'hidden' }} data-testid="workflow-editor">
           <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--nn-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>{editWf === 'new' ? 'New Workflow' : `Edit: ${editWf.name}`}</h3>
+            <h3 style={{ fontSize: 14, fontFamily: 'DM Sans', color: 'var(--text)' }}>{editWf === 'new' ? 'New Workflow' : `Edit: ${editWf.name}`}</h3>
             <button onClick={() => setEditWf(null)} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', display: 'flex' }}><X size={18} /></button>
           </div>
           <div style={{ padding: '16px 20px' }}>
@@ -1245,7 +1245,7 @@ const Settings = () => {
             <div className="modal-overlay" onClick={() => !saving && setShowLogHours(false)} data-testid="log-hours-modal">
               <div className="modal-box" style={{ maxWidth: 440 }} onClick={(e) => e.stopPropagation()}>
                 <div className="modal-hdr">
-                  <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 16 }}>Log Billable Hours</h3>
+                  <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Sans', fontSize: 16 }}>Log Billable Hours</h3>
                   <button onClick={() => setShowLogHours(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex' }}><X size={18} /></button>
                 </div>
                 <div className="modal-body">
@@ -1286,7 +1286,7 @@ const Settings = () => {
         <div data-testid="reminder-config-tab">
           <div className="nn-card" style={{ overflow: 'hidden', marginBottom: 14 }}>
             <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--nn-border)' }}>
-              <h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>AML Service Reminders</h3>
+              <h3 style={{ fontSize: 14, fontFamily: 'DM Sans', color: 'var(--text)' }}>AML Service Reminders</h3>
               <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>All AML-related reminders and tasks will be routed to a single designated staff member.</p>
             </div>
             <div style={{ padding: '16px 20px' }}>
@@ -1300,7 +1300,7 @@ const Settings = () => {
 
           <div className="nn-card" style={{ overflow: 'hidden', marginBottom: 14 }}>
             <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--nn-border)' }}>
-              <h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Audit Service Reminders</h3>
+              <h3 style={{ fontSize: 14, fontFamily: 'DM Sans', color: 'var(--text)' }}>Audit Service Reminders</h3>
               <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>Map each client to the staff member responsible for their audit reminders.</p>
             </div>
             <div style={{ padding: '16px 20px' }}>
@@ -1338,7 +1338,7 @@ const Settings = () => {
         <div data-testid="reset-data-tab">
           <div className="nn-card" style={{ overflow: 'hidden', marginBottom: 14, borderLeft: '3px solid var(--red)' }}>
             <div style={{ padding: '16px 20px' }}>
-              <h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--red)', marginBottom: 4 }}>Danger Zone — Reset Application Data</h3>
+              <h3 style={{ fontSize: 14, fontFamily: 'DM Sans', color: 'var(--red)', marginBottom: 4 }}>Danger Zone — Reset Application Data</h3>
               <p style={{ fontSize: 12, color: 'var(--muted)' }}>This will permanently delete selected data. User accounts and firm settings will be preserved. This action cannot be undone.</p>
             </div>
           </div>
@@ -1381,7 +1381,7 @@ const Settings = () => {
       {tab === 'storage' && driveStatus && (
         <div className="nn-card" style={{ overflow: 'hidden', marginTop: 14 }} data-testid="drive-integration">
           <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--nn-border)' }}>
-            <h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Google Drive Integration</h3>
+            <h3 style={{ fontSize: 14, fontFamily: 'DM Sans', color: 'var(--text)' }}>Google Drive Integration</h3>
             <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>Connect Google Drive to sync client documents to the cloud.</p>
           </div>
           <div style={{ padding: '16px 20px' }}>

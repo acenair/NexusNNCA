@@ -197,7 +197,7 @@ const MyTasks = () => {
         <div style={{ background: 'linear-gradient(135deg, var(--navy) 0%, var(--navy3) 100%)', padding: '16px 20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
             <div>
-              <h2 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 18 }}>{isPartner ? 'All Tasks' : 'My Tasks'}</h2>
+              <h2 style={{ color: 'var(--gold)', fontFamily: 'DM Sans', fontSize: 18 }}>{isPartner ? 'All Tasks' : 'My Tasks'}</h2>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>{isPartner ? 'View and manage tasks across all team members' : 'Your assigned tasks and deadlines'}</div>
             </div>
             {isPartner && (
@@ -213,7 +213,7 @@ const MyTasks = () => {
                 { label: 'Active', value: stats.inProgress, color: 'var(--blue, #3b82f6)' },
               ].map(s => (
                 <div key={s.label} style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 18, fontWeight: 700, color: s.color, fontFamily: 'DM Serif Display' }}>{s.value}</div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: s.color, fontFamily: 'DM Sans' }}>{s.value}</div>
                   <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: 0.5 }}>{s.label}</div>
                 </div>
               ))}
@@ -279,7 +279,7 @@ const MyTasks = () => {
         <div className="modal-overlay" onClick={() => !uploading && setShowUpload(false)} data-testid="bulk-upload-modal">
           <div className="modal-box" style={{ maxWidth: 600, maxHeight: '85vh' }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-hdr">
-              <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 16 }}>Bulk Task Upload</h3>
+              <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Sans', fontSize: 16 }}>Bulk Task Upload</h3>
               <button onClick={() => !uploading && setShowUpload(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex' }} data-testid="close-upload-modal"><X size={18} /></button>
             </div>
 

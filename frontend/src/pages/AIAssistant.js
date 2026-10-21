@@ -88,8 +88,8 @@ const AIAssistant = () => {
     return text
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/^### (.*$)/gm, '<h4 style="font-family:DM Serif Display;font-size:14px;margin:8px 0 4px;color:var(--text)">$1</h4>')
-      .replace(/^## (.*$)/gm, '<h3 style="font-family:DM Serif Display;font-size:15px;margin:10px 0 4px;color:var(--text)">$1</h3>')
+      .replace(/^### (.*$)/gm, '<h4 style="font-family:DM Sans;font-size:14px;margin:8px 0 4px;color:var(--text)">$1</h4>')
+      .replace(/^## (.*$)/gm, '<h3 style="font-family:DM Sans;font-size:15px;margin:10px 0 4px;color:var(--text)">$1</h3>')
       .replace(/^- (.*$)/gm, '<div style="padding-left:12px;margin:2px 0">• $1</div>')
       .replace(/^(\d+)\. (.*$)/gm, '<div style="padding-left:12px;margin:2px 0">$1. $2</div>')
       .replace(/`(.*?)`/g, '<code style="background:var(--off);padding:1px 5px;border-radius:3px;font-size:12px">$1</code>')
@@ -101,7 +101,7 @@ const AIAssistant = () => {
       {/* Sessions Panel */}
       <div className="ai-sessions-panel" style={{ display: showSessions ? 'flex' : undefined }} data-testid="ai-sessions-panel">
         <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--nn-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h3 style={{ fontSize: 13, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Conversations</h3>
+          <h3 style={{ fontSize: 13, fontFamily: 'DM Sans', color: 'var(--text)' }}>Conversations</h3>
           <button onClick={newSession} className="tbtn tbtn-gold" style={{ padding: '5px 10px', fontSize: 11 }} data-testid="new-chat-btn"><Plus size={12} /> New</button>
         </div>
         <div style={{ flex: 1, overflowY: 'auto' }}>
@@ -142,7 +142,7 @@ const AIAssistant = () => {
                 <Bot size={18} color="var(--navy)" />
               </div>
               <div>
-                <h2 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 16 }}>AI Compliance Assistant</h2>
+                <h2 style={{ color: 'var(--gold)', fontFamily: 'DM Sans', fontSize: 16 }}>AI Compliance Assistant</h2>
                 <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>UAE regulatory expert + firm data</div>
               </div>
             </div>
@@ -162,7 +162,7 @@ const AIAssistant = () => {
                   <Bot size={26} color="var(--gold)" />
                 </div>
                 <div style={{ textAlign: 'center' }}>
-                  <h3 style={{ fontFamily: 'DM Serif Display', fontSize: 16, color: 'var(--text)', marginBottom: 4 }}>How can I help you today?</h3>
+                  <h3 style={{ fontFamily: 'DM Sans', fontSize: 16, color: 'var(--text)', marginBottom: 4 }}>How can I help you today?</h3>
                   <p style={{ fontSize: 12, color: 'var(--muted)', maxWidth: 380 }}>Ask me about UAE compliance, audit standards, or your firm's client data and deadlines.</p>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, maxWidth: 500, width: '100%' }} className="ai-quick-grid" data-testid="quick-prompts">

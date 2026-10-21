@@ -53,7 +53,7 @@ const AgeingReport = () => {
     <div style={{ maxWidth: 1100, margin: '0 auto' }} data-testid="ageing-report-page">
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontFamily: 'DM Serif Display', fontSize: 22, color: 'var(--text)', marginBottom: 4 }}>Ageing Report</h1>
+        <h1 style={{ fontFamily: 'DM Sans', fontSize: 22, color: 'var(--text)', marginBottom: 4 }}>Ageing Report</h1>
         <p style={{ fontSize: 13, color: 'var(--muted)' }}>Unpaid invoice analysis with overdue tracking</p>
       </div>
 
@@ -61,7 +61,7 @@ const AgeingReport = () => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 24 }}>
         <div style={cardStyle}>
           <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', letterSpacing: 0.5, marginBottom: 8 }}>Total Outstanding</div>
-          <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)', fontFamily: 'DM Serif Display' }}>AED {summary.total_unpaid?.toLocaleString() || '0'}</div>
+          <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)', fontFamily: 'DM Sans' }}>AED {summary.total_unpaid?.toLocaleString() || '0'}</div>
           <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{summary.total_invoices} invoice{summary.total_invoices !== 1 ? 's' : ''}</div>
         </div>
         {Object.entries(BUCKET_LABELS).map(([key, label]) => {
@@ -83,7 +83,7 @@ const AgeingReport = () => {
       <div style={{ ...cardStyle, padding: 0 }}>
         <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--nn-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Client Breakdown</h3>
+            <h3 style={{ fontSize: 14, fontFamily: 'DM Sans', color: 'var(--text)' }}>Client Breakdown</h3>
             <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{clients.length} client{clients.length !== 1 ? 's' : ''} with outstanding invoices</p>
           </div>
         </div>

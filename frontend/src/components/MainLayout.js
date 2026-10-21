@@ -267,7 +267,7 @@ const MainLayout = ({ user }) => {
       {/* Logo */}
       <div style={{ padding: collapsed && !isMobile ? '16px 0' : '20px 20px 14px', borderBottom: '1px solid #e4eff6', display: 'flex', alignItems: 'center', justifyContent: collapsed && !isMobile ? 'center' : 'space-between' }}>
         {collapsed && !isMobile ? (
-          <div style={{ width: 36, height: 36, borderRadius: 8, background: '#01457C', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontFamily: 'DM Serif Display', fontWeight: 700, fontSize: 14, cursor: 'pointer' }} onClick={() => setCollapsed(false)} data-testid="sidebar-expand-btn">N</div>
+          <div style={{ width: 36, height: 36, borderRadius: 8, background: '#01457C', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontFamily: 'DM Sans', fontWeight: 700, fontSize: 14, cursor: 'pointer' }} onClick={() => setCollapsed(false)} data-testid="sidebar-expand-btn">N</div>
         ) : (
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -452,7 +452,7 @@ const MainLayout = ({ user }) => {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {/* Mobile menu button */}
             <button className="mobile-menu-btn" onClick={() => setMobileOpen(true)} style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', padding: 4, display: 'none', alignItems: 'center' }} data-testid="mobile-menu-btn"><Menu size={20} /></button>
-            <h2 style={{ fontSize: 17, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>{getPageTitle()}</h2>
+            <h2 style={{ fontSize: 17, fontFamily: 'DM Sans', color: 'var(--text)' }}>{getPageTitle()}</h2>
             <span className="topbar-date" style={{ fontSize: 11, color: 'var(--muted)' }}>{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -474,7 +474,7 @@ const MainLayout = ({ user }) => {
               {showNotifPanel && (
                 <div style={{ position: 'absolute', top: '100%', right: 0, width: 320, maxHeight: 400, background: 'var(--white)', border: '1px solid var(--nn-border)', borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.12)', zIndex: 100, overflow: 'hidden' }} data-testid="notif-panel">
                   <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--nn-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', fontFamily: 'DM Serif Display' }}>Notifications</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', fontFamily: 'DM Sans' }}>Notifications</span>
                     <span style={{ fontSize: 10, color: 'var(--muted)' }}>{notifications.length} pending</span>
                   </div>
                   <div style={{ maxHeight: 320, overflowY: 'auto' }}>
@@ -520,7 +520,7 @@ const MainLayout = ({ user }) => {
         <div className="modal-overlay" onClick={() => !submitting && setShowTaskModal(false)} data-testid="new-task-modal">
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
             <div className="modal-hdr">
-              <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 16 }}>New Task</h3>
+              <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Sans', fontSize: 16 }}>New Task</h3>
               <button onClick={() => setShowTaskModal(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex' }} data-testid="close-task-modal"><X size={18} /></button>
             </div>
             {successMsg ? (
@@ -553,7 +553,7 @@ const MainLayout = ({ user }) => {
         <div className="modal-overlay" onClick={() => !submitting && setShowEventModal(false)} data-testid="event-modal">
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
             <div className="modal-hdr">
-              <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 16 }}>{eventType === 'meeting' ? 'Schedule Meeting' : 'Create Follow-up'}</h3>
+              <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Sans', fontSize: 16 }}>{eventType === 'meeting' ? 'Schedule Meeting' : 'Create Follow-up'}</h3>
               <button onClick={() => setShowEventModal(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex' }} data-testid="close-event-modal"><X size={18} /></button>
             </div>
             {successMsg ? (

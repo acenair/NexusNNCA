@@ -23,7 +23,7 @@ const StaffAppreciation = () => {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 400 }}>
         <div className="nn-card" style={{ padding: '40px 48px', textAlign: 'center' }}>
-          <h2 style={{ fontFamily: 'DM Serif Display', color: 'var(--text)', marginBottom: 8, fontSize: 18 }}>Partner Access Only</h2>
+          <h2 style={{ fontFamily: 'DM Sans', color: 'var(--text)', marginBottom: 8, fontSize: 18 }}>Partner Access Only</h2>
           <p style={{ color: 'var(--muted)', fontSize: 13 }}>This feature is only available to partners</p>
         </div>
       </div>
@@ -77,7 +77,7 @@ const StaffAppreciation = () => {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <h1 style={{ fontFamily: 'DM Serif Display', color: 'var(--gold)', fontSize: 22, marginBottom: 4 }}>Staff Appreciation & Performance</h1>
+            <h1 style={{ fontFamily: 'DM Sans', color: 'var(--gold)', fontSize: 22, marginBottom: 4 }}>Staff Appreciation & Performance</h1>
             <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>Recognize your team · Track monthly work output · YTD 2026</p>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -96,7 +96,7 @@ const StaffAppreciation = () => {
         {statsRow.map((s, idx) => (
           <div key={idx} className="nn-card" style={{ padding: '14px 16px' }}>
             <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.7, color: 'var(--muted)', marginBottom: 4 }}>{s.label}</div>
-            <div style={{ fontSize: 24, fontFamily: 'DM Serif Display', color: s.color }}>{s.value}</div>
+            <div style={{ fontSize: 24, fontFamily: 'DM Sans', color: s.color }}>{s.value}</div>
           </div>
         ))}
       </div>
@@ -191,7 +191,7 @@ const StaffAppreciation = () => {
       {/* Staff Report Tab */}
       {activeTab === 'report' && (
         <div className="nn-card" style={{ padding: 24 }} data-testid="staff-report-tab">
-          <h3 style={{ fontFamily: 'DM Serif Display', fontSize: 16, marginBottom: 16 }}>Staff Performance Report</h3>
+          <h3 style={{ fontFamily: 'DM Sans', fontSize: 16, marginBottom: 16 }}>Staff Performance Report</h3>
           <p style={{ color: 'var(--muted)', fontSize: 13 }}>Select a staff member from the Team Cards to view their detailed performance report.</p>
         </div>
       )}
@@ -201,7 +201,7 @@ const StaffAppreciation = () => {
         <div data-testid="leaderboard-tab">
           <div className="nn-card">
             <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--nn-border)' }}>
-              <h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display' }}>YTD Leaderboard — 2026</h3>
+              <h3 style={{ fontSize: 14, fontFamily: 'DM Sans' }}>YTD Leaderboard — 2026</h3>
             </div>
             <table className="nn-table">
               <thead>
@@ -251,7 +251,7 @@ const StaffAppreciation = () => {
         <div className="modal-overlay" onClick={() => setShowAppreciationModal(false)} data-testid="appreciation-modal">
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
             <div className="modal-hdr">
-              <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 16 }}>Give Appreciation</h3>
+              <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Sans', fontSize: 16 }}>Give Appreciation</h3>
               <button onClick={() => setShowAppreciationModal(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontSize: 18 }}>x</button>
             </div>
             <div className="modal-body">
@@ -366,7 +366,7 @@ const StaffAppreciation = () => {
           <div className="modal-box" style={{ width: 600 }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-hdr">
               <div>
-                <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 16 }}>{selectedStaff.name} — Performance Report</h3>
+                <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Sans', fontSize: 16 }}>{selectedStaff.name} — Performance Report</h3>
                 <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Year-to-Date 2026 · January – March · {selectedStaff.role}</div>
               </div>
               <button onClick={() => setShowReportModal(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontSize: 18 }}>x</button>
@@ -382,13 +382,13 @@ const StaffAppreciation = () => {
                 ].map((s, i) => (
                   <div key={i} style={{ background: 'var(--off)', borderRadius: 8, padding: '10px 12px', textAlign: 'center' }}>
                     <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>{s.label}</div>
-                    <div style={{ fontSize: 18, fontFamily: 'DM Serif Display', color: s.color }}>{s.value}</div>
+                    <div style={{ fontSize: 18, fontFamily: 'DM Sans', color: s.color }}>{s.value}</div>
                   </div>
                 ))}
               </div>
 
               {/* Work Breakdown */}
-              <h4 style={{ fontSize: 13, fontFamily: 'DM Serif Display', marginBottom: 10, color: 'var(--text)' }}>Work Breakdown</h4>
+              <h4 style={{ fontSize: 13, fontFamily: 'DM Sans', marginBottom: 10, color: 'var(--text)' }}>Work Breakdown</h4>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 18 }}>
                 <div style={{ background: 'var(--blue-bg)', borderRadius: 8, padding: '10px 12px', textAlign: 'center' }}>
                   <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--blue)' }}>{selectedStaff.audits}</div>
@@ -405,7 +405,7 @@ const StaffAppreciation = () => {
               </div>
 
               {/* Task Completion */}
-              <h4 style={{ fontSize: 13, fontFamily: 'DM Serif Display', marginBottom: 8, color: 'var(--text)' }}>Task Completion Rate</h4>
+              <h4 style={{ fontSize: 13, fontFamily: 'DM Sans', marginBottom: 8, color: 'var(--text)' }}>Task Completion Rate</h4>
               <div style={{ marginBottom: 4 }}>
                 <div className="nn-progress" style={{ height: 8 }}>
                   <div className="nn-progress-bar" style={{ width: `${(selectedStaff.completed / selectedStaff.tasks * 100)}%`, background: 'var(--green)' }} />

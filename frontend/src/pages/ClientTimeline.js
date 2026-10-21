@@ -62,7 +62,7 @@ const ClientTimeline = () => {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
             <div>
-              <h2 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 18 }}>{client.name}</h2>
+              <h2 style={{ color: 'var(--gold)', fontFamily: 'DM Sans', fontSize: 18 }}>{client.name}</h2>
               <div style={{ display: 'flex', gap: 12, marginTop: 4, flexWrap: 'wrap' }}>
                 {client.entity_type && <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)' }}>{client.entity_type}</span>}
                 {client.jurisdiction && <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)' }}>{client.jurisdiction}</span>}
@@ -78,7 +78,7 @@ const ClientTimeline = () => {
                 { label: 'Documents', value: typeCounts.document || 0 },
               ].map(s => (
                 <div key={s.label} style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--gold)', fontFamily: 'DM Serif Display' }}>{s.value}</div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--gold)', fontFamily: 'DM Sans' }}>{s.value}</div>
                   <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>{s.label}</div>
                 </div>
               ))}

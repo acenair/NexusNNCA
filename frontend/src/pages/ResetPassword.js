@@ -55,13 +55,13 @@ const ResetPassword = () => {
 
       <div style={{ width: 420, maxWidth: '90vw', position: 'relative', zIndex: 1 }}>
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <div style={{ width: 52, height: 52, borderRadius: 12, background: 'var(--gold)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#17354c', fontFamily: 'DM Serif Display', fontSize: 20, fontWeight: 700, marginBottom: 12 }}>N&N</div>
-          <h1 style={{ fontFamily: 'DM Serif Display', color: '#0e7ec4', fontSize: 24, marginBottom: 4 }}>Nair & Nelliyatt</h1>
+          <div style={{ width: 52, height: 52, borderRadius: 12, background: 'var(--gold)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#17354c', fontFamily: 'DM Sans', fontSize: 20, fontWeight: 700, marginBottom: 12 }}>N&N</div>
+          <h1 style={{ fontFamily: 'DM Sans', color: '#0e7ec4', fontSize: 24, marginBottom: 4 }}>Nair & Nelliyatt</h1>
           <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', letterSpacing: 1 }}>CHARTERED ACCOUNTANTS</p>
         </div>
 
         <div style={{ background: '#fff', borderRadius: 14, padding: '28px 30px', boxShadow: '0 16px 64px rgba(0,0,0,0.25)' }}>
-          <h2 style={{ fontFamily: 'DM Serif Display', fontSize: 18, color: '#17354c', marginBottom: 4 }}>Reset Password</h2>
+          <h2 style={{ fontFamily: 'DM Sans', fontSize: 18, color: '#17354c', marginBottom: 4 }}>Reset Password</h2>
           <p style={{ fontSize: 12, color: '#7891a4', marginBottom: 20 }}>Enter the one-time code a partner relayed to you, and choose a new password.</p>
 
           {error && (

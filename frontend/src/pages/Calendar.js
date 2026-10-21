@@ -152,7 +152,7 @@ const CalendarPage = () => {
         <div className="nn-card" style={{ overflow: 'hidden' }}>
           <div style={{ background: 'linear-gradient(135deg, var(--navy) 0%, var(--navy3) 100%)', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
-              <h2 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 18, marginBottom: 2 }}>{monthName}</h2>
+              <h2 style={{ color: 'var(--gold)', fontFamily: 'DM Sans', fontSize: 18, marginBottom: 2 }}>{monthName}</h2>
               <div className="cal-subtitle" style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Nair & Nelliyatt Chartered Accountants</div>
             </div>
             <div style={{ display: 'flex', gap: 6 }}>
@@ -251,7 +251,7 @@ const CalendarPage = () => {
 
           <div className="nn-card">
             <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--nn-border)' }}>
-              <h3 style={{ fontSize: 13, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Upcoming Events</h3>
+              <h3 style={{ fontSize: 13, fontFamily: 'DM Sans', color: 'var(--text)' }}>Upcoming Events</h3>
             </div>
             <div style={{ maxHeight: 320, overflowY: 'auto' }}>
               {upcomingEvents.slice(0, 8).map((ev, idx) => (
@@ -267,7 +267,7 @@ const CalendarPage = () => {
           </div>
 
           <div className="nn-card" style={{ padding: '14px 16px' }}>
-            <h3 style={{ fontSize: 13, fontFamily: 'DM Serif Display', color: 'var(--text)', marginBottom: 10 }}>This Month</h3>
+            <h3 style={{ fontSize: 13, fontFamily: 'DM Sans', color: 'var(--text)', marginBottom: 10 }}>This Month</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {[
                 { label: 'Meetings', count: Object.values(events).flat().filter(e => e.type === 'meeting').length, color: 'var(--green)' },
@@ -315,7 +315,7 @@ const CalendarPage = () => {
         <div className="modal-overlay" onClick={() => !submitting && setShowEventModal(false)} data-testid="cal-event-modal">
           <div className="modal-box" style={{ width: 510 }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-hdr">
-              <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 16 }}>
+              <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Sans', fontSize: 16 }}>
                 {{ meeting: 'Schedule Meeting', followup: 'Create Follow-up', task: 'Add Task', deadline: 'Add Deadline' }[eventType]}
               </h3>
               <button onClick={() => setShowEventModal(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex' }}><X size={18} /></button>

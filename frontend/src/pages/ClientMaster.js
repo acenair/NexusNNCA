@@ -105,7 +105,7 @@ const ClientMaster = () => {
   const labelStyle = { fontSize: 10, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', marginBottom: 3 };
 
   if (user?.title !== 'Managing Partner') {
-    return <div className="fade-in" style={{ padding: 40, textAlign: 'center' }} data-testid="client-master-denied"><h2 style={{ fontFamily: 'DM Serif Display', color: 'var(--text)', marginBottom: 8 }}>Access Restricted</h2><p style={{ fontSize: 13, color: 'var(--muted)' }}>Client Master is available to the Managing Partner only.</p></div>;
+    return <div className="fade-in" style={{ padding: 40, textAlign: 'center' }} data-testid="client-master-denied"><h2 style={{ fontFamily: 'DM Sans', color: 'var(--text)', marginBottom: 8 }}>Access Restricted</h2><p style={{ fontSize: 13, color: 'var(--muted)' }}>Client Master is available to the Managing Partner only.</p></div>;
   }
 
   return (
@@ -114,7 +114,7 @@ const ClientMaster = () => {
       <div className="nn-card" style={{ overflow: 'hidden', marginBottom: 16 }}>
         <div style={{ background: 'linear-gradient(135deg, var(--navy) 0%, var(--navy3) 100%)', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
           <div>
-            <h2 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 18 }}>Client Master</h2>
+            <h2 style={{ color: 'var(--gold)', fontFamily: 'DM Sans', fontSize: 18 }}>Client Master</h2>
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>{clients.length} clients &middot; Managing Partner Access</div>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -237,7 +237,7 @@ const ClientMaster = () => {
         <div className="modal-overlay" onClick={() => !saving && setEditClient(null)} data-testid="edit-client-modal">
           <div className="modal-box" style={{ maxWidth: 600, maxHeight: '90vh' }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-hdr">
-              <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 16 }}>Edit Client</h3>
+              <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Sans', fontSize: 16 }}>Edit Client</h3>
               <button onClick={() => setEditClient(null)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex' }} data-testid="close-edit-modal"><X size={18} /></button>
             </div>
             {successMsg ? (

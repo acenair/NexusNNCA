@@ -99,7 +99,7 @@ const Invoices = () => {
   const labelStyle = { fontSize: 10, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', marginBottom: 3 };
 
   if (user?.role !== 'partner') {
-    return <div className="fade-in" style={{ padding: 40, textAlign: 'center' }}><h2 style={{ fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Access Restricted</h2></div>;
+    return <div className="fade-in" style={{ padding: 40, textAlign: 'center' }}><h2 style={{ fontFamily: 'DM Sans', color: 'var(--text)' }}>Access Restricted</h2></div>;
   }
 
   return (
@@ -110,7 +110,7 @@ const Invoices = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <Receipt size={18} style={{ color: 'var(--gold)' }} />
             <div>
-              <h2 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 18 }}>Invoice Management</h2>
+              <h2 style={{ color: 'var(--gold)', fontFamily: 'DM Sans', fontSize: 18 }}>Invoice Management</h2>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>Create and manage client invoices</div>
             </div>
           </div>
@@ -198,7 +198,7 @@ const Invoices = () => {
         <div className="modal-overlay" onClick={() => !saving && setShowModal(false)} data-testid="invoice-modal">
           <div className="modal-box" style={{ maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-hdr">
-              <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 16 }}>{editInvoice ? 'Edit Invoice' : 'New Invoice'}</h3>
+              <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Sans', fontSize: 16 }}>{editInvoice ? 'Edit Invoice' : 'New Invoice'}</h3>
               <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex' }}><X size={18} /></button>
             </div>
             <div className="modal-body">

@@ -57,7 +57,7 @@ const ClientDashboard = ({ user, defaultTab }) => {
     <div className="fade-in" data-testid="client-dashboard">
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
-        <h1 style={{ fontFamily: 'DM Serif Display', fontSize: 24, color: 'var(--text)' }}>Welcome, {user?.name}</h1>
+        <h1 style={{ fontFamily: 'DM Sans', fontSize: 24, color: 'var(--text)' }}>Welcome, {user?.name}</h1>
         <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>{docData.client_name ? `Client Portal — ${docData.client_name}` : 'Client Portal'}</p>
       </div>
 
@@ -105,7 +105,7 @@ const ClientDashboard = ({ user, defaultTab }) => {
           <div className="nn-card" style={{ overflow: 'hidden' }}>
             <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--nn-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Documents Required</h3>
+                <h3 style={{ fontSize: 14, fontFamily: 'DM Sans', color: 'var(--text)' }}>Documents Required</h3>
                 <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>Service: {(docData.service_type || '').replace('_', ' ').toUpperCase()}</p>
               </div>
               <div style={{ fontSize: 12, fontWeight: 600, color: uploadedDocs === totalDocs && totalDocs > 0 ? 'var(--green)' : 'var(--gold4)' }}>
@@ -155,7 +155,7 @@ const ClientDashboard = ({ user, defaultTab }) => {
             <div key={eng.engagement_id} className="nn-card" style={{ overflow: 'hidden', marginBottom: 14 }} data-testid={`workflow-eng-${eng.engagement_id}`}>
               <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--nn-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>{eng.service_type}</h3>
+                  <h3 style={{ fontSize: 14, fontFamily: 'DM Sans', color: 'var(--text)' }}>{eng.service_type}</h3>
                   <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>Current phase: {eng.phase || '—'}</p>
                 </div>
                 <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 10px', borderRadius: 10, background: eng.status === 'Active' ? 'rgba(34,197,94,0.08)' : 'var(--off)', color: eng.status === 'Active' ? 'var(--green)' : 'var(--muted)' }}>{eng.status}</span>
@@ -183,7 +183,7 @@ const ClientDashboard = ({ user, defaultTab }) => {
         <div data-testid="client-invoices-section">
           <div className="nn-card" style={{ overflow: 'hidden' }}>
             <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--nn-border)' }}>
-              <h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>Invoice History</h3>
+              <h3 style={{ fontSize: 14, fontFamily: 'DM Sans', color: 'var(--text)' }}>Invoice History</h3>
             </div>
             {invoices.length === 0 ? (
               <div style={{ padding: 40, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>No invoices yet.</div>

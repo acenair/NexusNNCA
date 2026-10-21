@@ -96,7 +96,7 @@ const ServicePage = ({ title, subtitle, serviceType, stats }) => {
       {/* Banner */}
       <div style={{ background: 'linear-gradient(135deg, var(--navy), var(--navy3))', borderRadius: 'var(--rl)', padding: '18px 22px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, boxShadow: 'var(--shadow)' }} data-testid="service-banner">
         <div>
-          <h1 style={{ fontFamily: 'DM Serif Display', color: 'var(--gold)', fontSize: 18, marginBottom: 3 }}>{title}</h1>
+          <h1 style={{ fontFamily: 'DM Sans', color: 'var(--gold)', fontSize: 18, marginBottom: 3 }}>{title}</h1>
           <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{subtitle}</p>
         </div>
         <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
@@ -106,7 +106,7 @@ const ServicePage = ({ title, subtitle, serviceType, stats }) => {
             { label: 'Total', value: engagements.length },
           ]).map((s, i) => (
             <div key={i} style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--gold)', fontFamily: 'DM Serif Display' }}>{s.value}</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--gold)', fontFamily: 'DM Sans' }}>{s.value}</div>
               <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: 0.5 }}>{s.label}</div>
             </div>
           ))}
@@ -191,7 +191,7 @@ const ServicePage = ({ title, subtitle, serviceType, stats }) => {
         <div className="modal-overlay" onClick={() => !submitting && setShowCreate(false)} data-testid="create-engagement-modal">
           <div className="modal-box" style={{ maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-hdr">
-              <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Serif Display', fontSize: 16 }}>New {title} Engagement</h3>
+              <h3 style={{ color: 'var(--gold)', fontFamily: 'DM Sans', fontSize: 16 }}>New {title} Engagement</h3>
               <button onClick={() => setShowCreate(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex' }}><X size={18} /></button>
             </div>
             {successMsg ? (

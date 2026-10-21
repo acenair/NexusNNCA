@@ -94,7 +94,7 @@ const AuditWorkbook = ({ engagementId, clientId, clientName }) => {
   if (showStartForm || audits.length === 0) {
     return (
       <div className="nn-card" style={{ padding: 24 }} data-testid="audit-start-form">
-        <h3 style={{ fontSize: 15, fontFamily: 'DM Serif Display', color: 'var(--text)', marginBottom: 4 }}>Start Digital Audit Workbook</h3>
+        <h3 style={{ fontSize: 15, fontFamily: 'DM Sans', color: 'var(--text)', marginBottom: 4 }}>Start Digital Audit Workbook</h3>
         <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16 }}>25-section statutory audit checklist for {clientName}.</p>
         <div style={{ marginBottom: 14, maxWidth: 320 }}>
           <label style={{ fontSize: 10, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>Audit Period *</label>
@@ -131,7 +131,7 @@ const AuditWorkbook = ({ engagementId, clientId, clientName }) => {
         <div style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <h3 style={{ fontSize: 14, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>{audit.period}</h3>
+              <h3 style={{ fontSize: 14, fontFamily: 'DM Sans', color: 'var(--text)' }}>{audit.period}</h3>
               <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 10px', borderRadius: 10, background: audit.status === 'completed' ? 'var(--green-bg)' : 'rgba(14,109,180,0.12)', color: audit.status === 'completed' ? 'var(--green)' : 'var(--gold4)' }} data-testid="audit-status-pill">{audit.status === 'completed' ? 'Completed' : 'In Progress'}</span>
               {audit.rolled_forward_from && <span style={{ fontSize: 10, color: 'var(--muted)' }}>Rolled forward</span>}
             </div>
@@ -187,7 +187,7 @@ const AuditWorkbook = ({ engagementId, clientId, clientName }) => {
         {/* Questions Panel */}
         <div className="nn-card" style={{ flex: 1, minWidth: 0, maxHeight: 640, overflowY: 'auto' }} data-testid="audit-questions-panel">
           <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--nn-border)', position: 'sticky', top: 0, background: 'var(--white)', zIndex: 1 }}>
-            <h4 style={{ fontSize: 13, fontFamily: 'DM Serif Display', color: 'var(--text)' }}>{currentSection.name}</h4>
+            <h4 style={{ fontSize: 13, fontFamily: 'DM Sans', color: 'var(--text)' }}>{currentSection.name}</h4>
             <div className="nn-progress" style={{ height: 4, marginTop: 6, width: 160 }}><div className="nn-progress-bar" style={{ width: `${currentProgress?.pct || 0}%`, background: 'var(--gold)' }} /></div>
           </div>
           {currentSection.questions.map(q => (

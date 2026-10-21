@@ -27,8 +27,8 @@ const ClientLayout = ({ user }) => {
       {/* Top Nav */}
       <nav style={{ background: 'var(--navy, #0a1128)', padding: '0 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56, position: 'sticky', top: 0, zIndex: 50, flexWrap: 'wrap', gap: 4 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 6, background: 'var(--gold, #D4AF37)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--navy, #0a1128)', fontWeight: 800, fontSize: 9, fontFamily: 'DM Serif Display' }}>N&N</div>
-          <span style={{ fontFamily: 'DM Serif Display', fontSize: 13, color: 'var(--gold, #D4AF37)' }}>Client Portal</span>
+          <div style={{ width: 28, height: 28, borderRadius: 6, background: 'var(--gold, #D4AF37)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--navy, #0a1128)', fontWeight: 800, fontSize: 9, fontFamily: 'DM Sans' }}>N&N</div>
+          <span style={{ fontFamily: 'DM Sans', fontSize: 13, color: 'var(--gold, #D4AF37)' }}>Client Portal</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           {navItems.map(item => {
