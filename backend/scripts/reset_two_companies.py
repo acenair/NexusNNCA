@@ -161,6 +161,8 @@ def inv(number_seq, client, service, amount, date, due, staff_name, state):
         receipts.append({"receipt_id": f"RCT-{uuid.uuid4().hex[:8].upper()}", "amount": paid,
                          "method": "Bank transfer", "reference": f"TRF-{number_seq:04d}",
                          "date": iso(today - timedelta(days=2)), "recorded_by": "Admin", "recorded_at": now.isoformat()})
+    elif state == "draft":
+        status = "Draft"
     elif state == "credit":
         credits.append({"credit_id": f"CN-{uuid.uuid4().hex[:8].upper()}", "amount": 250, "reason": "agreed fee adjustment",
                         "date": iso(today - timedelta(days=1)), "created_by": "Admin"})
