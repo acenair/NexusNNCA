@@ -368,7 +368,7 @@ const MainLayout = ({ user }) => {
                           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                           padding: '6px 10px', borderRadius: 6, fontSize: 13, textDecoration: 'none',
                           transition: 'all 0.15s', marginBottom: 1,
-                          background: isActive ? 'var(--gold)' : 'transparent',
+                          background: isActive ? '#e7f1fa' : 'transparent',
                           color: isActive ? '#0e6db4' : '#698398',
                           fontWeight: isActive ? 600 : 400,
                         }}
