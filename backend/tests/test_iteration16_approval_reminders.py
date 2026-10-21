@@ -9,8 +9,8 @@ import requests
 from dotenv import dotenv_values
 
 
-BASE_URL = (dotenv_values("/app/frontend/.env").get("REACT_APP_BACKEND_URL") or "").rstrip("/")
-CREDENTIALS_PATH = Path("/app/memory/test_credentials.md")
+BASE_URL = (dotenv_values(Path(__file__).resolve().parents[2] / "frontend" / ".env").get("REACT_APP_BACKEND_URL") or "").rstrip("/")
+CREDENTIALS_PATH = Path(__file__).resolve().parents[1] / "test_credentials.md"
 TIMEOUT = 30
 
 
@@ -41,7 +41,7 @@ def login(email: str) -> tuple[dict, dict]:
 
 @pytest.fixture(scope="module")
 def partner_session():
-    return login("arjun@nnadvisory.ae")
+    return login("srinivas.anup@gmail.com")
 
 
 @pytest.fixture(scope="module")

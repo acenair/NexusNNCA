@@ -18,13 +18,13 @@ class TestAuth:
     def test_partner_login(self):
         """Partner (Arjun) can login"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "arjun@nnadvisory.ae",
+            "email": "srinivas.anup@gmail.com",
             "password": "nn123456"
         })
         assert response.status_code == 200, f"Partner login failed: {response.text}"
         data = response.json()
         assert "session_token" in data
-        assert data["email"] == "arjun@nnadvisory.ae"
+        assert data["email"] == "srinivas.anup@gmail.com"
         assert data["role"] == "partner"
         print(f"Partner login successful: {data['name']}")
         return data["session_token"]
@@ -51,7 +51,7 @@ class TestClientTimeline:
     def setup(self):
         """Get auth token and client list"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "arjun@nnadvisory.ae",
+            "email": "srinivas.anup@gmail.com",
             "password": "nn123456"
         })
         self.token = response.json()["session_token"]
@@ -160,7 +160,7 @@ class TestExportAuditReport:
     def setup(self):
         """Get auth token and engagement list"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "arjun@nnadvisory.ae",
+            "email": "srinivas.anup@gmail.com",
             "password": "nn123456"
         })
         self.token = response.json()["session_token"]
@@ -223,7 +223,7 @@ class TestExportVATReturn:
     def setup(self):
         """Get auth token and VAT engagements"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "arjun@nnadvisory.ae",
+            "email": "srinivas.anup@gmail.com",
             "password": "nn123456"
         })
         self.token = response.json()["session_token"]
@@ -305,7 +305,7 @@ class TestTasksRegression:
         """Partner can see all tasks without filter"""
         # Login as partner
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "arjun@nnadvisory.ae",
+            "email": "srinivas.anup@gmail.com",
             "password": "nn123456"
         })
         token = response.json()["session_token"]
@@ -326,7 +326,7 @@ class TestClientMasterButtons:
     def setup(self):
         """Get auth token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "arjun@nnadvisory.ae",
+            "email": "srinivas.anup@gmail.com",
             "password": "nn123456"
         })
         self.token = response.json()["session_token"]

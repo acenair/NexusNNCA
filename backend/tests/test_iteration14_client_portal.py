@@ -10,10 +10,10 @@ from dotenv import dotenv_values
 from pymongo import MongoClient
 
 
-FRONTEND_ENV = dotenv_values("/app/frontend/.env")
-BACKEND_ENV = dotenv_values("/app/backend/.env")
+FRONTEND_ENV = dotenv_values(Path(__file__).resolve().parents[2] / "frontend" / ".env")
+BACKEND_ENV = dotenv_values(Path(__file__).resolve().parents[1] / ".env")
 BASE_URL = (FRONTEND_ENV.get("REACT_APP_BACKEND_URL") or "").rstrip("/")
-CREDENTIALS_PATH = Path("/app/memory/test_credentials.md")
+CREDENTIALS_PATH = Path(__file__).resolve().parents[1] / "test_credentials.md"
 
 
 def credential_for(email: str) -> dict:
@@ -42,7 +42,7 @@ def login(email: str) -> tuple[dict, dict]:
 @pytest.fixture(scope="module")
 def portal_context():
     """Create an approved linked client user and isolated invoice/engagement data."""
-    partner_headers, partner = login("arjun@nnadvisory.ae")
+    partner_headers, partner = login("srinivas.anup@gmail.com")
     staff_headers, staff = login("fazil@nnadvisory.ae")
     assert partner["role"] == "partner"
     assert staff["role"] == "staff"

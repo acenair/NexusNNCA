@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
 # Test credentials
-PARTNER_EMAIL = "arjun@nnadvisory.ae"
+PARTNER_EMAIL = "srinivas.anup@gmail.com"
 PARTNER_PASSWORD = "nn123456"
 STAFF_EMAIL = "fazil@nnadvisory.ae"
 STAFF_PASSWORD = "nn123456"

@@ -90,3 +90,5 @@ frontend/node_modules/.cache/default-development/0.pack
 
 # Local-dev shim for platform-private emergentintegrations (see _local_shims/chat.py)
 backend/_local_shims/
+
+backend/test_credentials.md

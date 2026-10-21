@@ -8,9 +8,9 @@ import requests
 from dotenv import dotenv_values
 
 
-FRONTEND_ENV = dotenv_values("/app/frontend/.env")
+FRONTEND_ENV = dotenv_values(Path(__file__).resolve().parents[2] / "frontend" / ".env")
 BASE_URL = (FRONTEND_ENV.get("REACT_APP_BACKEND_URL") or "").rstrip("/")
-CREDENTIALS_PATH = Path("/app/memory/test_credentials.md")
+CREDENTIALS_PATH = Path(__file__).resolve().parents[1] / "test_credentials.md"
 TIMEOUT = 30
 
 
@@ -40,7 +40,7 @@ def login(email: str) -> dict:
 
 @pytest.fixture(scope="module")
 def partner_session():
-    body = login("arjun@nnadvisory.ae")
+    body = login("srinivas.anup@gmail.com")
     return body, {"Authorization": f"Bearer {body['session_token']}"}
 
 
@@ -97,7 +97,7 @@ class TestBearerAuthentication:
             assert required_key in body
 
     def test_logout_prioritizes_bearer_over_conflicting_cookie(self):
-        partner = login("arjun@nnadvisory.ae")
+        partner = login("srinivas.anup@gmail.com")
         staff = login("fazil@nnadvisory.ae")
         partner_headers = {"Authorization": f"Bearer {partner['session_token']}"}
         staff_headers = {"Authorization": f"Bearer {staff['session_token']}"}

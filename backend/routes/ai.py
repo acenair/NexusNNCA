@@ -2,11 +2,10 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 from fastapi import Cookie
-from core import EMERGENT_LLM_KEY
+from core import GEMINI_API_KEY
 from fastapi import HTTPException
 from fastapi import Header
-from emergentintegrations.llm.chat import LlmChat
-from emergentintegrations.llm.chat import UserMessage
+from services.llm import LlmChat, UserMessage
 from datetime import datetime
 from core import db
 from core import get_current_user
@@ -102,10 +101,10 @@ Guidelines:
 - Format responses with markdown for clarity"""
 
     chat = LlmChat(
-        api_key=EMERGENT_LLM_KEY,
+        api_key=GEMINI_API_KEY,
         session_id=req.session_id,
         system_message=system_message
-    ).with_model("gemini", "gemini-3-flash-preview")
+    ).with_model("gemini", "gemini-2.5-flash")
 
     user_message = UserMessage(text=req.message)
 

@@ -17,7 +17,7 @@ class TestSettingsRBAC:
         self.session = requests.Session()
         # Login as Managing Partner (Arjun)
         login_resp = self.session.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "arjun@nnadvisory.ae",
+            "email": "srinivas.anup@gmail.com",
             "password": "nn123456"
         })
         assert login_resp.status_code == 200, f"Partner login failed: {login_resp.text}"
@@ -83,7 +83,7 @@ class TestSettingsStorage:
         self.session = requests.Session()
         # Partner login
         login_resp = self.session.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "arjun@nnadvisory.ae",
+            "email": "srinivas.anup@gmail.com",
             "password": "nn123456"
         })
         assert login_resp.status_code == 200
@@ -173,7 +173,7 @@ class TestSettingsWorkflows:
         self.session = requests.Session()
         # Partner login
         login_resp = self.session.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "arjun@nnadvisory.ae",
+            "email": "srinivas.anup@gmail.com",
             "password": "nn123456"
         })
         assert login_resp.status_code == 200
@@ -317,7 +317,7 @@ class TestRegressionDocuments:
     def setup(self):
         self.session = requests.Session()
         login_resp = self.session.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "arjun@nnadvisory.ae",
+            "email": "srinivas.anup@gmail.com",
             "password": "nn123456"
         })
         assert login_resp.status_code == 200
@@ -339,7 +339,7 @@ class TestRegressionAIAssistant:
     def setup(self):
         self.session = requests.Session()
         login_resp = self.session.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "arjun@nnadvisory.ae",
+            "email": "srinivas.anup@gmail.com",
             "password": "nn123456"
         })
         assert login_resp.status_code == 200

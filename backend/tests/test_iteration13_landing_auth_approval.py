@@ -9,9 +9,9 @@ import requests
 from dotenv import dotenv_values
 
 
-frontend_env = dotenv_values("/app/frontend/.env")
+frontend_env = dotenv_values(Path(__file__).resolve().parents[2] / "frontend" / ".env")
 BASE_URL = (frontend_env.get("REACT_APP_BACKEND_URL") or "").rstrip("/")
-CREDENTIALS_PATH = Path("/app/memory/test_credentials.md")
+CREDENTIALS_PATH = Path(__file__).resolve().parents[1] / "test_credentials.md"
 
 
 def credential_for(email: str) -> dict:
@@ -29,12 +29,12 @@ def credential_for(email: str) -> dict:
 def partner_auth():
     response = requests.post(
         f"{BASE_URL}/api/auth/login",
-        json=credential_for("arjun@nnadvisory.ae"),
+        json=credential_for("srinivas.anup@gmail.com"),
         timeout=20,
     )
     assert response.status_code == 200, response.text
     body = response.json()
-    assert body["email"] == "arjun@nnadvisory.ae"
+    assert body["email"] == "srinivas.anup@gmail.com"
     assert body["role"] == "partner"
     assert body["title"] == "Managing Partner"
     assert isinstance(body["session_token"], str) and body["session_token"]
@@ -75,7 +75,7 @@ class TestAuthAndUserStatuses:
         response = requests.get(f"{BASE_URL}/api/auth/me", headers=partner_auth, timeout=20)
         assert response.status_code == 200, response.text
         body = response.json()
-        assert body["email"] == "arjun@nnadvisory.ae"
+        assert body["email"] == "srinivas.anup@gmail.com"
         assert body["role"] == "partner"
         assert body["title"] == "Managing Partner"
         assert "_id" not in body and "password" not in body
@@ -86,7 +86,7 @@ class TestAuthAndUserStatuses:
         users = response.json()
         assert isinstance(users, list) and users
         assert all("_id" not in user and "password" not in user for user in users)
-        arjun = next(user for user in users if user["email"] == "arjun@nnadvisory.ae")
+        arjun = next(user for user in users if user["email"] == "srinivas.anup@gmail.com")
         assert arjun.get("status") in (None, "approved")
 
     def test_staff_cannot_approve_or_reject(self, staff_auth):

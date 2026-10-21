@@ -31,7 +31,7 @@ if not BASE_URL:
 
 assert BASE_URL, "REACT_APP_BACKEND_URL not configured"
 
-PARTNER_EMAIL = "arjun@nnadvisory.ae"
+PARTNER_EMAIL = "srinivas.anup@gmail.com"
 STAFF_EMAIL = "fazil@nnadvisory.ae"
 PASSWORD = "nn123456"
 

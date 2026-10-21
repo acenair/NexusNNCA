@@ -15,7 +15,7 @@ class TestAuth:
     def test_partner_login(self):
         """Test partner login with correct credentials"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "arjun@nnadvisory.ae",
+            "email": "srinivas.anup@gmail.com",
             "password": "nn123456"
         })
         assert response.status_code == 200
@@ -40,7 +40,7 @@ class TestAuth:
     def test_invalid_login(self):
         """Test login with wrong password"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "arjun@nnadvisory.ae",
+            "email": "srinivas.anup@gmail.com",
             "password": "wrongpassword"
         })
         assert response.status_code == 401
@@ -49,7 +49,7 @@ class TestAuth:
     def test_users_list(self):
         """Test getting users list (requires auth since security fix)"""
         login = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "arjun@nnadvisory.ae", "password": "nn123456"
+            "email": "srinivas.anup@gmail.com", "password": "nn123456"
         })
         headers = {"Authorization": f"Bearer {login.json()['session_token']}"}
         response = requests.get(f"{BASE_URL}/api/auth/users-list", headers=headers)
@@ -70,7 +70,7 @@ class TestAIAssistant:
     def auth_token(self):
         """Get authentication token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "arjun@nnadvisory.ae",
+            "email": "srinivas.anup@gmail.com",
             "password": "nn123456"
         })
         return response.json().get("session_token")
@@ -175,7 +175,7 @@ class TestCalendar:
     def auth_token(self):
         """Get authentication token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "arjun@nnadvisory.ae",
+            "email": "srinivas.anup@gmail.com",
             "password": "nn123456"
         })
         return response.json().get("session_token")
@@ -255,7 +255,7 @@ class TestDashboard:
     def auth_token(self):
         """Get authentication token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "arjun@nnadvisory.ae",
+            "email": "srinivas.anup@gmail.com",
             "password": "nn123456"
         })
         return response.json().get("session_token")
@@ -291,7 +291,7 @@ class TestTasks:
     def auth_token(self):
         """Get authentication token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "arjun@nnadvisory.ae",
+            "email": "srinivas.anup@gmail.com",
             "password": "nn123456"
         })
         return response.json().get("session_token")
@@ -337,7 +337,7 @@ class TestClients:
     def auth_token(self):
         """Get authentication token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "arjun@nnadvisory.ae",
+            "email": "srinivas.anup@gmail.com",
             "password": "nn123456"
         })
         return response.json().get("session_token")

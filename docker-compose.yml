@@ -1,0 +1,37 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    env_file: .env          # MONGO_URL, DB_NAME, JWT_SECRET, GEMINI_API_KEY, ...
+    environment:
+      MONGO_URL: mongodb://mongo:27017
+    volumes:
+      - uploads:/app/uploads   # local-disk document storage
+    expose:
+      - "8001"
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"               # put Caddy/HTTPS in front or terminate TLS here
+
+volumes:
+  mongo_data:
+  uploads:

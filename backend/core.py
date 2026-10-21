@@ -17,44 +17,78 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
 # Env vars
-EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY')
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
 JWT_SECRET = os.environ['JWT_SECRET']
 JWT_ALGORITHM = 'HS256'
 VAPID_PRIVATE_KEY = os.environ.get('VAPID_PRIVATE_KEY', '')
 VAPID_PUBLIC_KEY = os.environ.get('VAPID_PUBLIC_KEY', '')
 VAPID_CLAIMS_EMAIL = os.environ.get('VAPID_CLAIMS_EMAIL', 'mailto:admin@nnadvisory.ae')
-STORAGE_URL = "https://integrations.emergentagent.com/objstore/api/v1/storage"
 APP_NAME = "ca-ai"
 
 logger = logging.getLogger(__name__)
 
-# ---- Storage ----
-storage_key = None
+# ---- Storage (portable) ----
+# BACKEND: local disk by default (volume-mounted in Docker); S3-compatible when
+# S3_BUCKET + keys are configured. Same function signatures as before, so no
+# route code changes. Existing object paths remain valid.
+STORAGE_BACKEND = os.environ.get('STORAGE_BACKEND', 'local')  # 'local' | 's3'
+LOCAL_STORAGE_DIR = Path(os.environ.get('LOCAL_STORAGE_DIR', str(ROOT_DIR / 'uploads')))
+S3_BUCKET = os.environ.get('S3_BUCKET', '')
+S3_REGION = os.environ.get('S3_REGION', 'us-east-1')
+S3_ENDPOINT = os.environ.get('S3_ENDPOINT', '')  # for B2/Hostinger S3-compatible stores
+_s3 = None
+
+
+def _s3_client():
+    global _s3
+    if _s3 is None:
+        import boto3
+        kwargs = {"region_name": S3_REGION}
+        if S3_ENDPOINT:
+            kwargs["endpoint_url"] = S3_ENDPOINT
+        _s3 = boto3.client(
+            's3',
+            aws_access_key_id=os.environ['S3_ACCESS_KEY'],
+            aws_secret_access_key=os.environ['S3_SECRET_KEY'],
+            **kwargs,
+        )
+    return _s3
+
 
 def init_storage():
-    global storage_key
-    if storage_key:
-        return storage_key
-    try:
-        resp = requests.post(f"{STORAGE_URL}/init", json={"emergent_key": EMERGENT_LLM_KEY}, timeout=30)
-        resp.raise_for_status()
-        storage_key = resp.json()["storage_key"]
-        return storage_key
-    except Exception as e:
-        logger.error(f"Storage init failed: {e}")
-        raise
+    """Verify the configured storage is usable. Kept for startup-call compat."""
+    if STORAGE_BACKEND == 'local':
+        LOCAL_STORAGE_DIR.mkdir(parents=True, exist_ok=True)
+        return str(LOCAL_STORAGE_DIR)
+    if STORAGE_BACKEND == 's3':
+        _s3_client().head_bucket(Bucket=S3_BUCKET)
+        return S3_BUCKET
+    raise ValueError(f"Unknown STORAGE_BACKEND: {STORAGE_BACKEND}")
+
 
 def put_object(path: str, data: bytes, content_type: str) -> dict:
-    key = init_storage()
-    resp = requests.put(f"{STORAGE_URL}/objects/{path}", headers={"X-Storage-Key": key, "Content-Type": content_type}, data=data, timeout=120)
-    resp.raise_for_status()
-    return resp.json()
+    if STORAGE_BACKEND == 'local':
+        dest = (LOCAL_STORAGE_DIR / path).resolve()
+        # path safety: never escape the storage dir
+        if not str(dest).startswith(str(LOCAL_STORAGE_DIR.resolve())):
+            raise ValueError("Invalid storage path")
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(data)
+        return {"path": path, "size": len(data)}
+    _s3_client().put_object(Bucket=S3_BUCKET, Key=path, Body=data, ContentType=content_type)
+    return {"path": path, "size": len(data)}
+
 
 def get_object(path: str) -> tuple:
-    key = init_storage()
-    resp = requests.get(f"{STORAGE_URL}/objects/{path}", headers={"X-Storage-Key": key}, timeout=60)
-    resp.raise_for_status()
-    return resp.content, resp.headers.get("Content-Type", "application/octet-stream")
+    if STORAGE_BACKEND == 'local':
+        src = (LOCAL_STORAGE_DIR / path).resolve()
+        if not str(src).startswith(str(LOCAL_STORAGE_DIR.resolve())) or not src.exists():
+            raise FileNotFoundError(f"Object not found: {path}")
+        import mimetypes
+        ctype = mimetypes.guess_type(src.name)[0] or "application/octet-stream"
+        return src.read_bytes(), ctype
+    obj = _s3_client().get_object(Bucket=S3_BUCKET, Key=path)
+    return obj['Body'].read(), obj.get('ContentType', 'application/octet-stream')
 
 # ---- Auth helpers ----
 def hash_password(password: str) -> str:

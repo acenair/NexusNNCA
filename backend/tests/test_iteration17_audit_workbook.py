@@ -3,11 +3,12 @@ import io
 import os
 from datetime import datetime, timedelta, timezone
 
+from pathlib import Path
 import pytest
 import requests
 from dotenv import dotenv_values
 
-frontend_env = dotenv_values("/app/frontend/.env")
+frontend_env = dotenv_values(Path(__file__).resolve().parents[2] / "frontend" / ".env")
 base_url = os.environ.get("REACT_APP_BACKEND_URL") or frontend_env.get("REACT_APP_BACKEND_URL")
 if not base_url:
     raise RuntimeError("REACT_APP_BACKEND_URL missing")
@@ -27,7 +28,7 @@ def login(email):
 
 @pytest.fixture(scope="module")
 def partner():
-    return login("arjun@nnadvisory.ae")
+    return login("srinivas.anup@gmail.com")
 
 
 @pytest.fixture(scope="module")

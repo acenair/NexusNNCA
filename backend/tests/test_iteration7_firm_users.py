@@ -21,7 +21,7 @@ class TestAuth:
     def test_partner_login(self):
         """Partner (Arjun) can login"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "arjun@nnadvisory.ae",
+            "email": "srinivas.anup@gmail.com",
             "password": "nn123456"
         })
         assert response.status_code == 200, f"Partner login failed: {response.text}"
@@ -49,7 +49,7 @@ class TestFirmSettings:
     @pytest.fixture
     def partner_token(self):
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "arjun@nnadvisory.ae",
+            "email": "srinivas.anup@gmail.com",
             "password": "nn123456"
         })
         return response.json()["session_token"]
@@ -124,7 +124,7 @@ class TestUsersSettings:
     @pytest.fixture
     def partner_token(self):
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "arjun@nnadvisory.ae",
+            "email": "srinivas.anup@gmail.com",
             "password": "nn123456"
         })
         return response.json()["session_token"]
@@ -297,7 +297,7 @@ class TestPasswordChange:
     @pytest.fixture
     def partner_token(self):
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "arjun@nnadvisory.ae",
+            "email": "srinivas.anup@gmail.com",
             "password": "nn123456"
         })
         return response.json()["session_token"]
@@ -396,7 +396,7 @@ class TestNotificationBell:
     @pytest.fixture
     def partner_token(self):
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "arjun@nnadvisory.ae",
+            "email": "srinivas.anup@gmail.com",
             "password": "nn123456"
         })
         return response.json()["session_token"]

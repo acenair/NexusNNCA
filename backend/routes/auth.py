@@ -110,60 +110,7 @@ async def create_session(session_id: str):
     # email+password entirely, which also meant it could skip the forced
     # password-change gate. Re-evaluate in a future phase if re-enabled.
     raise HTTPException(status_code=410, detail="Google sign-in is temporarily disabled. Please use email and password.")
-    # REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
-    try:
-        resp = requests.get(
-            "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
-            headers={"X-Session-ID": session_id},
-            timeout=10
-        )
-        resp.raise_for_status()
-        data = resp.json()
-    except Exception as e:
-        logger.error(f"Failed to get session data: {e}")
-        raise HTTPException(status_code=400, detail="Invalid session ID")
-    
-    user_doc = await db.users.find_one({"email": data["email"]})
-    if user_doc:
-        user_id = user_doc["user_id"]
-        await db.users.update_one(
-            {"user_id": user_id},
-            {"$set": {"name": data["name"], "picture": data["picture"]}}
-        )
-        # Check if user is approved
-        if user_doc.get("status") == "pending_approval":
-            return {"error": "pending_approval", "message": "Your account is pending admin approval. Please contact the administrator."}
-    else:
-        user_id = f"user_{uuid.uuid4().hex[:12]}"
-        user_doc = {
-            "user_id": user_id,
-            "email": data["email"],
-            "name": data["name"],
-            "picture": data["picture"],
-            "role": "staff",
-            "title": "",
-            "status": "pending_approval",
-            "created_at": datetime.now(timezone.utc).isoformat()
-        }
-        await db.users.insert_one(user_doc)
-        return {"error": "pending_approval", "message": "Account created! Your access is pending admin approval."}
-    
-    session_doc = {
-        "user_id": user_id,
-        "session_token": data["session_token"],
-        "expires_at": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
-        "created_at": datetime.now(timezone.utc).isoformat()
-    }
-    await db.user_sessions.insert_one(session_doc)
-    
-    return {
-        "user_id": user_id,
-        "email": data["email"],
-        "name": data["name"],
-        "picture": data["picture"],
-        "session_token": data["session_token"]
-    }
-
+    # (Legacy Emergent OAuth session exchange removed — unreachable after 410; 54 lines dropped)
 
 @router.get("/auth/me")
 async def get_me(authorization: str = Header(None), session_token: str = Cookie(None)):

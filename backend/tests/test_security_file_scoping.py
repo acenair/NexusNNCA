@@ -12,7 +12,7 @@ import pytest
 import requests
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
-PARTNER_EMAIL = "arjun@nnadvisory.ae"
+PARTNER_EMAIL = "srinivas.anup@gmail.com"
 PARTNER_PASSWORD = "nn123456"
 TEST_PASSWORD = "TEST_client_scoped_123"
 

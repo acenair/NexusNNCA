@@ -19,7 +19,7 @@ class TestClientMasterRBAC:
     def managing_partner_session(self):
         """Login as Arjun (Managing Partner) and get session token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "arjun@nnadvisory.ae",
+            "email": "srinivas.anup@gmail.com",
             "password": "nn123456"
         })
         assert response.status_code == 200, f"Managing Partner login failed: {response.text}"
