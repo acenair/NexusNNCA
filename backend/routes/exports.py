@@ -12,6 +12,43 @@ from datetime import timezone
 router = APIRouter(prefix="/api")
 
 
+@router.get("/export/clients-csv")
+async def export_clients_csv(authorization: str = Header(None), session_token: str = Cookie(None)):
+    """Client master CSV export (Reports hub → 'Client master export')."""
+    import csv
+    import io
+
+    user = await get_current_user(authorization, session_token)
+    if user.get("role") != "partner":
+        raise HTTPException(status_code=403, detail="Only partners can export the client master")
+
+    clients = await db.clients.find({}, {"_id": 0}).sort("name", 1).to_list(2000)
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    header = ["Client ID", "Name", "Trade Name", "Entity Type", "Jurisdiction", "Emirate", "Freezone",
+              "Industry", "Trade License No", "License Expiry", "VAT Registered", "TRN",
+              "Corporate Tax Registered", "Corporate Tax TRN", "Financial Year End",
+              "Status", "AML Risk", "Contact Person", "Contact Email", "Contact Phone", "Active Services"]
+    writer.writerow(header)
+    for c in clients:
+        writer.writerow([
+            c.get("client_id", ""), c.get("name", ""), c.get("trade_name") or "", c.get("entity_type") or "",
+            c.get("jurisdiction") or "", c.get("emirate") or "", c.get("freezone_name") or "",
+            c.get("industry") or "", c.get("trade_licence_no") or "", c.get("license_expiry_date") or "",
+            "Yes" if c.get("vat_registered") else "No", c.get("trn") or "",
+            "Yes" if c.get("corporate_tax_registered") else "No", c.get("corporate_tax_trn") or "",
+            c.get("financial_year_end") or "", c.get("status") or "", c.get("aml_risk_rating") or "Low",
+            c.get("contact_person") or "", c.get("contact_email") or "", c.get("contact_phone") or "",
+            ", ".join(c.get("active_services") or []),
+        ])
+    buf.seek(0)
+    return StreamingResponse(
+        iter([buf.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=client-master-{datetime.now(timezone.utc).date().isoformat()}.csv"},
+    )
+
+
 @router.get("/export/audit-report/{engagement_id}")
 async def export_audit_report(engagement_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
     from fpdf import FPDF
