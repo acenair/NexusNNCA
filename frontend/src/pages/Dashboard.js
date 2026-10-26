@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useOutletContext, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Users, FileCheck, Wallet, ArrowDownToLine } from 'lucide-react';
+import Sparkline from '../components/Sparkline';
+import Skeleton from '../components/Skeleton';
+import Avatar from '../components/Avatar';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -89,6 +92,20 @@ const Dashboard = () => {
   const overdueTasks = openTasks.filter(t => t.due_date && t.due_date < today.toISOString().slice(0, 10));
   const reviewQueue = active.filter(e => e.phase === 'Review & Reporting');
 
+  // ---- Kanban pipeline (drag an engagement to a new stage) ----
+  const [dragOver, setDragOver] = useState(null);
+  const [dragging, setDragging] = useState(null);
+  const isPartnerUser = user?.role === 'partner';
+  const stageEngs = (s) => active.filter(e => s.phases.includes(e.phase));
+  const moveEngagement = async (engagement_id, stage) => {
+    const st = PIPELINE_STAGES.find(x => x.key === stage);
+    const phase = st?.phases?.[0];
+    if (!phase) return;
+    setEngagements(prev => prev.map(e => e.engagement_id === engagement_id ? { ...e, phase } : e));
+    try { await axios.patch(`${process.env.REACT_APP_BACKEND_URL}/api/service/engagements/${engagement_id}`, { phase }, { withCredentials: true }); }
+    catch (e) { console.error('Stage move failed', e); loadData(); }
+  };
+
   const chartMonths = [];
   for (let k = 5; k >= 0; k--) {
     const d = new Date(today.getFullYear(), today.getMonth() - k, 1);
@@ -128,9 +145,9 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 400 }}>
-        <div style={{ width: 36, height: 36, border: '3px solid var(--surface)', borderTopColor: 'var(--gold)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <div className="ov-wrap" data-testid="dashboard-skeleton">
+        <div className="ov-heading"><div><div className="ov-eyebrow">WORKSPACE</div><h1>Firm overview</h1></div></div>
+        <Skeleton kpi={4} cards={2} rows={6} cols={4} />
       </div>
     );
   }
@@ -180,12 +197,14 @@ const Dashboard = () => {
           <span className="af-icon"><Wallet size={18} /></span>
           <label>Billed this month</label>
           <b><AnimatedNumber value={billed} format={aed} /></b>
+          <span className="af-spark"><Sparkline data={chartMonths.map(m => m.billed)} color="#0e6db4" /></span>
           <small>Invoices issued this month</small>
         </section>
         <section className="af-card af-metric">
           <span className="af-icon"><ArrowDownToLine size={18} /></span>
           <label>Collected this month</label>
           <b><AnimatedNumber value={collected} format={aed} /></b>
+          <span className="af-spark"><Sparkline data={chartMonths.map(m => m.collected)} color="#0e7ec4" /></span>
           <small>Receipts recorded this month</small>
         </section>
       </div>
@@ -216,17 +235,29 @@ const Dashboard = () => {
           <div className="af-cardhead">
             <div><h2>Engagement pipeline</h2><div className="af-sub">All active engagements · Now</div></div>
           </div>
-          <div className="af-pipeline">
+          <div className="af-kanban" data-testid="engagement-kanban">
             {pipeline.map(s => (
-              <span key={s.key} style={{ width: totalActive ? (s.count / totalActive) * 100 + '%' : '0%', background: STAGE_COLORS[s.key] }} />
+              <div key={s.key}
+                className={`af-kancol${dragOver === s.key ? ' dragover' : ''}`}
+                onDragOver={e => { if (!isPartnerUser) return; e.preventDefault(); setDragOver(s.key); }}
+                onDragLeave={() => setDragOver(prev => prev === s.key ? null : prev)}
+                onDrop={e => { e.preventDefault(); setDragOver(null); if (dragging && isPartnerUser) moveEngagement(dragging, s.key); setDragging(null); }}>
+                <div className="af-kanhead"><span>{s.label.replace(/^Stage \d+: /, '')}</span><b>{s.count}</b></div>
+                {stageEngs(s).slice(0, 8).map(e => (
+                  <div key={e.engagement_id} className={`af-kancard${dragging === e.engagement_id ? ' dragging' : ''}`}
+                    style={{ borderLeftColor: STAGE_COLORS[s.key] }}
+                    draggable={isPartnerUser}
+                    onDragStart={ev => { setDragging(e.engagement_id); ev.dataTransfer.effectAllowed = 'move'; }}
+                    onDragEnd={() => setDragging(null)}>
+                    <b>{e.client_name}</b>
+                    <small>{SERVICE_LABELS[e.service_type] || e.service_type}</small>
+                  </div>
+                ))}
+                {stageEngs(s).length === 0 && <div className="af-kanempty">Drop here{isPartnerUser ? '' : ' (partners only)'}</div>}
+              </div>
             ))}
           </div>
-          <div className="af-stages">
-            {pipeline.map(s => (
-              <div className="af-stage" key={s.key}><span>{s.label}</span><b>{s.count}</b></div>
-            ))}
-            <div className="af-stage af-stage-total"><span>Total active</span><b>{totalActive}</b></div>
-          </div>
+          <div className="af-sub" style={{ marginTop: 8 }}>{isPartnerUser ? 'Drag a card between stages to update the engagement phase · ' : ''}{totalActive} active engagement(s)</div>
         </section>
       </div>
 

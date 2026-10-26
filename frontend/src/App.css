@@ -463,3 +463,33 @@ h1, h2, h3, h4, h5, h6 {
 /* Tabular numbers so amount columns don't jitter */
 .af-metric b, .af-table td, .af-movement b, .af-mini b, .ov-metric b,
 #root b { font-variant-numeric: tabular-nums; }
+
+
+/* ===== Medium tier: skeletons, kanban pipeline, avatars, sparkline placement ===== */
+.af-skel { background: linear-gradient(90deg, #e8eff5 25%, #f2f7fb 45%, #e8eff5 65%); background-size: 240% 100%;
+  animation: af-skel-pulse 1.15s ease infinite; }
+@keyframes af-skel-pulse { 0% { background-position: 120% 0; } 100% { background-position: -120% 0; } }
+@media (prefers-reduced-motion: reduce) { .af-skel { animation: none; } }
+
+/* KPI sparkline sits top-right of the metric card */
+.af-metric { position: relative; }
+.af-metric .af-spark { position: absolute; top: 16px; right: 16px; opacity: 0.95; }
+
+/* Kanban pipeline on the dashboard */
+.af-kanban { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(150px, 1fr); gap: 10px; overflow-x: auto; padding-bottom: 4px; }
+.af-kancol { background: #f6fafc; border: 1px solid var(--line); border-radius: 10px; min-height: 120px; padding: 8px; transition: background 0.15s, border-color 0.15s; }
+.af-kancol.dragover { background: #e7f1fa; border-color: var(--blue); }
+.af-kanhead { display: flex; align-items: center; justify-content: space-between; padding: 2px 4px 8px; }
+.af-kanhead span { font-size: 10.5px; font-weight: 700; letter-spacing: 0.2px; color: var(--muted); }
+.af-kanhead b { font-size: 11px; color: var(--text); background: var(--white); border: 1px solid var(--line); border-radius: 8px; padding: 1px 7px; }
+.af-kancard { background: var(--white); border: 1px solid var(--line); border-left: 3px solid var(--blue); border-radius: 8px;
+  padding: 8px 9px; margin-bottom: 6px; font-size: 11.5px; cursor: grab; transition: box-shadow 0.12s, transform 0.12s; }
+.af-kancard:hover { box-shadow: 0 2px 8px rgba(1,69,124,0.09); transform: translateY(-1px); }
+.af-kancard.dragging { opacity: 0.45; cursor: grabbing; }
+.af-kancard b { display: block; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.af-kancard small { color: var(--muted); font-size: 10px; }
+.af-kanempty { font-size: 10.5px; color: var(--muted); text-align: center; padding: 12px 4px; border: 1px dashed var(--line); border-radius: 8px; }
+
+/* Client avatar chip inside table rows */
+.af-avatar-cell { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.af-avatar-cell span.nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

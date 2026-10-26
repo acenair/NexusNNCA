@@ -3,6 +3,8 @@ import { useOutletContext, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { Plus, Download, TrendingUp, TrendingDown, Wallet, AlertTriangle } from 'lucide-react';
 import AnimatedNumber from '../components/AnimatedNumber';
+import Sparkline from '../components/Sparkline';
+import Skeleton from '../components/Skeleton';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -118,6 +120,13 @@ const BillingWorkspace = ({ initialTab }) => {
   const receipts = invoices.flatMap(i => (i.receipts || []).map(r => ({ ...r, inv: i }))).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   const monthReceipts = receipts.filter(r => (r.date || '').slice(0, 7) === month);
 
+  // 6-month trend series for the KPI sparklines
+  const months6 = Array.from({ length: 6 }, (_, k) => { const d = new Date(); d.setMonth(d.getMonth() - (5 - k)); return d.toISOString().slice(0, 7); });
+  const seriesBilled = months6.map(m => invoices.filter(i => !i.cancelled && i.status !== 'Draft' && (i.date || '').slice(0, 7) === m).reduce((n, i) => n + (i.amount || 0), 0));
+  const seriesCollected = months6.map(m => invoices.reduce((n, i) => n + (i.receipts || []).filter(r => (r.date || '').slice(0, 7) === m).reduce((n, r) => n + (r.amount || 0), 0), 0));
+  const seriesPending = months6.map(m => invoices.filter(i => !i.cancelled && i.status !== 'Draft' && (i.date || '').slice(0, 7) === m)
+    .reduce((n, i) => n + Math.max(0, i.amount - (i.amount_paid || 0) - (i.credits || []).reduce((x, c) => x + c.amount, 0)), 0));
+
   const TABS_INV = {
     'This month': monthInvoices.filter(i => i.status !== 'Draft'),
     'All issued': invoices.filter(i => !i.cancelled && i.status !== 'Draft'),
@@ -183,7 +192,7 @@ const BillingWorkspace = ({ initialTab }) => {
     a.click();
   };
 
-  if (loading || !summary) return <div className="page-loading">Loading billing workspace…</div>;
+  if (loading || !summary) return <div className="ov-wrap" data-testid="billing-skeleton"><div className="ov-heading"><div><div className="ov-eyebrow">BILLING WORKSPACE</div><h1>Invoices &amp; collections</h1></div></div><Skeleton kpi={6} rows={8} cols={5} /></div>;
 
   const S = summary;
   const staffNames = [...new Set(invoices.map(i => i.staff).filter(Boolean))];
@@ -248,9 +257,9 @@ const BillingWorkspace = ({ initialTab }) => {
       {tab === 'Invoices & collections' && (<>
         {/* 6 summary cards */}
         <div className="af-kpis" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
-          <section className="af-card af-metric"><span className="af-icon"><TrendingUp size={18} /></span><label>Billed for the month</label><b><AnimatedNumber value={S.billed_month} format={aed} /></b><small>{S.count_month} issued invoices · credits {aed(S.credits_month)}</small></section>
-          <section className="af-card af-metric"><span className="af-icon"><TrendingDown size={18} /></span><label>Collected during the month</label><b><AnimatedNumber value={S.collected_month} format={aed} /></b><small>{aed(S.collected_month_current)} current-month · {aed(S.collected_month_older)} older invoices</small></section>
-          <section className="af-card af-metric"><label>Pending for the month</label><b><AnimatedNumber value={S.pending_month} format={aed} /></b><small>Unpaid balance of this month's invoices</small></section>
+          <section className="af-card af-metric"><span className="af-icon"><TrendingUp size={18} /></span><label>Billed for the month</label><b><AnimatedNumber value={S.billed_month} format={aed} /></b><span className="af-spark"><Sparkline data={seriesBilled} color="#0e6db4" /></span><small>{S.count_month} issued invoices · credits {aed(S.credits_month)}</small></section>
+          <section className="af-card af-metric"><span className="af-icon"><TrendingDown size={18} /></span><label>Collected during the month</label><b><AnimatedNumber value={S.collected_month} format={aed} /></b><span className="af-spark"><Sparkline data={seriesCollected} color="#0e7ec4" /></span><small>{aed(S.collected_month_current)} current-month · {aed(S.collected_month_older)} older invoices</small></section>
+          <section className="af-card af-metric"><label>Pending for the month</label><b><AnimatedNumber value={S.pending_month} format={aed} /></b><span className="af-spark"><Sparkline data={seriesPending} color="#d39835" /></span><small>Unpaid balance of this month's invoices</small></section>
           <section className="af-card af-metric"><label>Billed till date</label><b><AnimatedNumber value={S.billed_total} format={aed} /></b><small>All issued invoices</small></section>
           <section className="af-card af-metric"><label>Collected till date</label><b><AnimatedNumber value={S.collected_total} format={aed} /></b><small>All dated receipts</small></section>
           <section className="af-card af-metric"><label>Pending till date</label><b><AnimatedNumber value={S.pending_total} format={aed} /></b><small><span className="af-red-text">{aed(S.overdue_total)} overdue · {S.overdue_count} invoices</span></small></section>

@@ -158,12 +158,20 @@ const ClientMaster = () => {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={9} style={{ ...tdStyle, textAlign: 'center', padding: 40, color: 'var(--muted)' }}>Loading...</td></tr>
+                Array.from({ length: 6 }, (_, k) => (
+                  <tr key={`skel-${k}`}>
+                    {Array.from({ length: 9 }, (_, cIdx) => (
+                      <td key={cIdx} style={{ ...tdStyle }}>
+                        <div className="af-skel" style={{ height: 10, borderRadius: 6, width: `${45 + ((k * 9 + cIdx * 17) % 45)}%` }} />
+                      </td>
+                    ))}
+                  </tr>
+                ))
               ) : filtered.length === 0 ? (
                 <tr><td colSpan={9} style={{ ...tdStyle, textAlign: 'center', padding: 40, color: 'var(--muted)' }}>No clients match your filters</td></tr>
               ) : filtered.map(c => (
                 <tr key={c.client_id} style={{ transition: 'background 0.12s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(14,109,180,0.03)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'} data-testid={`client-row-${c.client_id}`}>
-                  <td style={{ ...tdStyle, fontWeight: 600 }}>{c.name}</td>
+                  <td style={{ ...tdStyle, fontWeight: 600 }}><span className="af-avatar-cell"><Avatar name={c.name} size={26} /><span className="nm">{c.name}</span></span></td>
                   <td style={tdStyle}>{c.entity_type}</td>
                   <td style={tdStyle}><span style={{ fontSize: 11, color: 'var(--muted)' }}>{c.jurisdiction || '—'}</span></td>
                   <td style={tdStyle}><span style={{ fontSize: 11, fontFamily: 'monospace' }}>{c.trn || '—'}</span></td>

@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useOutletContext, Link, useSearchParams, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { Plus, Search } from 'lucide-react';
+import Avatar from '../components/Avatar';
+import Skeleton from '../components/Skeleton';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -116,7 +118,7 @@ const Engagements = () => {
 
   const clearPreset = () => { const p = new URLSearchParams(params); p.delete('service'); setParams(p, { replace: true }); };
 
-  if (loading) return <div className="page-loading">Loading engagements…</div>;
+  if (loading) return <div className="ov-wrap"><div className="ov-heading"><div><div className="ov-eyebrow">DELIVERY</div><h1>Engagements</h1></div></div><Skeleton kpi={4} rows={8} cols={5} /></div>;
 
   return (
     <div className="ov-wrap" data-testid="engagements-view">
@@ -176,7 +178,7 @@ const Engagements = () => {
                 const pct = progressOf(e);
                 return (
                   <tr key={e.engagement_id}>
-                    <td><b>{e.client_name || '—'}</b></td>
+                    <td><span className="af-avatar-cell"><Avatar name={e.client_name} size={26} /><b className="nm">{e.client_name || "—"}</b></span></td>
                     <td><span className="af-badge af-badge-blue">{SERVICE_LABELS[e.service_type] || e.service_type}</span></td>
                     <td>{e.phase || '—'}</td>
                     <td style={{ minWidth: 110 }}>
