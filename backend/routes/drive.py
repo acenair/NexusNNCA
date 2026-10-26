@@ -161,3 +161,28 @@ async def disconnect_drive(authorization: str = Header(None), session_token: str
     user = await require_partner(authorization, session_token)
     await db.drive_credentials.delete_many({"type": "firm"})
     return {"message": "Google Drive disconnected"}
+
+
+@router.post("/drive/provision-folders")
+async def provision_client_folders(authorization: str = Header(None), session_token: str = Cookie(None)):
+    """Ensure a Drive folder exists for every client under the firm root folder.
+    Stores drive_folder_id + drive_folder_link on each client record."""
+    user = await require_partner(authorization, session_token)
+    service = await get_drive_service()
+    if not service:
+        raise HTTPException(status_code=400, detail="Google Drive not connected — connect it first")
+
+    from services.drive import get_or_create_drive_folder
+    clients = await db.clients.find({"status": {"$ne": "Deleted"}}, {"_id": 0, "client_id": 1, "name": 1}).to_list(2000)
+    created, existing = 0, 0
+    for c in clients:
+        folder_id = await get_or_create_drive_folder(service, c["name"])
+        already = await db.clients.find_one({"client_id": c["client_id"], "drive_folder_id": {"$exists": True}})
+        await db.clients.update_one(
+            {"client_id": c["client_id"]},
+            {"$set": {"drive_folder_id": folder_id, "drive_folder_link": f"https://drive.google.com/drive/folders/{folder_id}"}})
+        if already:
+            existing += 1
+        else:
+            created += 1
+    return {"ok": True, "clients": len(clients), "folders_created": created, "folders_existing": existing}

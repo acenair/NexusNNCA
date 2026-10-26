@@ -36,6 +36,7 @@ async def upload_file(file: UploadFile = File(...), authorization: str = Header(
         "file_id": file_id,
         "storage_path": result["path"],
         "original_filename": file.filename,
+        "filename": file.filename,
         "content_type": file.content_type,
         "size": result["size"],
         "client_id": client_id,
@@ -44,9 +45,34 @@ async def upload_file(file: UploadFile = File(...), authorization: str = Header(
         "is_deleted": False,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
+    if client_id:
+        client = await db.clients.find_one({"client_id": client_id}, {"_id": 0, "name": 1})
+        file_doc["client_name"] = client["name"] if client else client_id
     await db.documents.insert_one(file_doc)
-    
-    return {"file_id": file_id, "filename": file.filename, "path": result["path"]}
+
+    # Auto-sync to Google Drive when connected and the doc belongs to a client (best-effort — upload never fails because of Drive)
+    drive_status = {"synced_to_drive": False}
+    if client_id:
+        try:
+            from services.drive import get_drive_service, get_or_create_drive_folder
+            service = await get_drive_service()
+            if service:
+                folder_id = await get_or_create_drive_folder(service, file_doc["client_name"])
+                from googleapiclient.http import MediaIoBaseUpload
+                import io as _io
+                media = MediaIoBaseUpload(_io.BytesIO(data), mimetype=file.content_type or "application/octet-stream")
+                drive_file = service.files().create(
+                    body={"name": file.filename, "parents": [folder_id]},
+                    media_body=media, fields="id,name,webViewLink").execute()
+                await db.documents.update_one(
+                    {"file_id": file_id},
+                    {"$set": {"drive_file_id": drive_file["id"], "drive_link": drive_file.get("webViewLink"),
+                              "synced_at": datetime.now(timezone.utc).isoformat()}})
+                drive_status = {"synced_to_drive": True, "drive_link": drive_file.get("webViewLink")}
+        except Exception as drive_err:
+            file_doc["drive_sync_error"] = str(drive_err)[:200]
+
+    return {"file_id": file_id, "filename": file.filename, "path": result["path"], **drive_status}
 
 
 @router.get("/documents")
