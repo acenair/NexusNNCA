@@ -441,3 +441,25 @@ h1, h2, h3, h4, h5, h6 {
 .help-steps { margin: 14px 0 6px; padding-left: 20px; color: var(--ink); }
 .help-steps li { font-size: 13px; line-height: 1.7; margin-bottom: 8px; }
 .help-steps li::marker { color: var(--blue); font-weight: 700; }
+
+
+/* ===== UI polish: hover lift, badge dots, rich empty states, tabular numbers ===== */
+/* Cards + metrics: subtle lift on hover */
+.af-card, .ov-card, .nn-card { transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.15s ease; }
+.af-card:hover, .ov-card:hover { border-color: #cfe4f2; box-shadow: 0 3px 14px rgba(1, 69, 124, 0.07); }
+/* Tables: row hover tint */
+.af-table tbody tr { transition: background 0.12s ease; }
+.af-table tbody tr:hover { background: #f4f9fd; }
+
+/* Badges: colored status dot before the label */
+.af-badge { display: inline-flex; align-items: center; gap: 5px; }
+.af-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+/* Rich empty states */
+.af-empty { text-align: center; color: var(--muted, #7891a4); padding: 26px 16px; font-size: 12.5px; line-height: 1.6; }
+.af-empty::before { content: ''; display: block; width: 34px; height: 34px; margin: 0 auto 10px; border-radius: 10px;
+  background: #eaf3fb url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%230e6db4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 12h-6l-2 3h-4l-2-3H2'/%3E%3Cpath d='M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z'/%3E%3C/svg%3E") center no-repeat; }
+
+/* Tabular numbers so amount columns don't jitter */
+.af-metric b, .af-table td, .af-movement b, .af-mini b, .ov-metric b,
+#root b { font-variant-numeric: tabular-nums; }

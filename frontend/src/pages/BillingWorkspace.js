@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useOutletContext, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { Plus, Download, TrendingUp, TrendingDown, Wallet, AlertTriangle } from 'lucide-react';
+import AnimatedNumber from '../components/AnimatedNumber';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -247,12 +248,12 @@ const BillingWorkspace = ({ initialTab }) => {
       {tab === 'Invoices & collections' && (<>
         {/* 6 summary cards */}
         <div className="af-kpis" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
-          <section className="af-card af-metric"><span className="af-icon"><TrendingUp size={18} /></span><label>Billed for the month</label><b>{aed(S.billed_month)}</b><small>{S.count_month} issued invoices · credits {aed(S.credits_month)}</small></section>
-          <section className="af-card af-metric"><span className="af-icon"><TrendingDown size={18} /></span><label>Collected during the month</label><b>{aed(S.collected_month)}</b><small>{aed(S.collected_month_current)} current-month · {aed(S.collected_month_older)} older invoices</small></section>
-          <section className="af-card af-metric"><label>Pending for the month</label><b>{aed(S.pending_month)}</b><small>Unpaid balance of this month's invoices</small></section>
-          <section className="af-card af-metric"><label>Billed till date</label><b>{aed(S.billed_total)}</b><small>All issued invoices</small></section>
-          <section className="af-card af-metric"><label>Collected till date</label><b>{aed(S.collected_total)}</b><small>All dated receipts</small></section>
-          <section className="af-card af-metric"><label>Pending till date</label><b>{aed(S.pending_total)}</b><small><span className="af-red-text">{aed(S.overdue_total)} overdue · {S.overdue_count} invoices</span></small></section>
+          <section className="af-card af-metric"><span className="af-icon"><TrendingUp size={18} /></span><label>Billed for the month</label><b><AnimatedNumber value={S.billed_month} format={aed} /></b><small>{S.count_month} issued invoices · credits {aed(S.credits_month)}</small></section>
+          <section className="af-card af-metric"><span className="af-icon"><TrendingDown size={18} /></span><label>Collected during the month</label><b><AnimatedNumber value={S.collected_month} format={aed} /></b><small>{aed(S.collected_month_current)} current-month · {aed(S.collected_month_older)} older invoices</small></section>
+          <section className="af-card af-metric"><label>Pending for the month</label><b><AnimatedNumber value={S.pending_month} format={aed} /></b><small>Unpaid balance of this month's invoices</small></section>
+          <section className="af-card af-metric"><label>Billed till date</label><b><AnimatedNumber value={S.billed_total} format={aed} /></b><small>All issued invoices</small></section>
+          <section className="af-card af-metric"><label>Collected till date</label><b><AnimatedNumber value={S.collected_total} format={aed} /></b><small>All dated receipts</small></section>
+          <section className="af-card af-metric"><label>Pending till date</label><b><AnimatedNumber value={S.pending_total} format={aed} /></b><small><span className="af-red-text">{aed(S.overdue_total)} overdue · {S.overdue_count} invoices</span></small></section>
         </div>
 
         {/* Receivables movement */}
@@ -404,9 +405,9 @@ const BillingWorkspace = ({ initialTab }) => {
 
       {tab === 'Client Billing' && (<>
         <div className="af-kpis" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
-          <section className="af-card af-metric"><label>Advance billing ready</label><b>{aed(milestoneQueue.filter(m => m.kind === 'advance' && !m.invoiced).reduce((n, m) => n + m.amount, 0))}</b><small>{milestoneQueue.filter(m => m.kind === 'advance' && !m.invoiced).length} milestones · engagement signed</small></section>
-          <section className="af-card af-metric"><label>Draft-stage billing ready</label><b>{aed(milestoneQueue.filter(m => m.kind === 'draft' && !m.invoiced).reduce((n, m) => n + m.amount, 0))}</b><small>{milestoneQueue.filter(m => m.kind === 'draft' && !m.invoiced).length} milestones · later milestones</small></section>
-          <section className="af-card af-metric"><label>Prepared invoice drafts</label><b>{aed(summary.drafts_total)}</b><small>{summary.drafts_count} drafts · not issued</small></section>
+          <section className="af-card af-metric"><label>Advance billing ready</label><b><AnimatedNumber value={milestoneQueue.filter(m => m.kind === 'advance' && !m.invoiced).reduce((n, m) => n + m.amount, 0)} format={aed} /></b><small>{milestoneQueue.filter(m => m.kind === 'advance' && !m.invoiced).length} milestones · engagement signed</small></section>
+          <section className="af-card af-metric"><label>Draft-stage billing ready</label><b><AnimatedNumber value={milestoneQueue.filter(m => m.kind === 'draft' && !m.invoiced).reduce((n, m) => n + m.amount, 0)} format={aed} /></b><small>{milestoneQueue.filter(m => m.kind === 'draft' && !m.invoiced).length} milestones · later milestones</small></section>
+          <section className="af-card af-metric"><label>Prepared invoice drafts</label><b><AnimatedNumber value={summary.drafts_total} format={aed} /></b><small>{summary.drafts_count} drafts · not issued</small></section>
         </div>
         <section className="af-card" style={{ marginTop: 16 }}>
           <div className="af-cardhead"><div><h2>Billing action queue</h2><div className="af-sub">Milestones from each engagement's payment terms · fee amounts exclude tax</div></div></div>
@@ -437,12 +438,12 @@ const BillingWorkspace = ({ initialTab }) => {
         <div className="af-kpis" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
           <section className="af-card af-metric"><label>Allocated hours</label><b>{Math.round(costTotals.reduce((n, { t }) => n + t.alloc, 0))} hrs</b><small>{costTotals.length} jobs in this view</small></section>
           <section className="af-card af-metric"><label>Actual hours</label><b>{Math.round(costTotals.reduce((n, { t }) => n + t.act, 0))} hrs</b><small>Recorded effort to date</small></section>
-          <section className="af-card af-metric"><label>Budgeted internal cost</label><b>{aed(costTotals.reduce((n, { t }) => n + t.budget, 0))}</b><small>Staff-specific budget cost rates</small></section>
-          <section className="af-card af-metric"><label>Actual internal cost</label><b>{aed(costTotals.reduce((n, { t }) => n + t.actual, 0))}</b><small>Incl. incomplete jobs</small></section>
+          <section className="af-card af-metric"><label>Budgeted internal cost</label><b><AnimatedNumber value={costTotals.reduce((n, { t }) => n + t.budget, 0)} format={aed} /></b><small>Staff-specific budget cost rates</small></section>
+          <section className="af-card af-metric"><label>Actual internal cost</label><b><AnimatedNumber value={costTotals.reduce((n, { t }) => n + t.actual, 0)} format={aed} /></b><small>Incl. incomplete jobs</small></section>
         </div>
         <div className="af-kpis" style={{ gridTemplateColumns: 'repeat(2, 1fr)', marginTop: 12 }}>
           <section className="af-card af-metric"><label>Completed job performance</label><b>{completedCost.length} completed</b><small>Net hour variance {(() => { const v = completedCost.reduce((n, { t }) => n + (t.act - t.alloc), 0); return `${v >= 0 ? '+' : ''}${Math.round(v)}h`; })()} · net cost {aed(completedCost.reduce((n, { t }) => n + (t.actual - t.budget), 0))}</small></section>
-          <section className="af-card af-metric"><label>In-progress cost forecast</label><b>{aed(ongoingCost.reduce((n, { t }) => n + t.forecast, 0))}</b><small>{ongoingCost.length} ongoing · {Math.round(ongoingCost.reduce((n, { t }) => n + t.rem, 0))}h remaining effort</small></section>
+          <section className="af-card af-metric"><label>In-progress cost forecast</label><b><AnimatedNumber value={ongoingCost.reduce((n, { t }) => n + t.forecast, 0)} format={aed} /></b><small>{ongoingCost.length} ongoing · {Math.round(ongoingCost.reduce((n, { t }) => n + t.rem, 0))}h remaining effort</small></section>
         </div>
         <section className="af-card" style={{ marginTop: 16 }}>
           <div className="af-cardhead"><div><h2>Job time &amp; cost comparison</h2><div className="af-sub">Budget = Σ allocated hrs × budget rate · Actual = Σ actual hrs × actual rate · positive variance = over</div></div></div>

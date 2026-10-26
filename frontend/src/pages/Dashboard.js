@@ -179,13 +179,13 @@ const Dashboard = () => {
         <section className="af-card af-metric">
           <span className="af-icon"><Wallet size={18} /></span>
           <label>Billed this month</label>
-          <b>{aed(billed)}</b>
+          <b><AnimatedNumber value={billed} format={aed} /></b>
           <small>Invoices issued this month</small>
         </section>
         <section className="af-card af-metric">
           <span className="af-icon"><ArrowDownToLine size={18} /></span>
           <label>Collected this month</label>
-          <b>{aed(collected)}</b>
+          <b><AnimatedNumber value={collected} format={aed} /></b>
           <small>Receipts recorded this month</small>
         </section>
       </div>
