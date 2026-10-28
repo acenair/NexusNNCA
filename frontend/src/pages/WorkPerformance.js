@@ -10,6 +10,12 @@ const aed = (n) => 'AED ' + Math.round(Number(n || 0)).toLocaleString('en-US');
 const fmt = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
 const WorkPerformance = () => {
+  const [util, setUtil] = useState([]);
+  useEffect(() => {
+    axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/insights/staff-utilization`, { withCredentials: true })
+      .then(res => setUtil(res.data.staff || []))
+      .catch(() => setUtil([]));
+  }, []);
   const { user } = useOutletContext();
   const [engs, setEngs] = useState([]);
   const [invoices, setInvoices] = useState([]);
@@ -86,6 +92,21 @@ const WorkPerformance = () => {
         </div>
       </div>
 
+      <div className="af-card" style={{ marginBottom: 16 }} data-testid="utilization-card">
+        <div className="af-cardhead"><div><h2>Staff utilization</h2><div className="af-sub">Allocated engagement hours vs working-day capacity · this month</div></div></div>
+        {util.map(u => (
+          <div key={u.user_id} style={{ padding: '10px 0', borderBottom: '1px solid var(--line)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+              <b>{u.name}</b>
+              <span>{u.allocated}h allocated · {u.logged}h logged · {u.utilization_pct}% of {u.capacity}h</span>
+            </div>
+            <div style={{ height: 6, background: 'var(--line)', borderRadius: 4, marginTop: 6 }}>
+              <div style={{ height: 6, borderRadius: 4, width: `${Math.min(100, u.utilization_pct)}%`, background: u.utilization_pct > 90 ? '#d36b6b' : u.utilization_pct > 60 ? '#d39835' : '#0e6db4' }} />
+            </div>
+          </div>
+        ))}
+        {util.length === 0 && <p style={{ color: 'var(--muted)', fontSize: 12 }}>No utilization data yet.</p>}
+      </div>
       <div className="af-kpis" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
         <section className="af-card af-metric"><label>Your team</label><b>{stats.open.length} open</b><small>{stats.completedMonth} completed this month</small></section>
         <section className="af-card af-metric"><label>Review checkpoints</label><b>{stats.reviewQueue.length}</b><small>Engagements in Review &amp; Reporting</small></section>

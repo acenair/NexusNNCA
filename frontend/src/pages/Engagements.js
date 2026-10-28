@@ -46,6 +46,25 @@ const aed = (n) => 'AED ' + Number(n || 0).toLocaleString('en-US');
 const fmt = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
 const Engagements = () => {
+  const [renewals, setRenewals] = useState([]);
+  const [renewing, setRenewing] = useState('');
+  useEffect(() => {
+    if (user?.role === 'partner') {
+      axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/insights/renewal-candidates`, { withCredentials: true })
+        .then(res => setRenewals(res.data.candidates || []))
+        .catch(() => {});
+    }
+  }, [user, loading]);
+  const doRenew = async (eid) => {
+    setRenewing(eid);
+    try {
+      const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/insights/renew`, { engagement_id: eid }, { withCredentials: true });
+      setRenewals(prev => prev.filter(c => c.engagement_id !== eid));
+      alert(`Renewed — new engagement ${res.data.new_engagement_id} created with a fresh checklist.`);
+      setLoading(true); await load(); setLoading(false);
+    } catch (e) { alert('Renewal failed'); }
+    setRenewing('');
+  };
   const { user } = useOutletContext();
   const location = useLocation();
   const [params, setParams] = useSearchParams();
@@ -140,6 +159,17 @@ const Engagements = () => {
       </div>
 
       {/* Service chips */}
+      {user?.role === 'partner' && renewals.length > 0 && (
+        <section className="af-card" style={{ marginBottom: 14, borderLeft: '4px solid #fd5426' }} data-testid="renewals-banner">
+          <div className="af-cardhead"><div><h2>Annual renewals due</h2><div className="af-sub">These engagements are due for renewal — cloning creates a fresh checklist for the new period</div></div></div>
+          {renewals.map(c => (
+            <div key={c.engagement_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--line)' }}>
+              <span style={{ fontSize: 12.5 }}><b>{c.client_name}</b> · {c.service_type.replace(/_/g, ' ')} · fee {c.fee ? `AED ${c.fee.toLocaleString()}` : '—'}</span>
+              <button className="af-btn" onClick={() => doRenew(c.engagement_id)} disabled={renewing === c.engagement_id} data-testid={`renew-${c.engagement_id}`}>{renewing === c.engagement_id ? 'Renewing…' : 'Renew now'}</button>
+            </div>
+          ))}
+        </section>
+      )}
       <div className="af-chips" role="tablist">
         <button role="tab" aria-selected={!preset} onClick={clearPreset}>All ({engs.length})</button>
         {chips.map(([k, label]) => (

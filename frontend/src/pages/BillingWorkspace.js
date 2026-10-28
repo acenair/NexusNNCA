@@ -39,6 +39,8 @@ const BillingWorkspace = ({ initialTab }) => {
   const [rcptStaff, setRcptStaff] = useState('');
   const [costFor, setCostFor] = useState(null);
   const [costRows, setCostRows] = useState([]);
+  const [retainers, setRetainers] = useState([]);
+  const [generating, setGenerating] = useState(false);
   const isPartner = user?.role === 'partner';
 
   const load = useCallback(async () => {
@@ -50,14 +52,16 @@ const BillingWorkspace = ({ initialTab }) => {
       ]);
       setInvoices(Array.isArray(inv.data) ? inv.data : []);
       setSummary(sum.data);
-      const [eng, cl, us] = await Promise.all([
+      const [eng, cl, us, ret] = await Promise.all([
         axios.get(`${API}/service/engagements`, { withCredentials: true }),
         axios.get(`${API}/clients`, { withCredentials: true }),
         axios.get(`${API}/auth/users-list`, { withCredentials: true }),
+        axios.get(`${API}/insights/retainers`, { withCredentials: true }).catch(() => ({ data: { retainers: [] } })),
       ]);
       setEngagements(Array.isArray(eng.data) ? eng.data : []);
       setClients(Array.isArray(cl.data) ? cl.data : []);
       setUsers(Array.isArray(us.data) ? us.data : []);
+      setRetainers(ret.data.retainers || []);
     } catch (err) { console.error(err); }
     setLoading(false);
   }, [month]);
@@ -115,6 +119,24 @@ const BillingWorkspace = ({ initialTab }) => {
   };
 
   const cancelledInvoices = invoices.filter(i => i.cancelled);
+
+  const generateRetainers = async () => {
+    setGenerating(true);
+    try {
+      const res = await axios.post(`${API}/insights/retainers/generate`, {}, { withCredentials: true });
+      const n = res.data.count || 0;
+      alert(n ? `${n} retainer draft(s) created — review them in the Drafts tab, then issue.` : 'No retainer periods are due right now.');
+      await load();
+    } catch (e) { alert('Failed'); }
+    setGenerating(false);
+  };
+  const syncHours = async (e) => {
+    try {
+      const res = await axios.post(`${API}/insights/costing/sync-hours/${e.engagement_id}`, {}, { withCredentials: true });
+      alert(res.data.message || 'Hours synced');
+      await load();
+    } catch (err) { alert('Failed to sync hours'); }
+  };
 
   const monthInvoices = invoices.filter(i => (i.date || '').slice(0, 7) === month);
   const receipts = invoices.flatMap(i => (i.receipts || []).map(r => ({ ...r, inv: i }))).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
@@ -421,6 +443,33 @@ const BillingWorkspace = ({ initialTab }) => {
           <section className="af-card af-metric"><label>Prepared invoice drafts</label><b><AnimatedNumber value={summary.drafts_total} format={aed} /></b><small>{summary.drafts_count} drafts · not issued</small></section>
         </div>
         <section className="af-card" style={{ marginTop: 16 }}>
+          <div className="af-cardhead"><div><h2>Recurring retainers</h2><div className="af-sub">Monthly / quarterly engagements — generate this period's draft invoices in one click</div></div>
+            {isPartner && <button className="af-btn-primary" onClick={generateRetainers} disabled={generating} data-testid="generate-retainers">{generating ? 'Generating…' : 'Generate retainer drafts'}</button>}
+          </div>
+          {retainers.length > 0 && (
+            <div className="af-tablewrap">
+              <table className="af-table">
+                <thead><tr><th>CLIENT / ENGAGEMENT</th><th>FREQUENCY</th><th>FEE</th><th>RECENT PERIODS</th></tr></thead>
+                <tbody>
+                  {retainers.map(r => (
+                    <tr key={r.engagement_id}>
+                      <td><b>{r.client_name}</b><small>{r.service_type?.replace(/_/g, ' ')}</small></td>
+                      <td>{r.frequency}</td>
+                      <td>{aed(r.fee)}</td>
+                      <td>{r.periods.map(p => (
+                        <span key={p.period} className={`af-badge ${p.invoice_id ? (p.status === 'Draft' ? 'af-badge-amber' : 'af-badge-green') : 'af-badge-grey'}`} style={{ marginRight: 4 }}>
+                          {p.period}: {p.invoice_id ? p.status : 'due'}
+                        </span>
+                      ))}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
+        <section className="af-card" style={{ marginTop: 16 }}>
           <div className="af-cardhead"><div><h2>Billing action queue</h2><div className="af-sub">Milestones from each engagement's payment terms · fee amounts exclude tax</div></div></div>
           <div className="af-tablewrap">
             <table className="af-table">
@@ -476,7 +525,10 @@ const BillingWorkspace = ({ initialTab }) => {
                       <td>{t.alloc ? aed(t.budget) : '—'}</td>
                       <td>{t.act ? aed(t.actual) : '—'}</td>
                       <td><span className={`af-badge ${oc}`}>{outcome}</span></td>
-                      <td>{isPartner && <button className="af-link" onClick={() => openCostEditor(e)}>Staff breakdown / edit</button>}</td>
+                      <td style={{ whiteSpace: 'nowrap' }}>
+                        {isPartner && <button className="af-link" onClick={() => openCostEditor(e)}>Staff breakdown / edit</button>}
+                        {isPartner && <><br /><button className="af-link" onClick={() => syncHours(e)} data-testid={`sync-hours-${e.engagement_id}`}>Pull logged hours</button></>}
+                      </td>
                     </tr>
                   );
                 })}

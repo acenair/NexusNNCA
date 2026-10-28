@@ -36,6 +36,7 @@ from routes import (
     attendance,
     leads,
     doc_requests,
+    insights,
 )
 
 app = FastAPI()
@@ -72,6 +73,7 @@ for router in (
     attendance.router,
     leads.router,
     doc_requests.router,
+    insights.router,
 ):
     app.include_router(router)
 

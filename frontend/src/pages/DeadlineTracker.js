@@ -26,6 +26,12 @@ const BUCKETS = [
 ];
 
 const DeadlineTracker = () => {
+  const [regulatory, setRegulatory] = useState([]);
+  useEffect(() => {
+    axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/insights/regulatory-deadlines?within_days=120`, { withCredentials: true })
+      .then(res => setRegulatory(res.data.deadlines || []))
+      .catch(() => setRegulatory([]));
+  }, []);
   const { user } = useOutletContext();
   const navigate = useNavigate();
   const [engs, setEngs] = useState([]);
@@ -191,6 +197,28 @@ const DeadlineTracker = () => {
           </button>
         ))}
       </div>
+
+      {regulatory.length > 0 && (
+        <section className="af-card" style={{ marginTop: 14 }} data-testid="regulatory-card">
+          <div className="af-cardhead"><div><h2>Regulatory calendar</h2><div className="af-sub">FTA / Corporate Tax / Licence deadlines computed from your engagements — next 120 days</div></div></div>
+          <div className="af-tablewrap">
+            <table className="af-table">
+              <thead><tr><th>DEADLINE</th><th>CLIENT</th><th>DUE</th><th>DAYS LEFT</th><th>NOTE</th></tr></thead>
+              <tbody>
+                {regulatory.map((d, idx) => (
+                  <tr key={idx}>
+                    <td><b>{d.label}</b><small>{d.kind}</small></td>
+                    <td>{d.client}</td>
+                    <td>{new Date(d.due).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                    <td><span className={`af-badge ${d.days_left < 0 ? 'af-badge-red' : d.days_left <= 14 ? 'af-badge-amber' : 'af-badge-green'}`}>{d.days_left < 0 ? `${-d.days_left}d overdue` : `${d.days_left}d left`}</span></td>
+                    <td><small style={{ color: 'var(--muted)' }}>{d.note}</small></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       <div className="af-kpis" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginTop: 12 }}>
         <section className="af-card af-metric"><label>Forecast late</label><b>{risk.forecastLate}</b><small>Internal target passed</small></section>

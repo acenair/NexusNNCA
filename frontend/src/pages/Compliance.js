@@ -40,6 +40,19 @@ const riskBadge = { expired: 'af-badge-red', urgent: 'af-badge-amber', soon: 'af
 const stageBadge = (s) => ({ 'Verified': 'af-badge-green', 'Under review': 'af-badge-amber', 'Requested': 'af-badge-amber', 'Received': 'af-badge-blue', 'Renewal in progress': 'af-badge-red', 'Not requested': 'af-badge-grey' }[s] || 'af-badge-blue');
 
 const Compliance = () => {
+  const [screenName, setScreenName] = useState('');
+  const [screenResult, setScreenResult] = useState(null);
+  const [screening, setScreening] = useState(false);
+  const runScreen = async () => {
+    if (!screenName.trim()) return;
+    setScreening(true);
+    try {
+      const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/insights/sanctions-screen`, {
+        params: { name: screenName }, withCredentials: true });
+      setScreenResult(res.data);
+    } catch (e) { alert('Screening failed'); }
+    setScreening(false);
+  };
   const { user } = useOutletContext();
   const isPartner = user?.role === 'partner';
   const [scope, setScope] = useState('customers');
@@ -142,6 +155,29 @@ const Compliance = () => {
       </div>
       <p className="af-sub" style={{ margin: '4px 0 14px' }}>{SCOPES.find(s => s.key === scope).desc}</p>
 
+      <section className="af-card" style={{ marginBottom: 16 }} data-testid="sanctions-card">
+        <div className="af-cardhead"><div><h2>Sanctions screening</h2><div className="af-sub">UN consolidated list check — screen a client or prospect name (Stage 2 KYC requirement)</div></div></div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <input value={screenName} onChange={e => setScreenName(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && runScreen()}
+            placeholder="Client or prospect legal name…" data-testid="sanctions-input"
+            style={{ flex: 1, minWidth: 240, padding: '10px 12px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)' }} />
+          <button className="af-btn-primary" onClick={runScreen} disabled={screening || !screenName.trim()} data-testid="sanctions-run">{screening ? 'Checking…' : 'Screen name'}</button>
+        </div>
+        {screenResult && (
+          screenResult.clear
+            ? <p className="af-note" style={{ color: 'var(--green)', marginTop: 10 }}>✓ No matches on the UN consolidated list (as of {screenResult.list_date}).</p>
+            : <div style={{ marginTop: 10 }}>
+                {screenResult.hits.map((h, hi) => (
+                  <div key={hi} style={{ background: '#fdf0ef', border: '1px solid #f3c1c1', borderRadius: 8, padding: '10px 12px', marginBottom: 6, fontSize: 12.5 }}>
+                    <b style={{ color: 'var(--red)' }}>⚠ {h.matched_name}</b> — {h.type} · match score {Math.round(h.score * 100)}%
+                    <div style={{ color: 'var(--muted)', fontSize: 11.5 }}>Aliases: {h.aliases.join(' · ')}{h.dob ? ` · DOB ${h.dob}` : ''}</div>
+                  </div>
+                ))}
+                <p className="af-note">Do not proceed with the engagement until a full review is completed and documented.</p>
+              </div>
+        )}
+      </section>
       <div className="af-kpis" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
         <button className={`af-card af-metric`} style={{ border: riskFilter === 'expired' ? '2px solid var(--gold)' : '1px solid var(--line)', cursor: 'pointer', textAlign: 'left' }} onClick={() => setRiskFilter(riskFilter === 'expired' ? '' : 'expired')} data-testid="bucket-expired">
           <span className="af-icon"><AlertTriangle size={18} /></span>
