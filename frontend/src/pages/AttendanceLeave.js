@@ -145,7 +145,7 @@ const AttendanceLeave = () => {
                   <tr key={s.user_id}>
                     <td style={{ position: 'sticky', left: 0, background: 'white', whiteSpace: 'nowrap' }}><b>{s.name}</b><small>{s.title}</small></td>
                     {s.cells.map((c, i) => {
-                      const st = c.am === c.pm ? UNIT_STYLE[c.am] : { background: 'linear-gradient(135deg, ' + UNIT_STYLE[c.am].bg + ' 50%, ' + UNIT_STYLE[c.pm].bg + ' 50%)' };
+                      const st = c.am === c.pm ? (UNIT_STYLE[c.am] || UNIT_STYLE.future) : { background: 'linear-gradient(135deg, ' + (UNIT_STYLE[c.am] || UNIT_STYLE.future).bg + ' 50%, ' + (UNIT_STYLE[c.pm] || UNIT_STYLE.future).bg + ' 50%)' };
                       return (
                         <td key={i} style={{ padding: 0, textAlign: 'center' }}>
                           {isPartner && c.date <= new Date().toISOString().slice(0, 10) ? (
