@@ -309,6 +309,17 @@ async def staff_utilization(month: Optional[str] = None, authorization: str = He
         rows.append({"user_id": u["user_id"], "name": u["name"], "allocated": round(allocated, 1),
                      "logged": round(logged, 1), "capacity": capacity,
                      "utilization_pct": round(allocated / capacity * 100) if capacity else 0})
+    # dedupe users that share a name (e.g. two accounts for the same person)
+    merged = {}
+    for r in rows:
+        m = merged.setdefault(r["name"], dict(r))
+        if r is not m:
+            m["allocated"] = round(m["allocated"] + r["allocated"], 1)
+            m["logged"] = round(m["logged"] + r["logged"], 1)
+            m["capacity"] = max(m["capacity"], r["capacity"])
+    rows = list(merged.values())
+    for r in rows:
+        r["utilization_pct"] = round(r["allocated"] / r["capacity"] * 100) if r["capacity"] else 0
     rows.sort(key=lambda r: -r["utilization_pct"])
     return {"month": month, "staff": rows}
 
