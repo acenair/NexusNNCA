@@ -318,7 +318,9 @@ async def staff_utilization(month: Optional[str] = None, authorization: str = He
     for r in rows:
         m = merged.setdefault(r["name"], r)  # store the row itself so identity check works
         if r is not m:
-            m["allocated"] = round(m["allocated"] + r["allocated"], 1)
+            # same person, duplicate accounts: allocation is firm-wide (already counted
+            # once) so take the max; logged hours genuinely add up per account
+            m["allocated"] = max(m["allocated"], r["allocated"])
             m["logged"] = round(m["logged"] + r["logged"], 1)
             m["capacity"] = max(m["capacity"], r["capacity"])
     rows = list(merged.values())
