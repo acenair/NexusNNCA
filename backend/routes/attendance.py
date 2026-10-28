@@ -77,7 +77,7 @@ async def attendance_month(month: str, authorization: str = Header(None), sessio
         for d in days:
             iso = d.isoformat()
             if iso > today_iso:
-                kind, marked = "future", False
+                kind, marked = ("future", "future"), False
             else:
                 r = records.get((u["user_id"], iso))
                 default = _day_kind(d, iso in holiday_set)
