@@ -45,27 +45,7 @@ const SERVICE_LABELS = {
 const aed = (n) => 'AED ' + Number(n || 0).toLocaleString('en-US');
 const fmt = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
-const Engagements = () => {
-  const [renewals, setRenewals] = useState([]);
-  const [renewing, setRenewing] = useState('');
-  useEffect(() => {
-    if (user?.role === 'partner') {
-      axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/insights/renewal-candidates`, { withCredentials: true })
-        .then(res => setRenewals(res.data.candidates || []))
-        .catch(() => {});
-    }
-  }, [user, loading]);
-  const doRenew = async (eid) => {
-    setRenewing(eid);
-    try {
-      const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/insights/renew`, { engagement_id: eid }, { withCredentials: true });
-      setRenewals(prev => prev.filter(c => c.engagement_id !== eid));
-      alert(`Renewed — new engagement ${res.data.new_engagement_id} created with a fresh checklist.`);
-      setLoading(true); await load(); setLoading(false);
-    } catch (e) { alert('Renewal failed'); }
-    setRenewing('');
-  };
-  const { user } = useOutletContext();
+const Engagements = () => {  const { user } = useOutletContext();
   const location = useLocation();
   const [params, setParams] = useSearchParams();
   const preset = params.get('service') || ROUTE_PRESETS[location.pathname] || '';
@@ -82,6 +62,26 @@ const Engagements = () => {
   const [termDefs, setTermDefs] = useState({ service_terms: {}, general_terms: [] });
   const [form, setForm] = useState({ client_id: '', service_type: preset || 'statutory_audit', assigned_to: '', notes: '' });
 
+
+  const [renewals, setRenewals] = useState([]);
+  const [renewing, setRenewing] = useState('');
+  useEffect(() => {
+    if (user?.role === 'partner') {
+      axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/insights/renewal-candidates`, { withCredentials: true })
+        .then(res => setRenewals(res.data.candidates || []))
+        .catch(() => {});
+    }
+  }, [user]);
+  const doRenew = async (eid) => {
+    setRenewing(eid);
+    try {
+      const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/insights/renew`, { engagement_id: eid }, { withCredentials: true });
+      setRenewals(prev => prev.filter(c => c.engagement_id !== eid));
+      alert(`Renewed — new engagement ${res.data.new_engagement_id} created with a fresh checklist.`);
+      await loadEngs();
+    } catch (e) { alert('Renewal failed'); }
+    setRenewing('');
+  };
   const loadEngs = useCallback(async () => {
     setLoading(true);
     try {
