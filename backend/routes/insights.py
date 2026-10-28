@@ -375,3 +375,93 @@ async def sanctions_screen(name: str, client_id: Optional[str] = None,
             "sanctions_screened_at": datetime.now(timezone.utc).isoformat(),
             "sanctions_hits": len(hits)}})
     return {"hits": hits[:5], "clear": not hits, "screened_name": name, "list_date": data.get("retrieved")}
+
+
+# ---------- 7. Review-notes workflow (partner review of audit jobs) ----------
+
+@router.get("/service/engagements/{engagement_id}/review-notes")
+async def list_review_notes(engagement_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
+    await get_current_user(authorization, session_token)
+    notes = await db.review_notes.find({"engagement_id": engagement_id}, {"_id": 0})\
+        .sort("created_at", 1).to_list(500)
+    return {"notes": notes}
+
+
+@router.post("/service/engagements/{engagement_id}/review-notes")
+async def add_review_note(engagement_id: str, payload: dict = Body(default=None),
+                          authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await get_current_user(authorization, session_token)
+    text = ((payload or {}).get("text") or "").strip()
+    if not text:
+        raise HTTPException(status_code=422, detail="Note text is required")
+    eng = await db.service_engagements.find_one({"engagement_id": engagement_id}, {"_id": 0})
+    if not eng:
+        raise HTTPException(status_code=404, detail="Engagement not found")
+    note = {
+        "note_id": f"rn_{uuid.uuid4().hex[:12]}",
+        "engagement_id": engagement_id,
+        "text": text,
+        "author_id": user["user_id"], "author_name": user.get("name"),
+        "status": "Open",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "cleared_at": None, "cleared_by": None,
+    }
+    await db.review_notes.insert_one(note)
+    note.pop("_id", None)
+    return {"ok": True, "note": note}
+
+
+@router.patch("/insights/review-notes/{note_id}/clear")
+async def clear_review_note(note_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await get_current_user(authorization, session_token)
+    res = await db.review_notes.update_one(
+        {"note_id": note_id, "status": "Open"},
+        {"$set": {"status": "Cleared", "cleared_at": datetime.now(timezone.utc).isoformat(),
+                  "cleared_by": user.get("name")}})
+    if not res.matched_count:
+        raise HTTPException(status_code=404, detail="Open note not found")
+    return {"ok": True}
+
+
+# ---------- 8. Key audit assumptions & basis (per engagement) ----------
+
+@router.get("/service/engagements/{engagement_id}/assumptions")
+async def list_assumptions(engagement_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
+    await get_current_user(authorization, session_token)
+    eng = await db.service_engagements.find_one({"engagement_id": engagement_id}, {"_id": 0, "assumptions": 1})
+    if not eng:
+        raise HTTPException(status_code=404, detail="Engagement not found")
+    return {"assumptions": eng.get("assumptions", [])}
+
+
+@router.post("/service/engagements/{engagement_id}/assumptions")
+async def add_assumption(engagement_id: str, payload: dict = Body(default=None),
+                         authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await get_current_user(authorization, session_token)
+    text = ((payload or {}).get("text") or "").strip()
+    basis = ((payload or {}).get("basis") or "").strip()  # where the value comes from, e.g. "5% of revenue"
+    if not text:
+        raise HTTPException(status_code=422, detail="Assumption text is required")
+    eng = await db.service_engagements.find_one({"engagement_id": engagement_id}, {"_id": 0})
+    if not eng:
+        raise HTTPException(status_code=404, detail="Engagement not found")
+    entry = {
+        "assumption_id": f"as_{uuid.uuid4().hex[:10]}",
+        "text": text[:2000], "basis": basis[:500],
+        "added_by": user.get("name"), "added_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.service_engagements.update_one(
+        {"engagement_id": engagement_id}, {"$push": {"assumptions": entry}})
+    return {"ok": True, "assumption": entry}
+
+
+@router.delete("/service/engagements/{engagement_id}/assumptions/{assumption_id}")
+async def remove_assumption(engagement_id: str, assumption_id: str,
+                            authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await get_current_user(authorization, session_token)
+    res = await db.service_engagements.update_one(
+        {"engagement_id": engagement_id, "assumptions.assumption_id": assumption_id},
+        {"$pull": {"assumptions": {"assumption_id": assumption_id}}})
+    if not res.matched_count:
+        raise HTTPException(status_code=404, detail="Assumption not found")
+    return {"ok": True}

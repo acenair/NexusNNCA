@@ -6,7 +6,7 @@ from fastapi import Cookie
 from fastapi import HTTPException
 from fastapi import Header
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from core import db
 from core import get_current_user
 from core import log_activity
@@ -138,7 +138,8 @@ async def list_service_engagements(authorization: str = Header(None), session_to
 class ToggleChecklistRequest(BaseModel):
     group_index: int
     item_index: int
-    done: bool
+    done: Optional[bool] = None
+    note: Optional[str] = None  # working-paper note / justification for the item
 
 
 @router.patch("/service/engagements/{engagement_id}/checklist")
@@ -150,7 +151,13 @@ async def toggle_checklist_item(engagement_id: str, req: ToggleChecklistRequest,
 
     checklist = eng.get("checklist", [])
     if req.group_index < len(checklist) and req.item_index < len(checklist[req.group_index]["items"]):
-        checklist[req.group_index]["items"][req.item_index]["done"] = req.done
+        item = checklist[req.group_index]["items"][req.item_index]
+        if req.done is not None:
+            item["done"] = req.done
+        if req.note is not None:
+            item["note"] = req.note.strip()[:4000]
+            item["note_by"] = user.get("name")
+            item["note_at"] = datetime.now(timezone.utc).isoformat()
 
     # Auto-update phase based on checklist progress
     phase = checklist[0]["group"] if checklist else ""

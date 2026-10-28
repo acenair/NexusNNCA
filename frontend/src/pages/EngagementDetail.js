@@ -13,6 +13,8 @@ const EngagementDetail = () => {
   const location = useLocation();
   const { user } = useOutletContext();
   const [eng, setEng] = useState(null);
+  const [noteEditing, setNoteEditing] = useState(null);  // `${gIdx}-${iIdx}` being edited
+  const [noteDraft, setNoteDraft] = useState('');
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({});
@@ -52,6 +54,56 @@ const EngagementDetail = () => {
       const res = await axios.post(`${API}/service/engagements/${eng.engagement_id}/checklist/items`, { group, label }, { withCredentials: true });
       setEng({ ...eng, checklist: res.data.checklist });
     } catch (e) { alert(e.response?.data?.detail || 'Failed to add item'); }
+  };
+  const loadNotes = async () => {
+    try {
+      const res = await axios.get(`${API}/service/engagements/${engagementId}/review-notes`, { withCredentials: true });
+      setReviewNotes(res.data.notes || []);
+    } catch (e) {}
+  };
+  const loadAssumptions = async () => {
+    try {
+      const res = await axios.get(`${API}/service/engagements/${engagementId}/assumptions`, { withCredentials: true });
+      setAssumptions(res.data.assumptions || []);
+    } catch (e) {}
+  };
+  useEffect(() => { loadNotes(); loadAssumptions(); }, [engagementId]);
+  const addReviewNote = async () => {
+    if (!rnText.trim()) return;
+    try {
+      await axios.post(`${API}/service/engagements/${engagementId}/review-notes`, { text: rnText }, { withCredentials: true });
+      setRnText(''); await loadNotes();
+    } catch (e) { alert('Failed to add note'); }
+  };
+  const clearReviewNote = async (noteId) => {
+    try {
+      await axios.patch(`${API}/insights/review-notes/${noteId}/clear`, {}, { withCredentials: true });
+      await loadNotes();
+    } catch (e) { alert('Failed to clear note'); }
+  };
+  const addAssumption = async () => {
+    if (!asText.trim()) return;
+    try {
+      await axios.post(`${API}/service/engagements/${engagementId}/assumptions`, { text: asText, basis: asBasis }, { withCredentials: true });
+      setAsText(''); setAsBasis(''); await loadAssumptions();
+    } catch (e) { alert('Failed to add assumption'); }
+  };
+  const removeAssumption = async (aid) => {
+    try {
+      await axios.delete(`${API}/service/engagements/${engagementId}/assumptions/${aid}`, { withCredentials: true });
+      await loadAssumptions();
+    } catch (e) { alert('Failed to remove'); }
+  };
+  const saveItemNote = async (gIdx, iIdx, note) => {
+    try {
+      const res = await axios.patch(`${API}/service/engagements/${eng.engagement_id}/checklist`,
+        { group_index: gIdx, item_index: iIdx, note }, { withCredentials: true });
+      setEng(prev => ({ ...prev, checklist: (() => {
+        const cl = prev.checklist.map((g, gi) => gi === gIdx ? { ...g, items: g.items.map((it, ii) => ii === iIdx ? { ...it, note } : it) } : g);
+        return cl;
+      })() }));
+      setNoteEditing(null);
+    } catch (e) { alert('Failed to save note'); }
   };
   const removeItem = async (gIdx, iIdx) => {
     try {
@@ -177,6 +229,7 @@ const EngagementDetail = () => {
         <div style={{ display: 'flex', gap: 6, marginBottom: 14 }} data-testid="engagement-tabs">
           <button onClick={() => setActiveTab('checklist')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 'var(--rs)', border: activeTab === 'checklist' ? '1px solid var(--gold)' : '1px solid var(--nn-border)', background: activeTab === 'checklist' ? 'rgba(14,109,180,0.08)' : 'var(--white)', color: activeTab === 'checklist' ? 'var(--gold4)' : 'var(--muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }} data-testid="tab-checklist"><ListChecks size={14} /> Checklist</button>
           <button onClick={() => setActiveTab('audit')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 'var(--rs)', border: activeTab === 'audit' ? '1px solid var(--gold)' : '1px solid var(--nn-border)', background: activeTab === 'audit' ? 'rgba(14,109,180,0.08)' : 'var(--white)', color: activeTab === 'audit' ? 'var(--gold4)' : 'var(--muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }} data-testid="tab-audit-workbook"><BookOpen size={14} /> Audit Workbook</button>
+          <button onClick={() => setActiveTab('review')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 'var(--rs)', border: activeTab === 'review' ? '1px solid var(--gold)' : '1px solid var(--nn-border)', background: activeTab === 'review' ? 'rgba(14,109,180,0.08)' : 'var(--white)', color: activeTab === 'review' ? 'var(--gold4)' : 'var(--muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }} data-testid="tab-review"><ListChecks size={14} /> Review &amp; assumptions</button>
         </div>
       )}
 
@@ -196,6 +249,67 @@ const EngagementDetail = () => {
                 )}
               </div>
             )}
+      {activeTab === 'review' && (
+        <div style={{ margin: '0 20px' }} data-testid="review-assumptions">
+          <div className="nn-card" style={{ padding: '16px 20px', marginBottom: 14 }} data-testid="review-notes-card">
+            <div style={{ fontSize: 11, fontWeight: 650, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--gold)', marginBottom: 4 }}>Review notes</div>
+            <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10 }}>Reviewer comments on this job — each note stays open until explicitly cleared (clears with your name and time).</div>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+              <input value={rnText} onChange={e => setRnText(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && addReviewNote()}
+                placeholder="Review observation — e.g. 'Bank reconciliation differs from statement by AED 420 — obtain explanation'"
+                data-testid="review-note-input"
+                style={{ flex: 1, padding: '9px 12px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', fontSize: 12.5 }} />
+              <button className="af-btn-primary" onClick={addReviewNote} data-testid="add-review-note">Add note</button>
+            </div>
+            {reviewNotes.length === 0 && <div style={{ fontSize: 12, color: 'var(--muted)', padding: '8px 0' }}>No review notes yet.</div>}
+            {reviewNotes.map(n => (
+              <div key={n.note_id} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '9px 12px', borderRadius: 8, marginBottom: 6, background: n.status === 'Open' ? '#fdf6ec' : '#f0f7f2', border: `1px solid ${n.status === 'Open' ? '#f0e0c8' : '#cfe5d6'}` }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12.5, color: 'var(--text)' }}>{n.text}</div>
+                  <div style={{ fontSize: 10.5, color: 'var(--muted)', marginTop: 3 }}>
+                    {n.author_name} · {new Date(n.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                    {n.status === 'Cleared' && <> · cleared by {n.cleared_by} {n.cleared_at && new Date(n.cleared_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</>}
+                  </div>
+                </div>
+                {n.status === 'Open'
+                  ? <button className="af-btn" onClick={() => clearReviewNote(n.note_id)} data-testid={`clear-note-${n.note_id}`}>Mark cleared</button>
+                  : <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--green)' }}>CLEARED</span>}
+              </div>
+            ))}
+          </div>
+
+          <div className="nn-card" style={{ padding: '16px 20px' }} data-testid="assumptions-card">
+            <div style={{ fontSize: 11, fontWeight: 650, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--gold)', marginBottom: 4 }}>Assumptions &amp; basis</div>
+            <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10 }}>Key audit assumptions and the values used — e.g. materiality threshold, depreciation rates, sampling basis, FX rate applied. Each entry states where the value comes from.</div>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
+              <input value={asText} onChange={e => setAsText(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && addAssumption()}
+                placeholder="Assumption — e.g. 'Materiality: AED 50,000'"
+                data-testid="assumption-input"
+                style={{ flex: 2, minWidth: 220, padding: '9px 12px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', fontSize: 12.5 }} />
+              <input value={asBasis} onChange={e => setAsBasis(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && addAssumption()}
+                placeholder="Basis / justification — e.g. '5% of revenue before tax'"
+                data-testid="assumption-basis-input"
+                style={{ flex: 2, minWidth: 220, padding: '9px 12px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', fontSize: 12.5 }} />
+              <button className="af-btn-primary" onClick={addAssumption} data-testid="add-assumption">Add</button>
+            </div>
+            {assumptions.length === 0 && <div style={{ fontSize: 12, color: 'var(--muted)', padding: '8px 0' }}>No assumptions recorded yet — add materiality, sampling and rate assumptions as you set them.</div>}
+            {assumptions.map(a => (
+              <div key={a.assumption_id} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '9px 12px', borderRadius: 8, marginBottom: 6, background: 'var(--blue-bg, #eaf3fb)', border: '1px solid #d8e8f4' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text)' }}>{a.text}</div>
+                  {a.basis && <div style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 2 }}>Basis: {a.basis}</div>}
+                  <div style={{ fontSize: 10.5, color: 'var(--muted)', marginTop: 3 }}>{a.added_by} · {new Date(a.added_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</div>
+                </div>
+                <button className="af-btn" onClick={() => removeAssumption(a.assumption_id)} data-testid={`remove-assumption-${a.assumption_id}`}>Remove</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {activeTab === 'audit' && AUDIT_SERVICE_TYPES.includes(eng.service_type) ? (
         <AuditWorkbook engagementId={engagementId} clientId={eng.client_id} clientName={eng.client_name} />
       ) : (
@@ -233,6 +347,29 @@ const EngagementDetail = () => {
                   </div>
                   <span style={{ fontSize: 13, color: item.done ? 'var(--muted)' : 'var(--text)', textDecoration: item.done ? 'line-through' : 'none', flex: 1 }}>{item.label}</span>
                   {item.done && <span style={{ fontSize: 9, color: 'var(--green)', fontWeight: 600 }}>Done</span>}
+                  <button onClick={() => { setNoteEditing(`${gIdx}-${iIdx}`); setNoteDraft(item.note || ''); }}
+                    title={item.note ? 'View / edit justification note' : 'Add a working-paper note or justification'}
+                    data-testid={`note-${gIdx}-${iIdx}`}
+                    style={{ background: item.note ? 'var(--blue-bg, #e7f1fa)' : 'none', border: 'none', cursor: 'pointer', color: item.note ? '#0e6db4' : 'var(--muted)', padding: 2, borderRadius: 4 }}>
+                    <BookOpen size={12} />
+                  </button>
+                  {noteEditing === `${gIdx}-${iIdx}` && (
+                    <div style={{ width: '100%', marginTop: 6 }} data-testid={`note-editor-${gIdx}-${iIdx}`}>
+                      <textarea value={noteDraft} onChange={e => setNoteDraft(e.target.value)} autoFocus
+                        placeholder="Working-paper note / justification — what was done, basis, sample reference…"
+                        style={{ width: '100%', minHeight: 54, fontSize: 12, padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', boxSizing: 'border-box' }} />
+                      <div style={{ display: 'flex', gap: 6, marginTop: 4, justifyContent: 'flex-end' }}>
+                        <button className="af-btn" onClick={() => setNoteEditing(null)}>Cancel</button>
+                        <button className="af-btn-primary" onClick={() => saveItemNote(gIdx, iIdx, noteDraft)} data-testid={`note-save-${gIdx}-${iIdx}`}>Save note</button>
+                      </div>
+                    </div>
+                  )}
+                  {item.note && noteEditing !== `${gIdx}-${iIdx}` && (
+                    <div style={{ width: '100%', fontSize: 11.5, color: 'var(--muted)', background: 'var(--blue-bg, #eaf3fb)', borderRadius: 6, padding: '6px 10px', marginTop: 4 }} data-testid={`note-view-${gIdx}-${iIdx}`}>
+                      📝 {item.note}
+                      {item.note_by && <span style={{ opacity: 0.7 }}> — {item.note_by}</span>}
+                    </div>
+                  )}
                   {isPartner && (
                     <button onClick={() => removeItem(gIdx, iIdx)} title="Remove item"
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 2 }}
