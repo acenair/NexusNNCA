@@ -292,7 +292,10 @@ async def staff_utilization(month: Optional[str] = None, authorization: str = He
         allocated = 0.0
         async for e in db.service_engagements.find({"assigned_to": u["user_id"], "status": "Active"}, {"_id": 0, "staff_costs": 1}):
             for s in e.get("staff_costs", []):
-                if s.get("name", "").startswith(u["name"]):
+                sn = s.get("name", "").strip().lower()
+                un = u["name"].strip().lower()
+                if sn and un and (sn.startswith(un) or un.startswith(sn)
+                                  or sn.split()[0] == un.split()[0]):
                     allocated += s.get("allocated_hours", 0) or 0
         logged = 0.0
         async for bh in db.billable_hours.find({"staff_id": u["user_id"], "date": {"$regex": f"^{month}"}}, {"_id": 0, "hours": 1}):
