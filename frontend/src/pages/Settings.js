@@ -217,6 +217,7 @@ const Settings = () => {
       setStorage(storageRes.data.config || { provider: 'default', aws_s3: {}, google_drive: {}, onedrive: {} });
       setWorkflows(wfRes.data);
       setFirmName(firmRes.data.firm_name || 'Nair & Nelliyatt Chartered Accountants');
+        setFirmTax({ trn: firmRes.data.trn || '', address: firmRes.data.address || '', phone: firmRes.data.phone || '', email: firmRes.data.email || '', bank_details: firmRes.data.bank_details || '' });
       setUsers(usersRes.data);
       setPendingResets(resetsRes.data);
       // Load clients for linking
@@ -403,8 +404,8 @@ const Settings = () => {
   const saveFirmName = async () => {
     setSaving(true);
     try {
-      await axios.patch(`${API}/settings/firm`, { firm_name: firmName }, { withCredentials: true });
-      showSave('Firm name updated');
+      await axios.patch(`${API}/settings/firm`, { firm_name: firmName, ...firmTax }, { withCredentials: true });
+      showSave('Firm settings updated');
     } catch (err) { alert('Failed to save'); }
     finally { setSaving(false); }
   };
@@ -523,6 +524,13 @@ const Settings = () => {
             <div style={{ padding: '16px 20px' }}>
               <label style={labelStyle}>Firm Name</label>
               <input value={firmName} onChange={(e) => setFirmName(e.target.value)} style={{ ...inputStyle, maxWidth: 420 }} data-testid="firm-name-input" />
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12, marginTop: 12 }}>
+                <div><label style={labelStyle}>Firm TRN (for tax invoices)</label><input value={firmTax.trn} onChange={(e) => setFirmTax({ ...firmTax, trn: e.target.value })} style={inputStyle} placeholder="100XXXXXXXXXX" data-testid="firm-trn-input" /></div>
+                <div><label style={labelStyle}>Phone</label><input value={firmTax.phone} onChange={(e) => setFirmTax({ ...firmTax, phone: e.target.value })} style={inputStyle} /></div>
+                <div><label style={labelStyle}>Email</label><input value={firmTax.email} onChange={(e) => setFirmTax({ ...firmTax, email: e.target.value })} style={inputStyle} /></div>
+                <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Address</label><input value={firmTax.address} onChange={(e) => setFirmTax({ ...firmTax, address: e.target.value })} style={inputStyle} placeholder="Office, building, city" /></div>
+                <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Bank details (shown on invoices)</label><input value={firmTax.bank_details} onChange={(e) => setFirmTax({ ...firmTax, bank_details: e.target.value })} style={inputStyle} placeholder="Bank name · IBAN / account no." /></div>
+              </div>
             </div>
           </div>
 

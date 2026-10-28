@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { FileBarChart, CalendarDays, LayoutDashboard, Clock, Calendar, Star, Bell, FileText, Activity, Receipt, Building2, Briefcase, TrendingUp, Shield, LogOut, Users, Mail, Plus, X, CheckCircle, ChevronDown, ChevronRight, Menu, PanelLeftClose, MessageSquare, Database, FolderOpen, Settings, ClipboardList, UserPlus, AlertTriangle, HelpCircle} from 'lucide-react';
+import { FileBarChart, CalendarDays, LayoutDashboard, Clock, Calendar, Star, Bell, FileText, Activity, Receipt, Building2, Briefcase, TrendingUp, Shield, LogOut, Users, Mail, Plus, X, CheckCircle, ChevronDown, ChevronRight, Menu, PanelLeftClose, MessageSquare, Database, FolderOpen, Settings, ClipboardList, UserPlus, AlertTriangle, HelpCircle, FileInput} from 'lucide-react';
 import axios from 'axios';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -231,6 +231,7 @@ const MainLayout = ({ user }) => {
         { path: '/app/deadlines', label: 'Deadline Tracker', icon: Clock },
         { path: '/app/calendar', label: 'Service calendar', icon: Calendar },
         { path: '/app/documents', label: 'Documents', icon: FolderOpen },
+        { path: '/app/doc-requests', label: 'Document requests', icon: FileInput },
         { path: '/app/help', label: 'Help guide', icon: HelpCircle },
       ]
     },

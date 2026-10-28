@@ -4,6 +4,8 @@ import axios from 'axios';
 import '@/App.css';
 import LandingPage from '@/pages/LandingPage';
 import Help from '@/pages/Help';
+import DocRequests from '@/pages/DocRequests';
+import ClientUpload from '@/pages/ClientUpload';
 import Login from '@/pages/Login';
 import ChangePassword from '@/pages/ChangePassword';
 import ForgotPassword from '@/pages/ForgotPassword';
@@ -92,6 +94,7 @@ function AppRouter() {
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/upload/:token" element={<ClientUpload />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
@@ -145,6 +148,7 @@ function AppRouter() {
         <Route path="performance" element={<WorkPerformance />} />
         <Route path="reports" element={<Reports />} />
       <Route path="help" element={<Help />} />
+      <Route path="doc-requests" element={<DocRequests />} />
         <Route path="engagements/:engagementId" element={<EngagementDetail />} />
         <Route path="onboarding" element={<ClientOnboarding />} />
         <Route path="clients/:clientId/onboarding" element={<OnboardingTracker />} />

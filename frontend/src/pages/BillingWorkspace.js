@@ -32,7 +32,7 @@ const BillingWorkspace = ({ initialTab }) => {
   const [receipt, setReceipt] = useState({ amount: '', method: 'Bank transfer', reference: '', date: new Date().toISOString().slice(0, 10) });
   const [showCreate, setShowCreate] = useState(false);
   const [asDraft, setAsDraft] = useState(false);
-  const [form, setForm] = useState({ client_id: '', service_name: 'External Audit', amount: '', date: new Date().toISOString().slice(0, 10), due_date: '', staff: '' });
+  const [form, setForm] = useState({ client_id: '', service_name: 'External Audit', amount: '', vat_percent: '5', date: new Date().toISOString().slice(0, 10), due_date: '', staff: '' });
   const [saving, setSaving] = useState(false);
   const [invQ, setInvQ] = useState('');
   const [rcptQ, setRcptQ] = useState('');
@@ -147,7 +147,7 @@ const BillingWorkspace = ({ initialTab }) => {
   const milestoneQueue = [];
   engagements.filter(e => (e.milestones || []).length > 0).forEach(e => {
     const clientIssued = invoices.filter(i => !i.cancelled && i.status !== 'Draft' && i.client_id === e.client_id);
-    const covered = clientIssued.reduce((n, i) => n + (i.amount || 0), 0);
+    const covered = clientIssued.reduce((n, i) => n + (i.net_amount != null ? i.net_amount : i.amount), 0);
     let cum = 0;
     e.milestones.forEach((ms, idx) => {
       cum += ms.amount || 0;
@@ -174,7 +174,8 @@ const BillingWorkspace = ({ initialTab }) => {
   const createInvoice = async () => {
     setSaving(true);
     try {
-      await axios.post(`${API}/invoices`, { ...form, amount: parseFloat(form.amount), status: asDraft ? 'Draft' : 'Unpaid' }, { withCredentials: true });
+      const net = parseFloat(form.amount) || 0, vatPct = parseFloat(form.vat_percent) || 0;
+      await axios.post(`${API}/invoices`, { ...form, net_amount: net, vat_percent: vatPct, amount: Math.round(net * (1 + vatPct / 100) * 100) / 100, status: asDraft ? 'Draft' : 'Unpaid' }, { withCredentials: true });
       setShowCreate(false);
       setAsDraft(false);
       await load();
@@ -333,7 +334,7 @@ const BillingWorkspace = ({ initialTab }) => {
           </div>
           <div className="af-tablewrap">
             <table className="af-table">
-              <thead><tr><th>INVOICE / CUSTOMER</th><th>SERVICE / STAFF</th><th>DATE / DUE</th><th>BILLED</th><th>COLLECTED</th><th>CREDIT</th><th>PENDING</th><th>STATUS</th><th></th></tr></thead>
+              <thead><tr><th>INVOICE / CUSTOMER</th><th>SERVICE / STAFF</th><th>DATE / DUE</th><th>BILLED</th><th>COLLECTED</th><th>CREDIT</th><th>PENDING</th><th>STATUS</th><th></th><th></th></tr></thead>
               <tbody>
                 {shownInv.slice(0, 60).map(i => {
                   const credits = (i.credits || []).reduce((n, c) => n + c.amount, 0);
@@ -347,6 +348,7 @@ const BillingWorkspace = ({ initialTab }) => {
                       <td>{credits ? aed(credits) : '0'}</td>
                       <td><b>{aed(pendingOf(i))}</b></td>
                       <td><span className={`af-badge ${badge(statusOf(i))}`}>{statusOf(i)}</span></td>
+                      <td><a className="af-link" href={`${API}/invoices/${i.invoice_id}/pdf`} target="_blank" rel="noreferrer" data-testid={`pdf-${i.invoice_id}`}>PDF</a></td>
                       <td>{isPartner && i.status === 'Draft' && (
                         <button className="af-link" data-testid={`issue-${i.invoice_id}`} onClick={async () => {
                           await axios.post(`${API}/invoices/${i.invoice_id}/issue`, {}, { withCredentials: true }); await load();
@@ -358,7 +360,7 @@ const BillingWorkspace = ({ initialTab }) => {
                     </tr>
                   );
                 })}
-                {shownInv.length === 0 && <tr><td colSpan="10" className="af-empty">No invoices in this view.</td></tr>}
+                {shownInv.length === 0 && <tr><td colSpan="11" className="af-empty">No invoices in this view.</td></tr>}
               </tbody>
             </table>
           </div>
@@ -543,8 +545,16 @@ const BillingWorkspace = ({ initialTab }) => {
             <div className="af-formrow"><label>Service</label>
               <input value={form.service_name} onChange={e => setForm({ ...form, service_name: e.target.value })} />
             </div>
-            <div className="af-formrow"><label>Amount (AED) *</label>
+            <div className="af-formrow"><label>Amount net of VAT (AED) *</label>
               <input type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} />
+            </div>
+            <div className="af-formrow"><label>VAT %</label>
+              <select value={form.vat_percent} onChange={e => setForm({ ...form, vat_percent: e.target.value })}>
+                {['5', '0'].map(v => <option key={v} value={v}>{v === '5' ? '5% (standard rated)' : '0% (out of scope)'}</option>)}
+              </select>
+            </div>
+            <div className="af-formrow"><label>Invoice total (gross)</label>
+              <input readOnly value={form.amount ? (Math.round((parseFloat(form.amount) || 0) * (1 + (parseFloat(form.vat_percent) || 0) / 100) * 100) / 100).toLocaleString() : ''} style={{ background: 'var(--surface)' }} />
             </div>
             <div className="af-formrow"><label>Invoice date</label>
               <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} />

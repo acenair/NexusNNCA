@@ -493,3 +493,34 @@ h1, h2, h3, h4, h5, h6 {
 /* Client avatar chip inside table rows */
 .af-avatar-cell { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
 .af-avatar-cell span.nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+
+/* ===== Client document-upload portal (public /upload/:token) ===== */
+.cportal { min-height: 100vh; background: #f4f9fc; font-family: 'DM Sans', sans-serif; color: #17354c; padding: 40px 18px; box-sizing: border-box; }
+.cportal-wrap { max-width: 860px; margin: 0 auto; }
+.cportal-brand { font-weight: 800; font-size: 20px; color: #01457C; margin-bottom: 22px; display: flex; align-items: baseline; gap: 10px; }
+.cportal-brand span { font-size: 12px; font-weight: 500; color: #7891a4; letter-spacing: 0.4px; }
+.cportal-card { background: white; border: 1px solid #e4eff6; border-radius: 14px; padding: 28px; box-shadow: 0 4px 24px rgba(1,69,124,0.06); }
+.cportal-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; flex-wrap: wrap; }
+.cportal-eyebrow { font-size: 10px; letter-spacing: 2px; color: #0e6db4; font-weight: 700; }
+.cportal-card h1 { font-size: 24px; margin: 6px 0; letter-spacing: -0.5px; }
+.cportal-card p { color: #7891a4; font-size: 13px; margin: 4px 0; }
+.cportal-badge { background: #fff5e5; color: #b68128; border-radius: 20px; padding: 6px 12px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.cportal-badge.ok { background: #e6f4ed; color: #0e7e44; }
+.cportal-note { background: #eaf3fb; border-left: 3px solid #0e6db4; padding: 10px 12px; border-radius: 6px; font-size: 12.5px; margin: 14px 0; }
+.cportal-namefield { margin: 14px 0; }
+.cportal-namefield label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #7891a4; display: block; margin-bottom: 5px; }
+.cportal-namefield input { width: 100%; max-width: 340px; padding: 10px 12px; border: 1px solid #dbe9f6; border-radius: 8px; font: inherit; }
+.cportal-items { margin-top: 6px; }
+.cportal-item { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 13px 10px; border: 1px solid #e4eff6; border-radius: 10px; margin-bottom: 8px; transition: background 0.15s; }
+.cportal-item.received { background: #f2faf6; border-color: #d7ecdf; }
+.cportal-item-info { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.cportal-item-info b { font-size: 13.5px; display: block; }
+.cportal-item-info small { color: #7891a4; font-size: 11px; }
+.cportal-item button { border: 1px solid #0e6db4; background: #0e6db4; color: white; padding: 9px 16px; border-radius: 8px; font: inherit; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: background 0.15s; }
+.cportal-item button:hover { background: #01457C; }
+.cportal-done { background: #e6f4ed; color: #0e7e44; padding: 10px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; }
+.cportal-foot { display: flex; align-items: center; gap: 7px; color: #7891a4; font-size: 11.5px; margin-top: 16px; }
+.spin { animation: cportal-spin 0.9s linear infinite; }
+@keyframes cportal-spin { to { transform: rotate(360deg); } }
+@media (max-width: 640px) { .cportal-card { padding: 18px; } .cportal-item { flex-direction: column; align-items: flex-start; } }

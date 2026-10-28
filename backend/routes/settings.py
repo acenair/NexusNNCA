@@ -86,13 +86,23 @@ async def get_firm_settings(authorization: str = Header(None), session_token: st
 
 class FirmUpdateRequest(BaseModel):
     firm_name: str
+    trn: Optional[str] = None
+    address: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    bank_details: Optional[str] = None
 
 
 @router.patch("/settings/firm")
 async def update_firm_settings(req: FirmUpdateRequest, authorization: str = Header(None), session_token: str = Cookie(None)):
     user = await require_partner(authorization, session_token)
-    await db.settings.update_one({"type": "firm"}, {"$set": {"type": "firm", "firm_name": req.firm_name, "updated_by": user["user_id"], "updated_at": datetime.now(timezone.utc).isoformat()}}, upsert=True)
-    return {"message": "Firm name updated"}
+    fields = {"type": "firm", "firm_name": req.firm_name, "updated_by": user["user_id"],
+              "updated_at": datetime.now(timezone.utc).isoformat()}
+    for k in ("trn", "address", "phone", "email", "bank_details"):
+        if req.__getattribute__(k) is not None:
+            fields[k] = req.__getattribute__(k)
+    await db.settings.update_one({"type": "firm"}, {"$set": fields}, upsert=True)
+    return {"message": "Firm settings updated"}
 
 
 @router.get("/settings/storage")

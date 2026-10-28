@@ -6,6 +6,7 @@ from fastapi import HTTPException
 from fastapi import Header
 from typing import Optional
 from datetime import datetime
+from fastapi.responses import Response
 from core import db
 from core import log_activity
 from core import require_partner
@@ -19,7 +20,9 @@ class InvoiceRequest(BaseModel):
     client_id: str
     client_name: Optional[str] = None
     service_name: str
-    amount: float
+    amount: float  # gross total (net + VAT)
+    net_amount: Optional[float] = None  # amount excluding VAT; if omitted, treated as tax-exclusive legacy (VAT 0)
+    vat_percent: float = 0.0
     date: str
     due_date: Optional[str] = None
     status: str = "Unpaid"
@@ -42,13 +45,26 @@ async def create_invoice(req: InvoiceRequest, authorization: str = Header(None),
 
     year = req.date[:4] if req.date else str(datetime.now(timezone.utc).year)
     seq = await db.invoices.count_documents({}) + 1
+    # VAT breakdown: net + vat% = gross. Legacy invoices (no net_amount) stay tax-exclusive as entered.
+    if req.net_amount is not None:
+        net = round(req.net_amount, 2)
+        vat = round(net * req.vat_percent / 100, 2)
+        total = round(net + vat, 2)
+        if abs(total - req.amount) > 0.01:
+            total = total  # trust computed gross; keep amount consistent
+        net_amount, vat_amount, vat_percent = net, vat, req.vat_percent
+    else:
+        net_amount, vat_amount, vat_percent = round(req.amount, 2), 0.0, 0.0
     doc = {
         "invoice_id": invoice_id,
         "invoice_number": f"INV-{year}-{seq:03d}",
         "client_id": req.client_id,
         "client_name": client_name,
         "service_name": req.service_name,
-        "amount": req.amount,
+        "amount": total if req.net_amount is not None else req.amount,
+        "net_amount": net_amount,
+        "vat_amount": vat_amount,
+        "vat_percent": vat_percent,
         "date": req.date,
         "due_date": req.due_date,
         "status": req.status,
@@ -306,3 +322,159 @@ async def billing_summary(month: Optional[str] = None, authorization: str = Head
         "ageing": ageing,
         "status": "ok",
     }
+
+
+def _safe(text) -> str:
+    """Coerce to latin-1-safe text for fpdf core fonts (em-dashes, smart quotes, etc.)."""
+    if text is None:
+        return ""
+    return str(text).encode("latin-1", "replace").decode("latin-1")
+
+
+def _amount_in_words(amount: float) -> str:
+    """Amount in words (AED, UAE tax invoice requirement)."""
+    ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve",
+            "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"]
+    tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"]
+
+    def below_thousand(n):
+        words = []
+        if n >= 100:
+            words.append(ones[n // 100] + " Hundred")
+            n %= 100
+        if n >= 20:
+            words.append(tens[n // 10])
+            n %= 10
+        if n:
+            words.append(ones[n])
+        return " ".join(words)
+
+    n = int(amount)
+    fils = round((amount - n) * 100)
+    parts = []
+    for value, label in [(n // 1_000_000, "Million"), ((n // 1000) % 1000, "Thousand")]:
+        if value:
+            parts.append(below_thousand(value) + " " + label)
+    remainder = n % 1000
+    if remainder or not parts:
+        parts.append(below_thousand(remainder))
+    words = " ".join(parts).strip() or "Zero"
+    words += " Dirhams"
+    if fils:
+        words += f" and {below_thousand(fils)} Fils"
+    return words + " only"
+
+
+@router.get("/invoices/{invoice_id}/pdf")
+async def invoice_pdf(invoice_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
+    """UAE-compliant tax invoice PDF (firm TRN, client TRN, net/VAT/gross breakdown, amount in words)."""
+    from fpdf import FPDF
+    import io
+
+    user = await require_partner(authorization, session_token)
+    inv = await db.invoices.find_one({"invoice_id": invoice_id}, {"_id": 0})
+    if not inv:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+
+    firm_doc = await db.settings.find_one({"type": "firm"}, {"_id": 0}) or {}
+    client = await db.clients.find_one({"client_id": inv.get("client_id")}, {"_id": 0, "trn": 1, "corporate_tax_trn": 1, "address": 1, "contact_email": 1}) or {}
+
+    net = inv.get("net_amount", inv.get("amount", 0))
+    vat = inv.get("vat_amount", 0)
+    vat_pct = inv.get("vat_percent", 0)
+    gross = inv.get("amount", 0)
+
+    pdf = FPDF(format="A4")
+    pdf.set_auto_page_break(auto=True, margin=20)
+    pdf.add_page()
+
+    # Header: firm block + TAX INVOICE
+    pdf.set_font("helvetica", "B", 16)
+    pdf.cell(0, 8, _safe(firm_doc.get("firm_name", "Nair & Nelliyatt Chartered Accountants")), new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("helvetica", "", 9)
+    if firm_doc.get("address"):
+        pdf.cell(0, 5, _safe(firm_doc["address"]), new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 5, _safe(f"TRN: {firm_doc.get('trn') or '-'}") + (f"   |   {firm_doc.get('phone')}" if firm_doc.get("phone") else "") + (f"   |   {firm_doc.get('email')}" if firm_doc.get("email") else ""), new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(4)
+    pdf.set_font("helvetica", "B", 13)
+    pdf.set_text_color(1, 69, 124)
+    pdf.cell(0, 8, "TAX INVOICE", align="C", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_text_color(0, 0, 0)
+    pdf.ln(2)
+
+    # Invoice meta + client block (two columns)
+    y0 = pdf.get_y()
+    pdf.set_font("helvetica", "B", 9)
+    pdf.cell(95, 6, "Invoice details", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("helvetica", "", 9)
+    for label, val in [("Invoice No", inv.get("invoice_number", "")), ("Invoice Date", inv.get("date", "")), ("Due Date", inv.get("due_date") or "—"), ("Status", inv.get("status", ""))]:
+        pdf.cell(40, 5, _safe(label), new_x="LMARGIN", new_y="NEXT")
+        pdf.set_xy(45, pdf.get_y() - 5)
+        pdf.cell(50, 5, _safe(str(val)))
+    pdf.set_xy(110, y0)
+    pdf.set_font("helvetica", "B", 9)
+    pdf.cell(0, 6, "Billed to")
+    pdf.set_xy(110, pdf.get_y() + 6)
+    pdf.set_font("helvetica", "", 9)
+    pdf.multi_cell(0, 5, _safe(f"{inv.get('client_name', '')}\nTRN: {client.get('trn') or '-'}") + (f"\n{client['address']}" if client.get("address") else ""))
+    pdf.ln(4)
+
+    # Line items table
+    pdf.set_fill_color(234, 243, 251)
+    pdf.set_font("helvetica", "B", 9)
+    pdf.cell(95, 8, "DESCRIPTION", border=1, fill=True)
+    pdf.cell(30, 8, "QTY", border=1, fill=True, align="C")
+    pdf.cell(25, 8, "NET (AED)", border=1, fill=True, align="R")
+    pdf.cell(20, 8, "VAT %", border=1, fill=True, align="R")
+    pdf.cell(25, 8, "AMOUNT (AED)", border=1, fill=True, align="R", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("helvetica", "", 9)
+    desc = _safe(inv.get("service_name", "Professional services"))
+    if inv.get("notes"):
+        desc += "\n" + _safe(inv["notes"][:120])
+    pdf.multi_cell(95, 8, desc, border=1)
+    y_after = pdf.get_y() - (8 if "\n" not in desc else 16)
+    pdf.set_xy(95, y0 + 22)
+    pdf.set_y(y_after)
+    pdf.cell(95, 8, "", border=1)
+    pdf.set_xy(95, pdf.get_y())
+    pdf.cell(30, 8, "1", border=1, align="C")
+    pdf.cell(25, 8, f"{net:,.2f}", border=1, align="R")
+    pdf.cell(20, 8, f"{vat_pct:g}%", border=1, align="R")
+    pdf.cell(25, 8, f"{gross:,.2f}", border=1, align="R", new_x="LMARGIN", new_y="NEXT")
+
+    # Totals
+    pdf.set_x(140)
+    pdf.cell(30, 7, "Net amount", border=1)
+    pdf.cell(25, 7, f"{net:,.2f}", border=1, align="R", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_x(140)
+    pdf.cell(30, 7, f"VAT {vat_pct:g}%", border=1)
+    pdf.cell(25, 7, f"{vat:,.2f}", border=1, align="R", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("helvetica", "B", 10)
+    pdf.set_x(140)
+    pdf.cell(30, 7, "Total due", border=1, fill=True)
+    pdf.cell(25, 7, f"{gross:,.2f}", border=1, fill=True, align="R", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("helvetica", "", 8.5)
+    pdf.ln(4)
+    pdf.multi_cell(0, 5, _safe(f"Amount in words: {_amount_in_words(gross)}"))
+
+    # Receipts summary
+    paid = inv.get("amount_paid", 0)
+    balance = round(gross - paid, 2)
+    pdf.ln(2)
+    pdf.cell(0, 5, f"Amount received to date: AED {paid:,.2f}    |    Balance due: AED {balance:,.2f}", new_x="LMARGIN", new_y="NEXT")
+    if firm_doc.get("bank_details"):
+        pdf.ln(3)
+        pdf.multi_cell(0, 5, _safe("Bank details: " + firm_doc["bank_details"]))
+    pdf.ln(4)
+    pdf.set_font("helvetica", "I", 7.5)
+    pdf.set_text_color(120, 120, 120)
+    pdf.multi_cell(0, 4, "This is a computer-generated tax invoice issued in accordance with UAE Federal Decree-Law No. 8 of 2017 (VAT). "
+                        "No signature or stamp is required. Credits, if any, are issued as separate credit notes.")
+
+    pdf_bytes = bytes(pdf.output())
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'inline; filename="{inv.get("invoice_number", "invoice")}.pdf"'},
+    )
+

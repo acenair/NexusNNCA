@@ -60,6 +60,24 @@ const GUIDES = [
     ],
   },
   {
+    role: 'Partner', title: 'Tax invoices (PDF) with 5% VAT', steps: [
+      'Set your firm identity once: Settings → Firm Identity — add the firm TRN, address, phone, email and bank details. These print on every invoice.',
+      'Invoices are entered NET of VAT with a VAT % (5% standard rated, or 0% out of scope). The gross total is computed for you.',
+      'Every invoice row has a PDF link — it opens a UAE-format tax invoice: firm TRN, client TRN, net/VAT/gross breakdown, amount in words, received-to-date and balance, sequential invoice number.',
+      'Send the PDF to the client over WhatsApp/email; when payment lands, Record receipt as usual — pending updates automatically.',
+      'Old invoices entered before VAT capture keep their original amount (shown tax-exclusive).',
+    ],
+  },
+  {
+    role: 'Everyone', title: 'Client document requests (PBC portal)', steps: [
+      'Document requests (sidebar → WORKSPACE) sends a document checklist to a client without them logging in.',
+      'New request: pick the client (optionally link the engagement), apply a PBC template for the service (External Audit, VAT, AML…), edit the item list, create.',
+      'The client link is copied automatically — send it over WhatsApp or email. The portal is secure by link: no password for the client.',
+      'The client uploads against each item; files land in the app under that client (and into their Google Drive folder when Drive is connected), and the item flips to Received.',
+      'Watch the progress badge (e.g. 3/8 received) in the list; when everything arrives, follow up items left pending or tick the engagement checklist yourself.',
+    ],
+  },
+  {
     role: 'Partner', title: 'Leads and proposals', steps: [
       'Lead management → Add lead: company, contact, source (Referral, Website, Email, Phone/WhatsApp, Existing client, Networking), service, expected value.',
       'Move it through the pipeline: New lead → Qualified → Proposal sent (records proposal ref + sent date) → Negotiation → Confirmed (win). Winning a lead auto-creates a proposal record.',

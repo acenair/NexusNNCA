@@ -35,6 +35,7 @@ from routes import (
     google_auth,
     attendance,
     leads,
+    doc_requests,
 )
 
 app = FastAPI()
@@ -70,6 +71,7 @@ for router in (
     google_auth.router,
     attendance.router,
     leads.router,
+    doc_requests.router,
 ):
     app.include_router(router)
 
