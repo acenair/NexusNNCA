@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import Avatar from '../components/Avatar';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { Search, Edit2, X, ChevronDown, ChevronUp, Filter, Clock, ClipboardCheck, AlertTriangle } from 'lucide-react';
 import axios from 'axios';
