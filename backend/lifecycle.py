@@ -55,6 +55,9 @@ async def seed_nn_users():
 
 async def seed_nn_clients():
     """Seed demo clients for Nair & Nelliyatt practice."""
+    if await db.clients.count_documents({}) > 0:
+        return
+
     demo_clients = [
         {"name": "Al Baraka Trading LLC", "entity_type": "LLC", "jurisdiction": "Dubai Mainland", "trn": "100234567890003", "status": "Active", "active_services": ["Statutory Audit", "VAT Filing", "AML"]},
         {"name": "Falcon Logistics Co.", "entity_type": "LLC", "jurisdiction": "Dubai Mainland", "trn": "100456789000123", "status": "Active", "active_services": ["Statutory Audit", "VAT Filing", "Internal Audit", "AML"]},
@@ -85,6 +88,9 @@ async def seed_nn_clients():
 
 async def seed_nn_engagements():
     """Seed sample service engagements if none exist."""
+    if await db.service_engagements.count_documents({}) > 0:
+        return
+
     existing = await db.service_engagements.count_documents({})
     if existing > 0:
         return
