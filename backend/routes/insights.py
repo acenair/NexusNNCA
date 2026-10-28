@@ -288,17 +288,21 @@ async def staff_utilization(month: Optional[str] = None, authorization: str = He
     month = month or datetime.now(timezone.utc).date().strftime("%Y-%m")
     staff = await db.users.find({"role": {"$ne": "client"}}, {"_id": 0, "user_id": 1, "name": 1}).to_list(100)
     rows = []
+    def _name_matches(sn, un):
+        return bool(sn and un and (sn.startswith(un) or un.startswith(sn) or sn.split()[0] == un.split()[0]))
+
+    # count each staff_cost allocation row ONCE, attributed to its canonical user name
+    # (duplicate user accounts sharing a name must not multiply the hours)
+    alloc_by_name = {}
+    async for e in db.service_engagements.find({"status": "Active"}, {"_id": 0, "staff_costs": 1}):
+        for s in e.get("staff_costs", []):
+            sn = s.get("name", "").strip().lower()
+            owner = next((u["name"].strip().lower() for u in staff if _name_matches(sn, u["name"].strip().lower())), None)
+            if owner:
+                alloc_by_name[owner] = round(alloc_by_name.get(owner, 0) + (s.get("allocated_hours", 0) or 0), 1)
+
     for u in staff:
-        allocated = 0.0
-        # scan all active engagements — a staff_cost row named for this user counts
-        # toward their allocation regardless of who the engagement is assigned to
-        async for e in db.service_engagements.find({"status": "Active"}, {"_id": 0, "staff_costs": 1}):
-            for s in e.get("staff_costs", []):
-                sn = s.get("name", "").strip().lower()
-                un = u["name"].strip().lower()
-                if sn and un and (sn.startswith(un) or un.startswith(sn)
-                                  or sn.split()[0] == un.split()[0]):
-                    allocated += s.get("allocated_hours", 0) or 0
+        allocated = alloc_by_name.get(u["name"].strip().lower(), 0.0)
         logged = 0.0
         async for bh in db.billable_hours.find({"staff_id": u["user_id"], "date": {"$regex": f"^{month}"}}, {"_id": 0, "hours": 1}):
             logged += bh.get("hours", 0) or 0
