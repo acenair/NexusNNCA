@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useOutletContext, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Users, FileCheck, Wallet, ArrowDownToLine } from 'lucide-react';
+import AnimatedNumber from '../components/AnimatedNumber';
 import Sparkline from '../components/Sparkline';
 import Skeleton from '../components/Skeleton';
 import Avatar from '../components/Avatar';
