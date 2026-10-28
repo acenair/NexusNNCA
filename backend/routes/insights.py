@@ -312,7 +312,7 @@ async def staff_utilization(month: Optional[str] = None, authorization: str = He
     # dedupe users that share a name (e.g. two accounts for the same person)
     merged = {}
     for r in rows:
-        m = merged.setdefault(r["name"], dict(r))
+        m = merged.setdefault(r["name"], r)  # store the row itself so identity check works
         if r is not m:
             m["allocated"] = round(m["allocated"] + r["allocated"], 1)
             m["logged"] = round(m["logged"] + r["logged"], 1)
