@@ -13,7 +13,12 @@ const EngagementDetail = () => {
   const location = useLocation();
   const { user } = useOutletContext();
   const [eng, setEng] = useState(null);
-  const [noteEditing, setNoteEditing] = useState(null);  // `${gIdx}-${iIdx}` being edited
+  const [noteEditing, setNoteEditing] = useState(null);
+  const [reviewNotes, setReviewNotes] = useState([]);
+  const [rnText, setRnText] = useState('');
+  const [assumptions, setAssumptions] = useState([]);
+  const [asText, setAsText] = useState('');
+  const [asBasis, setAsBasis] = useState('');  // `${gIdx}-${iIdx}` being edited
   const [noteDraft, setNoteDraft] = useState('');
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
