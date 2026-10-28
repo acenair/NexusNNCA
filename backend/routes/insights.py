@@ -290,7 +290,9 @@ async def staff_utilization(month: Optional[str] = None, authorization: str = He
     rows = []
     for u in staff:
         allocated = 0.0
-        async for e in db.service_engagements.find({"assigned_to": u["user_id"], "status": "Active"}, {"_id": 0, "staff_costs": 1}):
+        # scan all active engagements — a staff_cost row named for this user counts
+        # toward their allocation regardless of who the engagement is assigned to
+        async for e in db.service_engagements.find({"status": "Active"}, {"_id": 0, "staff_costs": 1}):
             for s in e.get("staff_costs", []):
                 sn = s.get("name", "").strip().lower()
                 un = u["name"].strip().lower()
