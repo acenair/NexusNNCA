@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation, useOutletContext } from 'react-rou
 import { ArrowLeft, Download, CheckCircle, Clock, GitBranch, User, Calendar, Edit2, Save, X, ListChecks, BookOpen, Plus, Trash2} from 'lucide-react';
 import axios from 'axios';
 import AuditWorkbook from './AuditWorkbook';
+import TrialBalance from './TrialBalance';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const AUDIT_SERVICE_TYPES = ['statutory_audit', 'internal_audit', 'stock_audit', 'fraud_audit'];
@@ -235,6 +236,7 @@ const EngagementDetail = () => {
           <button onClick={() => setActiveTab('checklist')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 'var(--rs)', border: activeTab === 'checklist' ? '1px solid var(--gold)' : '1px solid var(--nn-border)', background: activeTab === 'checklist' ? 'rgba(14,109,180,0.08)' : 'var(--white)', color: activeTab === 'checklist' ? 'var(--gold4)' : 'var(--muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }} data-testid="tab-checklist"><ListChecks size={14} /> Checklist</button>
           <button onClick={() => setActiveTab('audit')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 'var(--rs)', border: activeTab === 'audit' ? '1px solid var(--gold)' : '1px solid var(--nn-border)', background: activeTab === 'audit' ? 'rgba(14,109,180,0.08)' : 'var(--white)', color: activeTab === 'audit' ? 'var(--gold4)' : 'var(--muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }} data-testid="tab-audit-workbook"><BookOpen size={14} /> Audit Workbook</button>
           <button onClick={() => setActiveTab('review')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 'var(--rs)', border: activeTab === 'review' ? '1px solid var(--gold)' : '1px solid var(--nn-border)', background: activeTab === 'review' ? 'rgba(14,109,180,0.08)' : 'var(--white)', color: activeTab === 'review' ? 'var(--gold4)' : 'var(--muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }} data-testid="tab-review"><ListChecks size={14} /> Review &amp; assumptions</button>
+          <button onClick={() => setActiveTab('tb')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 'var(--rs)', border: activeTab === 'tb' ? '1px solid var(--gold)' : '1px solid var(--nn-border)', background: activeTab === 'tb' ? 'rgba(14,109,180,0.08)' : 'var(--white)', color: activeTab === 'tb' ? 'var(--gold4)' : 'var(--muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }} data-testid="tab-trial-balance"><BookOpen size={14} /> Trial Balance</button>
         </div>
       )}
 
@@ -315,7 +317,9 @@ const EngagementDetail = () => {
         </div>
       )}
 
-      {activeTab === 'audit' && AUDIT_SERVICE_TYPES.includes(eng.service_type) ? (
+      {activeTab === 'tb' && AUDIT_SERVICE_TYPES.includes(eng.service_type) ? (
+        <TrialBalance engagementId={engagementId} />
+      ) : activeTab === 'audit' && AUDIT_SERVICE_TYPES.includes(eng.service_type) ? (
         <AuditWorkbook engagementId={engagementId} clientId={eng.client_id} clientName={eng.client_name} />
       ) : (
       <div className="nn-card" style={{ overflow: 'hidden' }} data-testid="engagement-checklist">

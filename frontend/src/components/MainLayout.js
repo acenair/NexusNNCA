@@ -230,7 +230,6 @@ const MainLayout = ({ user }) => {
         { path: '/app/deadlines', label: 'Deadline Tracker', icon: Clock },
         { path: '/app/calendar', label: 'Service calendar', icon: Calendar },
         { path: '/app/invoices', label: 'Invoices & collections', icon: Receipt, partnerOnly: true },
-        { path: '/app/help', label: 'Help guide', icon: HelpCircle },
       ]
     },
     {
@@ -469,6 +468,11 @@ const MainLayout = ({ user }) => {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {/* Mobile menu button */}
             <button className="mobile-menu-btn" onClick={() => setMobileOpen(true)} style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', padding: 4, display: 'none', alignItems: 'center' }} data-testid="mobile-menu-btn"><Menu size={20} /></button>
+            {/* Help — top-left, always accessible */}
+            <button onClick={() => navigate('/app/help')} title="Help & guides" data-testid="topbar-help-btn"
+              style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#eaf3fb', border: 'none', color: '#0e6db4', cursor: 'pointer', padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600 }}>
+              <HelpCircle size={14} /> <span className="btn-label">Help</span>
+            </button>
             <h2 style={{ fontSize: 17, fontFamily: 'DM Sans', color: 'var(--text)' }}>{getPageTitle()}</h2>
             <span className="topbar-date" style={{ fontSize: 11, color: 'var(--muted)' }}>{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
           </div>

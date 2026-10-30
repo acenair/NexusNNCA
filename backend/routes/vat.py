@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from fastapi import Cookie
 from fastapi import HTTPException
 from fastapi import Header
+from typing import Optional
 from datetime import datetime
 from core import db
 from core import get_current_user
@@ -21,10 +22,25 @@ async def get_vat_registrations(authorization: str = Header(None), session_token
 
 
 @router.post("/vat/registrations")
-async def create_vat_registration(client_id: str, annual_turnover: float, registration_type: str,
-                                 authorization: str = Header(None), session_token: str = Cookie(None)):
+async def create_vat_registration(client_id: str = None,
+                                  annual_turnover: float = None, registration_type: str = None,
+                                  body: Optional[dict] = None,
+                                  authorization: str = Header(None), session_token: str = Cookie(None)):
     user = await get_current_user(authorization, session_token)
-    
+
+    # Accept values from a JSON body (wizard) or query params (older callers)
+    if body:
+        client_id = body.get("client_id") or client_id
+        annual_turnover = body.get("annual_turnover") or body.get("turnover_last_12_months") or annual_turnover
+        registration_type = body.get("registration_type") or registration_type
+    if not client_id:
+        raise HTTPException(status_code=422, detail="client_id is required")
+    try:
+        annual_turnover = float(annual_turnover or 0)
+    except (TypeError, ValueError):
+        annual_turnover = 0.0
+    registration_type = registration_type or "Mandatory"
+
     client = await db.clients.find_one({"client_id": client_id}, {"_id": 0})
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
@@ -52,6 +68,30 @@ async def create_vat_registration(client_id: str, annual_turnover: float, regist
         "status": "Pending Documents",
         "created_at": reg_doc["created_at"]
     }
+
+
+@router.get("/vat/registrations/{registration_id}")
+async def get_vat_registration(registration_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
+    await get_current_user(authorization, session_token)
+    doc = await db.vat_registrations.find_one({"registration_id": registration_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Registration not found")
+    return doc
+
+
+@router.patch("/vat/registrations/{registration_id}")
+async def update_vat_registration(registration_id: str, body: Optional[dict] = None,
+                                  authorization: str = Header(None), session_token: str = Cookie(None)):
+    await get_current_user(authorization, session_token)
+    body = body or {}
+    body.pop("registration_id", None)
+    body["updated_at"] = datetime.now(timezone.utc).isoformat()
+    res = await db.vat_registrations.find_one_and_update(
+        {"registration_id": registration_id}, {"$set": body}, return_document=True)
+    if not res:
+        raise HTTPException(status_code=404, detail="Registration not found")
+    res.pop("_id", None)
+    return res
 
 
 @router.get("/vat/filings")

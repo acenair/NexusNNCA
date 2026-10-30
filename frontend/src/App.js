@@ -21,6 +21,8 @@ import InternalAudit from '@/pages/Audit/Internal';
 import StockAudit from '@/pages/Audit/Stock';
 import FraudAudit from '@/pages/Audit/Fraud';
 import VATRegistration from '@/pages/VAT/Registration';
+import VATRegistrations from '@/pages/VAT/Registrations';
+import VATRegistrationWorkflow from '@/pages/VAT/RegistrationWorkflow';
 import VATFiling from '@/pages/VAT/Filing';
 import VATAmendments from '@/pages/VAT/Amendments';
 import CorporateRegistration from '@/pages/Corporate/Registration';
@@ -118,6 +120,9 @@ function AppRouter() {
         
         {/* VAT */}
         <Route path="vat/registration" element={<Engagements />} />
+        <Route path="vat/registrations" element={<VATRegistrations />} />
+        <Route path="vat/registration-workflow" element={<VATRegistrationWorkflow />} />
+        <Route path="vat/registration-workflow/:id" element={<VATRegistrationWorkflow />} />
         <Route path="vat/filing" element={<Engagements />} />
         <Route path="vat/amendments" element={<Engagements />} />
         

@@ -129,7 +129,7 @@ const VATRegistrationWorkflow = () => {
         await axios.patch(`${API}/vat/registrations/${id}`, payload, { withCredentials: true });
       } else {
         const response = await axios.post(`${API}/vat/registrations`, payload, { withCredentials: true });
-        navigate(`/vat/registration-workflow/${response.data.registration_id}`, { replace: true });
+        navigate(`/app/vat/registration-workflow/${response.data.registration_id}`, { replace: true });
       }
       
       setCurrentStep(prev => prev + 1);

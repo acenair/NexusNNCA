@@ -9,7 +9,8 @@ const GUIDES = [
     role: 'Everyone', title: 'Getting started', steps: [
       'Open https://app.nairnelliyatt.com and sign in with your firm email and password (Google sign-in is available once enabled). Session lasts 7 days.',
       'The Overview (Dashboard) is your home screen — priority briefing, live KPIs, engagement pipeline, attention queue and activity feed, all from live data.',
-      'Use the left sidebar: WORKSPACE for day-to-day work (Overview, Customers, Engagements, Task management, Deadline Tracker, Service calendar, Documents) and FIRM MANAGEMENT for billing, compliance, attendance and reports.',
+      'Use the Help button in the top bar (top-left, next to the page title) — it opens these step-by-step guides from any screen.',
+      'Use the left sidebar: WORKSPACE for day-to-day work (Overview, Engagements, Task management, Deadline Tracker, Service calendar) and FIRM MANAGEMENT for onboarding, documents, compliance, billing and reports.',
       'On mobile, tap the ☰ icon (top bar) to open the sidebar.',
     ],
   },
@@ -66,6 +67,28 @@ const GUIDES = [
       'Every invoice row has a PDF link — it opens a UAE-format tax invoice: firm TRN, client TRN, net/VAT/gross breakdown, amount in words, received-to-date and balance, sequential invoice number.',
       'Send the PDF to the client over WhatsApp/email; when payment lands, Record receipt as usual — pending updates automatically.',
       'Old invoices entered before VAT capture keep their original amount (shown tax-exclusive).',
+    ],
+  },
+  {
+    role: 'Auditor / Staff', title: 'Audit workbench — trial balance (import, map, check)', steps: [
+      'Where it lives: Engagements → open an audit engagement (statutory, internal, stock or fraud audit) → the "Trial Balance" tab. There is no separate menu item — the trial balance belongs to the engagement, like the checklist.',
+      'Step 1 — Import: on the tab (empty state), click "Choose file" and pick the client\u0027s trial balance export. CSV and Excel (.xlsx) are accepted; the file must have an account-name column and debit/credit columns. Most accounting packages (Zoho Books, Tally, QuickBooks, Xero exports) match this directly. Maximum 8 MB.',
+      'Step 1 (contd) — the app reads the header row automatically, skips Total rows and reports how many accounts were found. If nothing is found, check that the export really contains account names and amounts (not a PDF-style print layout).',
+      'Step 2 — Auto-map: the app automatically suggests a financial-statement line for each account (Cash and bank, Trade receivables, PPE, Revenue, Staff costs…). Accounts mapped this way are marked AUTO. Click "Auto-map" any time to re-run the suggestions on accounts you have not mapped manually.',
+      'Step 2 (contd) — Manual mapping: any account showing "+ map this account" needs attention. Click it, pick the right statement line from the dropdown (grouped Assets / Liabilities / Equity / Income / Expenses). You can also change or clear an existing mapping the same way — a manual choice always overrides the AUTO suggestion.',
+      'Step 2 (contd) — Use the search box (top right of the accounts table) to find an account by name, description or mapped line. Net = debit minus credit; negative nets are shown in red (credit balances).',
+      'Step 3 — Run the checks: the "Integrity checks" card re-evaluates on every change and shows PASS / WARN / FAIL for: (1) Debits equal credits — the imported file must balance; if not, re-export from the accounting package; (2) All accounts mapped — the trial balance is not complete until this passes; (3) No zero-balance accounts (warning only — these can usually be excluded); (4) Revenue and expense lines populated (warning only).',
+      'Reading the results: the "Statement lines" card shows the net total per financial-statement line with the number of accounts feeding it — this is the draft that later feeds the financial statements and materiality benchmarks.',
+      'Re-importing: "Re-import" replaces the whole trial balance (e.g. the client sent an updated export). "Remove" deletes it from the engagement. Mapping suggestions re-run automatically on every import.',
+      'Who can see it: everyone working on the engagement can view; importing and mapping are recorded with your name and the date, and this forms part of the audit trail. Reviewers should treat the checks card as the first review of the working papers.',
+    ],
+  },
+  {
+    role: 'Auditor / Staff', title: 'Audit workbench — review notes, assumptions and the workbook', steps: [
+      'The Checklist tab stays your main to-do list: tick items as you complete them and use the note icon on any item to record what you did, the basis, or the sample reference — that note is your working-paper documentation.',
+      'The Audit Workbook tab holds the engagement\u0027s structured audit procedures and responses for audit engagements.',
+      'The "Review & assumptions" tab: reviewers add review notes (each stays open until explicitly cleared, recording who cleared it and when). Partners and staff add key audit assumptions — materiality, sampling basis, depreciation rates, FX rates — each with its justification.',
+      'Suggested flow per audit: collect PBC documents (Document requests) → import and map the trial balance (Trial Balance tab) → clear all integrity checks → record materiality and assumptions (Review & assumptions) → complete the checklist with working-paper notes → clear all review notes → partner approves.',
     ],
   },
   {
