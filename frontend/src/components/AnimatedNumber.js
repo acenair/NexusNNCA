@@ -27,7 +27,10 @@ const AnimatedNumber = ({ value = 0, format = (n) => String(n), duration = 450 }
       if (t < 1) rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);
-    return () => rafRef.current && cancelAnimationFrame(rafRef.current);
+    // background tabs suspend requestAnimationFrame — snap to the target so the
+    // number is never stuck on a stale value
+    const settle = setTimeout(() => setDisplay(to), duration + 600);
+    return () => { rafRef.current && cancelAnimationFrame(rafRef.current); clearTimeout(settle); };
   }, [value, duration]);
 
   return <>{format(display)}</>;
