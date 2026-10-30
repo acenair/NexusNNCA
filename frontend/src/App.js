@@ -44,6 +44,7 @@ import Compliance from '@/pages/Compliance';
 import Customer360 from '@/pages/Customer360';
 import Documents from '@/pages/Documents';
 import Settings from '@/pages/Settings';
+import Tasks from '@/pages/Tasks';
 import MyTasks from '@/pages/MyTasks';
 import ClientTimeline from '@/pages/ClientTimeline';
 import EngagementDetail from '@/pages/EngagementDetail';
@@ -102,7 +103,7 @@ function AppRouter() {
       <Route path="/app" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
         <Route index element={<Navigate to="/app/dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
-        <Route path="tasks" element={<MyTasks />} />
+        <Route path="tasks" element={<Tasks />} />
         <Route path="deadlines" element={<DeadlineTracker />} />
         <Route path="calendar" element={<Calendar />} />
         <Route path="appreciation" element={<StaffAppreciation />} />
