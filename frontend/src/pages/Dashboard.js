@@ -187,7 +187,10 @@ const Dashboard = () => {
   ];
   const todayIso = today.toISOString().slice(0, 10);
   const daysToD = (d) => Math.round((new Date(d.length > 10 ? d : d + 'T00:00:00') - new Date(todayIso + 'T00:00:00')) / 86400000);
-  const kycAttentionCount = kycRecs.filter(r => r.date_basis !== 'review' && r.due_date && daysToD(r.due_date) <= 30).length;
+  const todayIso2 = todayIso;
+  const kycExpired = kycRecs.filter(r => r.date_basis !== 'review' && r.due_date && r.due_date < todayIso);
+  const kycExpiring = kycRecs.filter(r => r.date_basis !== 'review' && r.due_date && r.due_date >= todayIso && daysToD(r.due_date) <= 30);
+  const kycAttentionCount = kycExpired.length + kycExpiring.length;
   const awaitingClientTasks = openTasks.filter(t => disp_await(t));
   function disp_await(t) { return t.status === 'Awaiting client'; }
   const responsesOverdue = awaitingClientTasks.filter(t => t.due_date && t.due_date < today.toISOString().slice(0, 10));
