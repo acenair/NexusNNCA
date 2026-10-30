@@ -51,7 +51,18 @@ const Customer360 = () => {
   };
   useEffect(() => { load(); }, [clientId]);
 
-  const scroll = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const scroll = (id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const scroller = el.closest('main') || document.querySelector('main.main-content');
+    const before = scroller ? scroller.scrollTop : window.scrollY;
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // some environments (headless, reduced-motion) never animate — fall back to an instant jump
+    setTimeout(() => {
+      const now = scroller ? scroller.scrollTop : window.scrollY;
+      if (Math.abs(now - before) < 5) el.scrollIntoView({ block: 'start' });
+    }, 350);
+  };
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 6500); };
 
   if (loading) return <div className="ov-wrap" data-testid="customer-overview"><p style={{ padding: 24, color: 'var(--muted)' }}>Loading customer…</p></div>;
