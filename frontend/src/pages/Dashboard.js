@@ -104,7 +104,7 @@ const Dashboard = () => {
 
   const thisMonth = today.toISOString().slice(0, 7);
   const pendingOf = (i) => Math.max(0, (i.amount || 0) - (i.amount_paid || 0) - (i.credits || []).reduce((n, c) => n + (c.amount || 0), 0));
-  const live = invoices.filter(i => !i.cancelled);
+  const live = invoices.filter(i => !i.cancelled && i.status !== 'Draft'); // drafts are not issued
   const monthInvoices = live.filter(i => (i.date || '').slice(0, 7) === thisMonth);
   const billed = monthInvoices.reduce((n, i) => n + (i.amount || 0), 0);
   const collected = live.reduce((n, i) => n + (i.receipts || []).filter(r => (r.date || '').slice(0, 7) === thisMonth).reduce((n, r) => n + (r.amount || 0), 0), 0);
@@ -283,7 +283,7 @@ const Dashboard = () => {
         <section className="af-card af-metric">
           <span className="af-icon"><Users size={18} /></span>
           <label>Active clients</label>
-          <b><Link to="/app/customers" style={{ color: 'inherit' }}>{stats?.active_clients ?? 0}</Link></b>
+          <b><Link to="/app/customers" style={{ color: 'inherit' }}>{activeClients || stats?.active_clients || 0}</Link></b>
           <small>{newClientsThisPeriod} new client(s) in {periodLabel}</small>
         </section>
         <section className="af-card af-metric">
