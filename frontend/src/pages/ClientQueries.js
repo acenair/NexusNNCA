@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MessageSquareQuestion, Send, CheckCircle2, FileText, Loader2 } from 'lucide-react';
+import { MessageSquare, Send, CheckCircle2, FileText, Loader2 } from 'lucide-react';
 import axios from 'axios';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -58,7 +58,7 @@ const ClientQueries = ({ engagementId }) => {
       {/* Raise a query */}
       <div className="nn-card" style={{ padding: '14px 20px', marginBottom: 14 }}>
         <div style={{ fontSize: 11, fontWeight: 650, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--gold)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-          <MessageSquareQuestion size={13} /> Ask the client
+          <MessageSquare size={13} /> Ask the client
         </div>
         <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>
           The query appears in the client's portal instantly. They reply in the portal with a message and any files — replies land here and in the journal.

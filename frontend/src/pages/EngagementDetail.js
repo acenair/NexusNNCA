@@ -6,7 +6,7 @@ import AuditWorkbook from './AuditWorkbook';
 import TrialBalance from './TrialBalance';
 import WorkJournal from './WorkJournal';
 import ClientQueries from './ClientQueries';
-import { MessageSquareQuestion } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const AUDIT_SERVICE_TYPES = ['statutory_audit', 'internal_audit', 'stock_audit', 'fraud_audit'];
@@ -249,7 +249,7 @@ const EngagementDetail = () => {
             {isAudit && tabBtn('review', 'tab-review', <ListChecks size={14} />, 'Review & assumptions')}
             {isAudit && tabBtn('tb', 'tab-trial-balance', <BookOpen size={14} />, 'Trial Balance')}
             {tabBtn('journal', 'tab-journal', <BookOpen size={14} />, 'Journal')}
-            {tabBtn('queries', 'tab-queries', <MessageSquareQuestion size={14} />, 'Client queries')}
+            {tabBtn('queries', 'tab-queries', <MessageSquare size={14} />, 'Client queries')}
           </div>
         );
       })()}
