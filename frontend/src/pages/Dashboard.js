@@ -82,7 +82,7 @@ const Dashboard = () => {
       if (isPartner && results[7]) setVisaAlerts(Array.isArray(results[7].data) ? results[7].data : []);
       // the conditional visa-alerts push lands AFTER these array entries, so:
       // [7]=leads [8]=clients [9]=utilization [10]=regulatory [11]=renewals [12]=compliance [13]=visa
-      setLeads(Array.isArray(results[7].data) ? results[7].data : []);
+      const lraw = results[7].data; setLeads(Array.isArray(lraw) ? lraw : (lraw?.leads || []));
       setClientsList(Array.isArray(results[8].data) ? results[8].data : []);
       setUtil(results[9].data?.staff || []);
       setRegDeadlines(results[10].data?.deadlines || []);
