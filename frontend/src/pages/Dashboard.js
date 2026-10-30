@@ -80,12 +80,14 @@ const Dashboard = () => {
       setActivities(Array.isArray(results[5].data) ? results[5].data : []);
       setProposals(Array.isArray(results[6].data) ? results[6].data : []);
       if (isPartner && results[7]) setVisaAlerts(Array.isArray(results[7].data) ? results[7].data : []);
-      setLeads(Array.isArray(results[8].data) ? results[8].data : []);
-      setClientsList(Array.isArray(results[9].data) ? results[9].data : []);
-      setUtil(results[10].data?.staff || []);
-      setRegDeadlines(results[11].data?.deadlines || []);
-      setRenewals(results[12].data?.candidates || []);
-      const kraw = results[13].data;
+      // the conditional visa-alerts push lands AFTER these array entries, so:
+      // [7]=leads [8]=clients [9]=utilization [10]=regulatory [11]=renewals [12]=compliance [13]=visa
+      setLeads(Array.isArray(results[7].data) ? results[7].data : []);
+      setClientsList(Array.isArray(results[8].data) ? results[8].data : []);
+      setUtil(results[9].data?.staff || []);
+      setRegDeadlines(results[10].data?.deadlines || []);
+      setRenewals(results[11].data?.candidates || []);
+      const kraw = results[12].data;
       setKycRecs(Array.isArray(kraw) ? kraw : (kraw?.records || []));
     } catch (err) { console.error('Failed to load dashboard data:', err); }
     setLoading(false);
