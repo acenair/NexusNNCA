@@ -79,8 +79,8 @@ const Tasks = () => {
   };
 
   const serviceOptions = [...new Set(tasks.map(t => t.service_module).concat(Object.keys(SERVICE_LABELS)))];
-  const staffOptions = [...new Set(tasks.map(t => t.assigned_to_name).filter(Boolean))
-    .concat(staff.map(s => s.name))];
+  const staffOptions = [...new Set(tasks.map(t => t.assigned_to_name).filter(Boolean)
+    .concat(staff.map(s => s.name)))];
 
   const visible = tasks.filter(j => {
     const t = tab === 'Active' ? active(j) : tab === 'All jobs' ? true : tab === 'Delayed' ? isLate(j)
