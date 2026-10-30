@@ -41,6 +41,14 @@ const Dashboard = () => {
   const [visaAlerts, setVisaAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [briefOpen, setBriefOpen] = useState(false);
+  const [ovTab, setOvTab] = useState('glance');
+  const [period, setPeriod] = useState(0); // 0 = this month, 1 = last month
+  const [leads, setLeads] = useState([]);
+  const [clientsList, setClientsList] = useState([]);
+  const [util, setUtil] = useState([]);
+  const [regDeadlines, setRegDeadlines] = useState([]);
+  const [renewals, setRenewals] = useState([]);
+  const [kycRecs, setKycRecs] = useState([]);
   const isPartner = user?.role === 'partner';
 
   useEffect(() => { loadData(); }, []);
@@ -55,6 +63,12 @@ const Dashboard = () => {
         axios.get(`${API}/auth/users-list`, { withCredentials: true }),
         axios.get(`${API}/dashboard/activities`, { withCredentials: true }),
         axios.get(`${API}/proposals`, { withCredentials: true }).catch(() => ({ data: [] })),
+        axios.get(`${API}/leads`, { withCredentials: true }).catch(() => ({ data: [] })),
+        axios.get(`${API}/clients`, { withCredentials: true }).catch(() => ({ data: [] })),
+        axios.get(`${API}/insights/staff-utilization`, { withCredentials: true }).catch(() => ({ data: { staff: [] } })),
+        axios.get(`${API}/insights/regulatory-deadlines?within_days=60`, { withCredentials: true }).catch(() => ({ data: { deadlines: [] } })),
+        axios.get(`${API}/insights/renewal-candidates`, { withCredentials: true }).catch(() => ({ data: { candidates: [] } })),
+        axios.get(`${API}/compliance/records?scope=customers`, { withCredentials: true }).catch(() => ({ data: [] })),
       ];
       if (isPartner) calls.push(axios.get(`${API}/dashboard/visa-alerts`, { withCredentials: true }).catch(() => ({ data: [] })));
       const results = await Promise.all(calls);
@@ -66,6 +80,13 @@ const Dashboard = () => {
       setActivities(Array.isArray(results[5].data) ? results[5].data : []);
       setProposals(Array.isArray(results[6].data) ? results[6].data : []);
       if (isPartner && results[7]) setVisaAlerts(Array.isArray(results[7].data) ? results[7].data : []);
+      setLeads(Array.isArray(results[8].data) ? results[8].data : []);
+      setClientsList(Array.isArray(results[9].data) ? results[9].data : []);
+      setUtil(results[10].data?.staff || []);
+      setRegDeadlines(results[11].data?.deadlines || []);
+      setRenewals(results[12].data?.candidates || []);
+      const kraw = results[13].data;
+      setKycRecs(Array.isArray(kraw) ? kraw : (kraw?.records || []));
     } catch (err) { console.error('Failed to load dashboard data:', err); }
     setLoading(false);
   };
@@ -144,6 +165,63 @@ const Dashboard = () => {
     isPartner && visaAlerts.length > 0 && { label: 'Visa / document expiry', desc: 'Staff documents expiring soon', badge: `${visaAlerts.length} alerts`, cls: 'af-badge-amber', link: '/app/settings' },
   ].filter(Boolean);
 
+  // ---- Overview panels data (all live, all linked) ----
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const periodDate = new Date(today.getFullYear(), today.getMonth() - period, 1);
+  const periodKey = periodDate.toISOString().slice(0, 7);
+  const periodLabel = `${MONTHS[periodDate.getMonth()]} ${periodDate.getFullYear()}`;
+  const lastPeriodLabel = `${MONTHS[new Date(today.getFullYear(), today.getMonth() - period - 1, 1).getMonth()]} ${new Date(today.getFullYear(), today.getMonth() - period - 1, 1).getFullYear()}`;
+  const pBilled = live.filter(i => (i.date || '').slice(0, 7) === periodKey).reduce((n, i) => n + (i.amount || 0), 0);
+  const pCollected = live.reduce((n, i) => n + (i.receipts || []).filter(r => (r.date || '').slice(0, 7) === periodKey).reduce((n, r) => n + (r.amount || 0), 0), 0);
+
+  const overdueJobs = openTasks.filter(t => t.due_date && t.due_date < today.toISOString().slice(0, 10));
+  const finalPrint = active.filter(e => e.phase === 'Completion' || e.phase === 'Filing');
+  const stagesTable = [
+    { label: 'Awaiting documents', count: pipeline[0].count, action: 'Follow up with clients', link: '/app/engagements' },
+    { label: 'In progress', count: pipeline[1].count, action: 'Complete fieldwork and preparation', link: '/app/engagements' },
+    { label: 'Manager review', count: pipeline[2].count, action: 'Clear review points', link: '/app/engagements' },
+    { label: 'Draft sent', count: pipeline[3].count, action: 'Obtain management confirmation', link: '/app/engagements' },
+    { label: 'Management confirmed', count: pipeline[4].count, action: 'Final print and partner signature', link: '/app/engagements' },
+  ];
+  const todayIso = today.toISOString().slice(0, 10);
+  const daysToD = (d) => Math.round((new Date(d.length > 10 ? d : d + 'T00:00:00') - new Date(todayIso + 'T00:00:00')) / 86400000);
+  const kycAttentionCount = kycRecs.filter(r => r.date_basis !== 'review' && r.due_date && daysToD(r.due_date) <= 30).length;
+  const awaitingClientTasks = openTasks.filter(t => disp_await(t));
+  function disp_await(t) { return t.status === 'Awaiting client'; }
+  const responsesOverdue = awaitingClientTasks.filter(t => t.due_date && t.due_date < today.toISOString().slice(0, 10));
+  const completedThisMonth = tasks.filter(t => t.status === 'Completed' && (t.completed_at || '').slice(0, 7) === periodKey);
+  const draftInv = invoices.filter(i => i.status === 'Draft');
+  const creditsThisMonth = live.reduce((n, i) => n + (i.credits || []).filter(c => (c.date || '').slice(0, 7) === periodKey).reduce((n, c) => n + (c.amount || 0), 0), 0);
+  const cancelledInv = invoices.filter(i => i.cancelled);
+  // receivables ageing (real)
+  const age = { current: 0, d30: 0, d60: 0, d90: 0 };
+  live.forEach(i => { const p = pendingOf(i); if (p <= 0.009) return; const dd = i.due_date ? Math.round((new Date(today.toISOString().slice(0, 10)) - new Date(i.due_date)) / 86400000) : -1;
+    if (dd <= 0) age.current += p; else if (dd <= 30) age.d30 += p; else if (dd <= 60) age.d60 += p; else age.d90 += p; });
+  // growth
+  const leadsThisPeriod = leads.filter(l => (l.created_at || '').slice(0, 7) === periodKey);
+  const activeClients = clientsList.filter(c => c.status !== 'Inactive').length;
+  const newClientsThisPeriod = clientsList.filter(c => (c.created_at || '').slice(0, 7) === periodKey).length;
+  const onboardingIncomplete = clientsList.filter(c => c.onboarding_stage && !['Completed', 'Lost'].includes(c.onboarding_stage)).length;
+  const inactiveClients = clientsList.filter(c => c.status === 'Inactive').length;
+  const followupsOverdue = responsesOverdue.length;
+  // capacity
+  const totalCapacity = util.reduce((n, u) => n + (u.capacity || 0), 0);
+  const totalAllocated = util.reduce((n, u) => n + (u.allocated || 0), 0);
+  const overCapacity = util.filter(u => u.utilization_pct > 100);
+  // compliance
+  const kycIncomplete = kycRecs.filter(r => ['Requested', 'Received'].includes(r.stage) || (r.date_basis !== 'review' && r.due_date && r.due_date < today.toISOString().slice(0, 10))).length;
+  const licenceRenewals = regDeadlines.filter(x => x.kind === 'Trade licence').length;
+
+  const Tile = ({ label, value, sub, to }) => (
+    <section className="af-card af-metric">
+      <span className="sub">{label}</span>
+      <Link to={to} data-testid={`tile-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} style={{ display: 'block', color: 'inherit', textDecoration: 'none' }}>
+        <b style={{ display: 'block', fontSize: 26, margin: '10px 0', color: '#01457C', textDecoration: 'underline', textDecorationColor: 'rgba(14,109,180,0.3)', textUnderlineOffset: 4 }}>{value}</b>
+      </Link>
+      <small>{sub}</small>
+    </section>
+  );
+
   if (loading) {
     return (
       <div className="ov-wrap" data-testid="dashboard-skeleton">
@@ -168,9 +246,23 @@ const Dashboard = () => {
           <h1>Firm overview</h1>
           <p>A clear view of clients, delivery, finances and your team.</p>
         </div>
-        <div className="ov-asof">As of {fmtDay(today.toISOString())} · {today.getFullYear()}</div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <select value={period} onChange={e => setPeriod(Number(e.target.value))} data-testid="period-select" className="af-btn" style={{ padding: '9px 12px' }}>
+            <option value={0}>{periodLabel}</option>
+            <option value={1}>{lastPeriodLabel}</option>
+          </select>
+          <button className="af-btn" onClick={() => window.print()} data-testid="print-overview">Print overview</button>
+        </div>
       </div>
 
+      <div className="af-tabs" role="tablist" data-testid="overview-tabs" style={{ marginBottom: 16 }}>
+        {[['glance', 'At a glance'], ['engagements', 'Engagements'], ['financials', 'Financials'], ['growth', 'Clients & growth'], ['team', 'Team & capacity'], ['compliance', 'Compliance & deadlines']].map(([k, label]) => (
+          <button key={k} role="tab" aria-selected={ovTab === k} onClick={() => setOvTab(k)} data-testid={`ovtab-${k}`}
+            style={{ background: ovTab === k ? '#dff2ff' : 'transparent', color: ovTab === k ? '#087ebd' : '#6b8799', fontWeight: ovTab === k ? 650 : 400, border: 'none', padding: '8px 13px', borderRadius: 7, cursor: 'pointer', fontSize: 12.5 }}>{label}</button>
+        ))}
+      </div>
+
+      {ovTab === 'glance' && (<>
       <section className="af-hero">
         <div>
           <strong>Good {today.getHours() < 12 ? 'morning' : today.getHours() < 17 ? 'afternoon' : 'evening'}, {user?.name?.split(' ')[0]}</strong>
@@ -185,28 +277,28 @@ const Dashboard = () => {
         <section className="af-card af-metric">
           <span className="af-icon"><Users size={18} /></span>
           <label>Active clients</label>
-          <b>{stats?.active_clients ?? 0}</b>
-          <small>Current snapshot</small>
+          <b><Link to="/app/customers" style={{ color: 'inherit' }}>{stats?.active_clients ?? 0}</Link></b>
+          <small>{newClientsThisPeriod} new client(s) in {periodLabel}</small>
         </section>
         <section className="af-card af-metric">
           <span className="af-icon"><FileCheck size={18} /></span>
           <label>Active engagements</label>
-          <b>{totalActive}</b>
-          <small>Across all service lines</small>
+          <b><Link to="/app/engagements" style={{ color: 'inherit' }}>{totalActive}</Link></b>
+          <small>Current snapshot · across all service lines</small>
         </section>
         <section className="af-card af-metric">
           <span className="af-icon"><Wallet size={18} /></span>
-          <label>Billed this month</label>
-          <b><AnimatedNumber value={billed} format={aed} /></b>
+          <label>Billed · {periodLabel}</label>
+          <b><AnimatedNumber value={pBilled} format={aed} /></b>
           <span className="af-spark"><Sparkline data={chartMonths.map(m => m.billed)} color="#0e6db4" /></span>
-          <small>Invoices issued this month</small>
+          <small>Invoices issued in selected month</small>
         </section>
         <section className="af-card af-metric">
           <span className="af-icon"><ArrowDownToLine size={18} /></span>
-          <label>Collected this month</label>
-          <b><AnimatedNumber value={collected} format={aed} /></b>
+          <label>Collected · {periodLabel}</label>
+          <b><AnimatedNumber value={pCollected} format={aed} /></b>
           <span className="af-spark"><Sparkline data={chartMonths.map(m => m.collected)} color="#0e7ec4" /></span>
-          <small>Receipts recorded this month</small>
+          <small>Receipts recorded in selected month</small>
         </section>
       </div>
 
@@ -339,6 +431,231 @@ const Dashboard = () => {
           {activities.length === 0 && <p className="af-note">No activity recorded yet.</p>}
         </section>
       </div>
+
+      </>)}
+
+      {ovTab === 'engagements' && (
+        <div data-testid="panel-engagements">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 18 }}>
+            <Tile label="Active jobs" value={totalActive} sub="Across all services" to="/app/engagements" />
+            <Tile label="Overdue jobs" value={overdueJobs.length} sub="Current delivery exceptions" to="/app/tasks" />
+            <Tile label="Manager review" value={pipeline[2].count} sub="Awaiting review" to="/app/engagements" />
+            <Tile label="Ready for final print" value={finalPrint.length} sub="Filing & completion phases" to="/app/engagements" />
+          </div>
+          <section className="af-card" style={{ marginBottom: 18 }}>
+            <div className="af-cardhead"><div><h2>Delivery stages</h2><div className="af-sub">Current snapshot · counts cover {totalActive} active engagements</div></div></div>
+            <div className="af-tablewrap">
+              <table className="af-table">
+                <thead><tr><th>STAGE</th><th>ENGAGEMENTS</th><th>NEXT ACTION</th></tr></thead>
+                <tbody>
+                  {stagesTable.map(s => (
+                    <tr key={s.label}>
+                      <td><Link to={s.link} style={{ color: '#01457C', textDecoration: 'underline', textDecorationColor: 'rgba(14,109,180,0.3)' }}><b>{s.label}</b></Link></td>
+                      <td><Link to={s.link} style={{ color: '#01457C' }}><b>{s.count}</b></Link></td>
+                      <td>{s.action}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+          <div className="af-grid af-grid-65">
+            <section className="af-card">
+              <div className="af-cardhead"><div><h2>Service portfolio</h2><div className="af-sub">Active engagements by service</div></div></div>
+              <div className="af-tablewrap">
+                <table className="af-table">
+                  <thead><tr><th>SERVICE</th><th>ACTIVE</th></tr></thead>
+                  <tbody>
+                    {Object.entries(serviceMix).sort((a, b) => b[1] - a[1]).map(([k, v]) => (
+                      <tr key={k}><td>{k}</td><td><Link to="/app/engagements" style={{ color: '#01457C' }}><b>{v}</b></Link></td></tr>
+                    ))}
+                    {Object.keys(serviceMix).length === 0 && <tr><td colSpan="2" className="af-empty">No active engagements.</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+            <section className="af-card">
+              <div className="af-cardhead"><div><h2>Delivery checkpoints</h2><div className="af-sub">Current snapshot</div></div></div>
+              <div className="af-tablewrap">
+                <table className="af-table">
+                  <tbody>
+                    <tr><td>Client responses overdue</td><td><Link to="/app/tasks" style={{ color: '#01457C' }}><b>{responsesOverdue.length}</b></Link></td></tr>
+                    <tr><td>Partner approval pending</td><td><Link to="/app/engagements" style={{ color: '#01457C' }}><b>{reviewQueue.length}</b></Link></td></tr>
+                    <tr><td>Final issued this month</td><td><Link to="/app/engagements" style={{ color: '#01457C' }}><b>{completedThisMonth.length}</b></Link></td></tr>
+                    <tr><td>Due in next 7 days</td><td><Link to="/app/deadlines" style={{ color: '#01457C' }}><b>{dueSoon.length}</b></Link></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </div>
+      )}
+
+      {ovTab === 'financials' && (
+        <div data-testid="panel-financials">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 18 }}>
+            <Tile label="Billed this month" value={aed(pBilled)} sub={`Invoices issued in ${periodLabel}`} to="/app/invoices" />
+            <Tile label="Collected this month" value={aed(pCollected)} sub={`Receipts in ${periodLabel}`} to="/app/invoices" />
+            <Tile label="Outstanding" value={aed(outstanding)} sub="Across all invoices" to="/app/invoices" />
+            <Tile label="Overdue" value={aed(overdueInv)} sub="Included in outstanding" to="/app/invoices" />
+          </div>
+          <div className="af-grid af-grid-65">
+            <section className="af-card">
+              <div className="af-cardhead"><div><h2>Receivables ageing</h2><div className="af-sub">Current snapshot · AED</div></div></div>
+              <div className="af-tablewrap">
+                <table className="af-table">
+                  <thead><tr><th>AGE BUCKET</th><th>BALANCE</th><th>ACTION</th></tr></thead>
+                  <tbody>
+                    <tr><td>Not yet due</td><td><Link to="/app/invoices" style={{ color: '#01457C' }}><b>{aed(age.current)}</b></Link></td><td>Monitor due dates</td></tr>
+                    <tr><td>1–30 days overdue</td><td><Link to="/app/invoices" style={{ color: '#01457C' }}><b>{aed(age.d30)}</b></Link></td><td>Client reminder</td></tr>
+                    <tr><td>31–60 days overdue</td><td><Link to="/app/invoices" style={{ color: '#01457C' }}><b>{aed(age.d60)}</b></Link></td><td>Owner follow-up</td></tr>
+                    <tr><td>61+ days overdue</td><td><Link to="/app/invoices" style={{ color: '#01457C' }}><b>{aed(age.d90)}</b></Link></td><td>Partner escalation</td></tr>
+                    <tr><td><b>Total outstanding</b></td><td><Link to="/app/invoices" style={{ color: '#01457C' }}><b>{aed(outstanding)}</b></Link></td><td></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+            <section className="af-card">
+              <div className="af-cardhead"><div><h2>Billing controls</h2><div className="af-sub">Current snapshot</div></div></div>
+              <div className="af-tablewrap">
+                <table className="af-table">
+                  <tbody>
+                    <tr><td>Draft invoices pending</td><td><Link to="/app/invoices" style={{ color: '#01457C' }}><b>{draftInv.length}</b></Link></td><td>{aed(draftInv.reduce((n, i) => n + (i.amount || 0), 0))}</td></tr>
+                    <tr><td>Credit notes this month</td><td><Link to="/app/invoices" style={{ color: '#01457C' }}><b>{creditsThisMonth ? '—' : '—'}</b></Link></td><td>{aed(creditsThisMonth)}</td></tr>
+                    <tr><td>Cancelled invoices</td><td><Link to="/app/invoices" style={{ color: '#01457C' }}><b>{cancelledInv.length}</b></Link></td><td>{aed(cancelledInv.reduce((n, i) => n + (i.amount || 0), 0))}</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <p className="af-note">Billed totals represent net issued invoices. Drafts are excluded from receivables.</p>
+            </section>
+          </div>
+        </div>
+      )}
+
+      {ovTab === 'growth' && (
+        <div data-testid="panel-growth">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 18 }}>
+            <Tile label="Active clients" value={activeClients} sub={`${newClientsThisPeriod} new in ${periodLabel}`} to="/app/client-master" />
+            <Tile label="New enquiries" value={leadsThisPeriod.length} sub={`Leads created in ${periodLabel}`} to="/app/leads" />
+            <Tile label="Won engagements" value={wonProposals.length} sub="Confirmed proposals" to="/app/proposals" />
+            <Tile label="Open proposals" value={openProposals.length} sub={`${aed(openProposalValue)} pipeline`} to="/app/proposals" />
+          </div>
+          <div className="af-grid af-grid-65">
+            <section className="af-card">
+              <div className="af-cardhead"><div><h2>Opportunity pipeline</h2><div className="af-sub">Open proposals</div></div></div>
+              <div className="af-tablewrap">
+                <table className="af-table">
+                  <thead><tr><th>CLIENT</th><th>SERVICE</th><th>VALUE</th><th>STATUS</th></tr></thead>
+                  <tbody>
+                    {openProposals.slice(0, 6).map(pp => (
+                      <tr key={pp.proposal_id || pp.id}>
+                        <td><b>{pp.client_name || '—'}</b></td>
+                        <td>{pp.service_type ? (SERVICE_LABELS[pp.service_type] || pp.service_type) : (pp.service || '—')}</td>
+                        <td>{pp.value ? aed(pp.value) : '—'}</td>
+                        <td><span className="af-badge af-badge-blue">{pp.stage || pp.status || '—'}</span></td>
+                      </tr>
+                    ))}
+                    {openProposals.length === 0 && <tr><td colSpan="4" className="af-empty">No open proposals.</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+            <section className="af-card">
+              <div className="af-cardhead"><div><h2>Client relationship priorities</h2><div className="af-sub">Current snapshot</div></div></div>
+              <div className="af-tablewrap">
+                <table className="af-table">
+                  <tbody>
+                    <tr><td>Renewals due (engagements to renew)</td><td><Link to="/app/engagements" style={{ color: '#01457C' }}><b>{renewals.length}</b></Link></td><td>Prepare renewal quotations</td></tr>
+                    <tr><td>Onboarding incomplete</td><td><Link to="/app/client-master" style={{ color: '#01457C' }}><b>{onboardingIncomplete}</b></Link></td><td>Complete KYC and engagement letter</td></tr>
+                    <tr><td>Inactive clients to revisit</td><td><Link to="/app/client-master" style={{ color: '#01457C' }}><b>{inactiveClients}</b></Link></td><td>Review service needs</td></tr>
+                    <tr><td>Client follow-ups overdue</td><td><Link to="/app/tasks" style={{ color: '#01457C' }}><b>{followupsOverdue}</b></Link></td><td>Contact relationship owner</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </div>
+      )}
+
+      {ovTab === 'team' && (
+        <div data-testid="panel-team">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 18 }}>
+            <Tile label="Available hours" value={totalCapacity} sub={`${util.length} staff · this month`} to="/app/performance" />
+            <Tile label="Planned hours" value={Math.round(totalAllocated)} sub="Current allocations" to="/app/performance" />
+            <Tile label="Planned utilisation" value={`${totalCapacity ? Math.round(totalAllocated / totalCapacity * 100) : 0}%`} sub={`${Math.round(totalAllocated)} / ${totalCapacity} hours`} to="/app/performance" />
+            <Tile label="Over capacity" value={overCapacity.length} sub={overCapacity.length ? `${overCapacity.map(u => u.name).join(', ')} — review assignments` : 'Everyone within capacity'} to="/app/performance" />
+          </div>
+          <section className="af-card" style={{ marginBottom: 18 }}>
+            <div className="af-cardhead"><div><h2>Staff allocation</h2><div className="af-sub">Allocated engagement hours vs working-day capacity · this month</div></div></div>
+            <div className="af-tablewrap">
+              <table className="af-table">
+                <thead><tr><th>STAFF</th><th>PLANNED</th><th>CAPACITY</th><th>UTILISATION</th><th>ACTION</th></tr></thead>
+                <tbody>
+                  {util.map(u => (
+                    <tr key={u.user_id}>
+                      <td><Link to="/app/performance" style={{ color: '#01457C' }}><b>{u.name}</b></Link></td>
+                      <td>{u.allocated} hrs</td>
+                      <td>{u.capacity} hrs</td>
+                      <td><span className={`af-badge ${u.utilization_pct > 100 ? 'af-badge-red' : u.utilization_pct > 75 ? 'af-badge-amber' : 'af-badge-green'}`}>{u.utilization_pct}%</span></td>
+                      <td>{u.utilization_pct > 100 ? 'Reassign work' : `${Math.max(0, u.capacity - Math.round(u.allocated))} hrs available`}</td>
+                    </tr>
+                  ))}
+                  {util.length === 0 && <tr><td colSpan="5" className="af-empty">No allocation data yet.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </section>
+          <section className="af-card">
+            <div className="af-cardhead"><div><h2>Review capacity</h2><div className="af-sub">Management snapshot</div></div></div>
+            <div className="af-mini"><span>Manager review</span><Link to="/app/engagements" style={{ color: '#01457C' }}><b>{reviewQueue.length} engagements</b></Link></div>
+            <div className="af-mini"><span>Due within 7 days</span><Link to="/app/deadlines" style={{ color: '#01457C' }}><b>{dueSoon.length} deliverables</b></Link></div>
+            <div className="af-mini"><span>Open tasks</span><Link to="/app/tasks" style={{ color: '#01457C' }}><b>{openTasks.length}</b></Link></div>
+          </section>
+        </div>
+      )}
+
+      {ovTab === 'compliance' && (
+        <div data-testid="panel-compliance">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 18 }}>
+            <Tile label="Due in 7 days" value={dueSoon.length} sub="All deliverables" to="/app/deadlines" />
+            <Tile label="Overdue jobs" value={overdueJobs.length} sub="Escalation required" to="/app/tasks" />
+            <Tile label="KYC attention" value={kycAttentionCount} sub="Expired or expiring documents" to="/app/compliance" />
+            <Tile label="Licence renewals" value={licenceRenewals} sub="Due in next 60 days" to="/app/deadlines" />
+          </div>
+          <section className="af-card" style={{ marginBottom: 18 }}>
+            <div className="af-cardhead"><div><h2>Compliance calendar</h2><div className="af-sub">FTA / Corporate Tax / Licence · next 60 days</div></div></div>
+            <div className="af-tablewrap">
+              <table className="af-table">
+                <thead><tr><th>CLIENT</th><th>DELIVERABLE</th><th>DUE</th><th>DAYS LEFT</th></tr></thead>
+                <tbody>
+                  {regDeadlines.slice(0, 8).map((x, i) => (
+                    <tr key={i}>
+                      <td><b>{x.client}</b></td>
+                      <td>{x.label}</td>
+                      <td>{fmtDay(x.due)}</td>
+                      <td><span className={`af-badge ${x.days_left < 0 ? 'af-badge-red' : x.days_left <= 14 ? 'af-badge-amber' : 'af-badge-green'}`}>{x.days_left < 0 ? `${-x.days_left}d overdue` : `${x.days_left}d left`}</span></td>
+                    </tr>
+                  ))}
+                  {regDeadlines.length === 0 && <tr><td colSpan="4" className="af-empty">No regulatory deadlines in the window.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </section>
+          <section className="af-card">
+            <div className="af-cardhead"><div><h2>Document readiness</h2><div className="af-sub">KYC register · customers scope</div></div></div>
+            <div className="af-tablewrap">
+              <table className="af-table">
+                <tbody>
+                  <tr><td> KYC records on file</td><td><Link to="/app/compliance" style={{ color: '#01457C' }}><b>{kycRecs.length}</b></Link></td></tr>
+                  <tr><td>Expired documents</td><td><Link to="/app/compliance" style={{ color: '#01457C' }}><b>{kycExpired.length}</b></Link></td></tr>
+                  <tr><td>Expiring within 30 days</td><td><Link to="/app/compliance" style={{ color: '#01457C' }}><b>{kycExpiring.length}</b></Link></td></tr>
+                  <tr><td>Client follow-ups overdue</td><td><Link to="/app/tasks" style={{ color: '#01457C' }}><b>{followupsOverdue}</b></Link></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      )}
 
       {briefOpen && (
         <div className="af-modal" onClick={(e) => e.target === e.currentTarget && setBriefOpen(false)}>
