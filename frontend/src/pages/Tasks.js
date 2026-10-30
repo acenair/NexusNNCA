@@ -85,6 +85,8 @@ const Tasks = () => {
   const visible = tasks.filter(j => {
     const t = tab === 'Active' ? active(j) : tab === 'All jobs' ? true : tab === 'Delayed' ? isLate(j)
       : tab === 'Upcoming' ? isUpcoming(j) : tab === 'Review' ? disp(j.status) === 'In review'
+      : tab === 'Scheduled' ? disp(j.status) === 'Scheduled'
+      : tab === 'Completed' ? disp(j.status) === 'Completed'
       : disp(j.status) === 'Awaiting client';
     return t
       && (svcFilter === 'All services' || j.service_module === svcFilter)
@@ -176,7 +178,8 @@ const Tasks = () => {
 
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
               <Tab k="Active" label="Active" /><Tab k="All jobs" label="All jobs" /><Tab k="Upcoming" label="Upcoming" />
-              <Tab k="Delayed" label="Delayed" /><Tab k="Review" label="Review" /><Tab k="Client pending" label="Client pending" />
+              <Tab k="Delayed" label="Delayed" /><Tab k="Client pending" label="Client pending" /><Tab k="Review" label="Review" />
+              <Tab k="Scheduled" label="Scheduled" /><Tab k="Completed" label="Completed" />
             </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
               <div style={{ position: 'relative', flex: 1, minWidth: 160 }}>
