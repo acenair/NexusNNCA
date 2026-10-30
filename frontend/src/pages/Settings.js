@@ -91,13 +91,14 @@ const Settings = () => {
 
   // Firm
   const [firmName, setFirmName] = useState('Nair & Nelliyatt Chartered Accountants');
+  const [firmTax, setFirmTax] = useState({ trn: '', phone: '', email: '', address: '', bank_details: '' });
   const [users, setUsers] = useState([]);
   const [editUser, setEditUser] = useState(null);
   const [userForm, setUserForm] = useState({ name: '', role: '', title: '', email: '', new_password: '', date_of_joining: '', notification_email: '', phone: '', date_of_birth: '', gender: '', emirates_id: '', passport_number: '', passport_expiry: '', visa_status: '', visa_expiry: '', emergency_contact_name: '', emergency_contact_phone: '', address: '', department: '' });
 
   // Add User modal
   const [showAddUser, setShowAddUser] = useState(false);
-  const [addUserForm, setAddUserForm] = useState({ name: '', email: '', role: 'staff', title: '', notification_email: '', phone: '' });
+  const [addUserForm, setAddUserForm] = useState({ name: '', email: '', role: 'staff', title: '', notification_email: '', phone: '', client_id: '' });
 
   // Billable Hours
   const [bhEntries, setBhEntries] = useState([]);
@@ -456,7 +457,7 @@ const Settings = () => {
     try {
       const res = await axios.post(`${API}/settings/users`, addUserForm, { withCredentials: true });
       setShowAddUser(false);
-      setAddUserForm({ name: '', email: '', role: 'staff', title: '', notification_email: '', phone: '' });
+      setAddUserForm({ name: '', email: '', role: 'staff', title: '', notification_email: '', phone: '', client_id: '' });
       loadSettings();
       setSecretReveal({ type: 'temp_password', value: res.data.temporary_password, name: addUserForm.name, email: addUserForm.email });
     } catch (err) { alert(err.response?.data?.detail || 'Failed to create user'); }
@@ -800,6 +801,15 @@ const Settings = () => {
                       <option value="client">Client</option>
                     </select>
                   </div>
+                  {addUserForm.role === 'client' && (
+                    <div style={{ marginBottom: 12 }}>
+                      <label style={labelStyle}>Link to client record *</label>
+                      <select value={addUserForm.client_id || ''} onChange={(e) => setAddUserForm(p => ({ ...p, client_id: e.target.value }))} style={inputStyle} data-testid="add-user-client-select">
+                        <option value="">— Select the client —</option>
+                        {bhClients.map(c => <option key={c.client_id} value={c.client_id}>{c.name}</option>)}
+                      </select>
+                    </div>
+                  )}
                   <div style={{ marginBottom: 12 }}>
                     <label style={labelStyle}>Title / Designation</label>
                     <input value={addUserForm.title} onChange={(e) => setAddUserForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Senior Associate, Manager..." style={inputStyle} data-testid="add-user-title-input" />
