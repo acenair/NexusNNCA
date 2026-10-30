@@ -4,6 +4,9 @@ import { ArrowLeft, Download, CheckCircle, Clock, GitBranch, User, Calendar, Edi
 import axios from 'axios';
 import AuditWorkbook from './AuditWorkbook';
 import TrialBalance from './TrialBalance';
+import WorkJournal from './WorkJournal';
+import ClientQueries from './ClientQueries';
+import { MessageSquareQuestion } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const AUDIT_SERVICE_TYPES = ['statutory_audit', 'internal_audit', 'stock_audit', 'fraud_audit'];
@@ -47,11 +50,14 @@ const EngagementDetail = () => {
   const toggleChecklist = async (gIdx, iIdx, currentDone) => {
     try {
       const res = await axios.patch(`${API}/service/engagements/${engagementId}/checklist`, { group_index: gIdx, item_index: iIdx, done: !currentDone }, { withCredentials: true });
+      const item = eng.checklist?.[gIdx]?.items?.[iIdx];
       setEng(prev => {
         const cl = [...prev.checklist];
         cl[gIdx] = { ...cl[gIdx], items: cl[gIdx].items.map((item, i) => i === iIdx ? { ...item, done: !currentDone } : item) };
         return { ...prev, checklist: cl, phase: res.data.phase, status: res.data.status };
       });
+      // Continuity nudge: completing an item with no working-paper note opens the note editor
+      if (!currentDone && !(item?.note || '').trim()) setNoteEditing(`${gIdx}-${iIdx}`);
     } catch (e) { console.error(e); }
   };
   const addItem = async (group, label) => {
@@ -230,15 +236,23 @@ const EngagementDetail = () => {
         </div>
       )}
 
-      {/* Tab Switcher */}
-      {AUDIT_SERVICE_TYPES.includes(eng.service_type) && (
-        <div style={{ display: 'flex', gap: 6, marginBottom: 14 }} data-testid="engagement-tabs">
-          <button onClick={() => setActiveTab('checklist')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 'var(--rs)', border: activeTab === 'checklist' ? '1px solid var(--gold)' : '1px solid var(--nn-border)', background: activeTab === 'checklist' ? 'rgba(14,109,180,0.08)' : 'var(--white)', color: activeTab === 'checklist' ? 'var(--gold4)' : 'var(--muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }} data-testid="tab-checklist"><ListChecks size={14} /> Checklist</button>
-          <button onClick={() => setActiveTab('audit')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 'var(--rs)', border: activeTab === 'audit' ? '1px solid var(--gold)' : '1px solid var(--nn-border)', background: activeTab === 'audit' ? 'rgba(14,109,180,0.08)' : 'var(--white)', color: activeTab === 'audit' ? 'var(--gold4)' : 'var(--muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }} data-testid="tab-audit-workbook"><BookOpen size={14} /> Audit Workbook</button>
-          <button onClick={() => setActiveTab('review')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 'var(--rs)', border: activeTab === 'review' ? '1px solid var(--gold)' : '1px solid var(--nn-border)', background: activeTab === 'review' ? 'rgba(14,109,180,0.08)' : 'var(--white)', color: activeTab === 'review' ? 'var(--gold4)' : 'var(--muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }} data-testid="tab-review"><ListChecks size={14} /> Review &amp; assumptions</button>
-          <button onClick={() => setActiveTab('tb')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 'var(--rs)', border: activeTab === 'tb' ? '1px solid var(--gold)' : '1px solid var(--nn-border)', background: activeTab === 'tb' ? 'rgba(14,109,180,0.08)' : 'var(--white)', color: activeTab === 'tb' ? 'var(--gold4)' : 'var(--muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }} data-testid="tab-trial-balance"><BookOpen size={14} /> Trial Balance</button>
-        </div>
-      )}
+      {/* Tab Switcher — base tabs for every service; audit extras for audit types */}
+      {(() => {
+        const isAudit = AUDIT_SERVICE_TYPES.includes(eng.service_type);
+        const tabBtn = (key, testid, icon, label) => (
+          <button onClick={() => setActiveTab(key)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 'var(--rs)', border: activeTab === key ? '1px solid var(--gold)' : '1px solid var(--nn-border)', background: activeTab === key ? 'rgba(14,109,180,0.08)' : 'var(--white)', color: activeTab === key ? 'var(--gold4)' : 'var(--muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }} data-testid={testid}>{icon} {label}</button>
+        );
+        return (
+          <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }} data-testid="engagement-tabs">
+            {tabBtn('checklist', 'tab-checklist', <ListChecks size={14} />, 'Checklist')}
+            {isAudit && tabBtn('audit', 'tab-audit-workbook', <BookOpen size={14} />, 'Audit Workbook')}
+            {isAudit && tabBtn('review', 'tab-review', <ListChecks size={14} />, 'Review & assumptions')}
+            {isAudit && tabBtn('tb', 'tab-trial-balance', <BookOpen size={14} />, 'Trial Balance')}
+            {tabBtn('journal', 'tab-journal', <BookOpen size={14} />, 'Journal')}
+            {tabBtn('queries', 'tab-queries', <MessageSquareQuestion size={14} />, 'Client queries')}
+          </div>
+        );
+      })()}
 
       {eng.terms && Object.keys(eng.terms).length > 0 && (
               <div className="nn-card" style={{ margin: '0 20px 14px', padding: '16px 20px' }} data-testid="engagement-terms">
@@ -319,6 +333,10 @@ const EngagementDetail = () => {
 
       {activeTab === 'tb' && AUDIT_SERVICE_TYPES.includes(eng.service_type) ? (
         <TrialBalance engagementId={engagementId} />
+      ) : activeTab === 'journal' ? (
+        <WorkJournal engagementId={engagementId} />
+      ) : activeTab === 'queries' ? (
+        <ClientQueries engagementId={engagementId} />
       ) : activeTab === 'audit' && AUDIT_SERVICE_TYPES.includes(eng.service_type) ? (
         <AuditWorkbook engagementId={engagementId} clientId={eng.client_id} clientName={eng.client_name} />
       ) : (

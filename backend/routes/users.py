@@ -107,6 +107,7 @@ class CreateUserRequest(BaseModel):
     title: Optional[str] = None
     notification_email: Optional[str] = None
     phone: Optional[str] = None
+    client_id: Optional[str] = None
 
 
 @router.post("/settings/users")
@@ -120,6 +121,14 @@ async def create_user(req: CreateUserRequest, authorization: str = Header(None),
         raise HTTPException(status_code=400, detail="A user with this email already exists")
     if req.role not in ("staff", "partner", "client"):
         raise HTTPException(status_code=400, detail="Role must be staff, partner, or client")
+    client_id = None
+    if req.role == "client":
+        client_id = (req.client_id or "").strip() or None
+        if not client_id:
+            raise HTTPException(status_code=422, detail="Client users need a client record (client_id)")
+        client = await db.clients.find_one({"client_id": client_id})
+        if not client:
+            raise HTTPException(status_code=404, detail="Linked client record not found")
     temp_password = _generate_temp_secret(12)
     user_doc = {
         "user_id": f"user_{uuid.uuid4().hex[:12]}",
@@ -133,6 +142,8 @@ async def create_user(req: CreateUserRequest, authorization: str = Header(None),
         "phone": req.phone.strip() if req.phone else "",
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
+    if req.role == "client":
+        user_doc["client_id"] = client_id
     await db.users.insert_one(user_doc)
     await log_activity("User created", f"{partner['name']} created user {req.name.strip()} ({email})", partner["user_id"])
     return {"message": f"User {req.name.strip()} created", "user_id": user_doc["user_id"], "temporary_password": temp_password}

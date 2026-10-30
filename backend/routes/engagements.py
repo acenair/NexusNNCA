@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from core import db
 from core import get_current_user
 from core import log_activity
+from routes.journal import journal_event
 from datetime import timezone
 import uuid
 
@@ -154,10 +155,22 @@ async def toggle_checklist_item(engagement_id: str, req: ToggleChecklistRequest,
         item = checklist[req.group_index]["items"][req.item_index]
         if req.done is not None:
             item["done"] = req.done
+            await journal_event(
+                engagement_id,
+                "checklist_done" if req.done else "checklist_undone",
+                f"{'Completed' if req.done else 'Reopened'} checklist item: {item.get('label', '')}"
+                + ("" if not req.done or (item.get('note') or '').strip() else " — ⚠ no working-paper note recorded"),
+                by_name=user.get("name") or "User",
+                client_id=eng.get("client_id") or "", client_name=eng.get("client_name") or "")
         if req.note is not None:
             item["note"] = req.note.strip()[:4000]
             item["note_by"] = user.get("name")
             item["note_at"] = datetime.now(timezone.utc).isoformat()
+            await journal_event(
+                engagement_id, "checklist_note",
+                f"Working-paper note on '{item.get('label', '')}': {req.note.strip()[:200]}",
+                by_name=user.get("name") or "User",
+                client_id=eng.get("client_id") or "", client_name=eng.get("client_name") or "")
 
     # Auto-update phase based on checklist progress
     phase = checklist[0]["group"] if checklist else ""
@@ -175,6 +188,11 @@ async def toggle_checklist_item(engagement_id: str, req: ToggleChecklistRequest,
         {"engagement_id": engagement_id},
         {"$set": {"checklist": checklist, "phase": phase, "status": status}}
     )
+    if phase and phase != eng.get("phase"):
+        await journal_event(
+            engagement_id, "phase_moved", f"Phase moved: {eng.get('phase')} → {phase}",
+            by_name=user.get("name") or "User",
+            client_id=eng.get("client_id") or "", client_name=eng.get("client_name") or "")
     return {"phase": phase, "status": status, "progress": round(done_count / total * 100) if total > 0 else 0}
 
 
@@ -217,7 +235,20 @@ async def update_service_engagement(engagement_id: str, status: Optional[str] = 
         update_data["assigned_to_name"] = assigned_to_name
     if not update_data:
         raise HTTPException(status_code=400, detail="Nothing to update")
+    prior = await db.service_engagements.find_one({"engagement_id": engagement_id}, {"_id": 0, "phase": 1, "client_id": 1, "client_name": 1})
     await db.service_engagements.update_one({"engagement_id": engagement_id}, {"$set": update_data})
+    # Journal the continuity-relevant changes
+    changed = []
+    if "status" in update_data:
+        changed.append(f"status → {update_data['status']}")
+    if "phase" in update_data and update_data["phase"] != (prior or {}).get("phase"):
+        changed.append(f"phase → {update_data['phase']}")
+    if "assigned_to_name" in update_data:
+        changed.append(f"assigned to {update_data['assigned_to_name'] or '—'}")
+    if changed:
+        await journal_event(engagement_id, "engagement_updated", "; ".join(changed),
+                            by_name=user.get("name") or "User",
+                            client_id=(prior or {}).get("client_id") or "", client_name=(prior or {}).get("client_name") or "")
     return {"message": "Engagement updated"}
 
 

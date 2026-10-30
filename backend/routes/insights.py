@@ -9,6 +9,7 @@ from typing import Optional
 from datetime import datetime, timezone, timedelta, date
 from core import db, get_current_user
 from services.templates import CHECKLIST_TEMPLATES
+from routes.journal import journal_event
 import calendar
 import json
 import os
@@ -408,18 +409,27 @@ async def add_review_note(engagement_id: str, payload: dict = Body(default=None)
     }
     await db.review_notes.insert_one(note)
     note.pop("_id", None)
+    await journal_event(engagement_id, "review_note_added",
+                        f"Review note opened: {text[:200]}",
+                        by_name=user.get("name") or "User",
+                        client_id=eng.get("client_id") or "", client_name=eng.get("client_name") or "")
     return {"ok": True, "note": note}
 
 
 @router.patch("/insights/review-notes/{note_id}/clear")
 async def clear_review_note(note_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
     user = await get_current_user(authorization, session_token)
+    prior_note = await db.review_notes.find_one({"note_id": note_id}, {"_id": 0})
     res = await db.review_notes.update_one(
         {"note_id": note_id, "status": "Open"},
         {"$set": {"status": "Cleared", "cleared_at": datetime.now(timezone.utc).isoformat(),
                   "cleared_by": user.get("name")}})
     if not res.matched_count:
         raise HTTPException(status_code=404, detail="Open note not found")
+    if prior_note:
+        await journal_event(prior_note.get("engagement_id", ""), "review_note_cleared",
+                            f"Review note cleared: {(prior_note.get('text') or '')[:200]}",
+                            by_name=user.get("name") or "User")
     return {"ok": True}
 
 

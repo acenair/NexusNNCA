@@ -162,6 +162,8 @@ async def get_client_workflow(authorization: str = Header(None), session_token: 
         return {"engagements": []}
 
     engs = await db.service_engagements.find({"client_id": client_id}, {"_id": 0}).to_list(20)
+    partner = await db.users.find_one({"role": "partner"}, {"_id": 0, "name": 1})
+    partner_name = partner.get("name") if partner else ""
     result = []
     for eng in engs:
         stages = []
@@ -177,10 +179,11 @@ async def get_client_workflow(authorization: str = Header(None), session_token: 
             "service_type": eng.get("service_type", "").replace("_", " ").title(),
             "status": eng.get("status", "Active"),
             "phase": eng.get("phase", ""),
+            "contact_name": eng.get("assigned_to_name") or "",
             "stages": stages,
         })
 
-    return {"engagements": result}
+    return {"engagements": result, "partner_name": partner_name}
 
 
 @router.get("/client-portal/invoices")

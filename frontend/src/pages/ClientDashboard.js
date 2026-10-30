@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FileText, Upload, CheckCircle, Clock, AlertCircle, Receipt, Loader2, Download, ChevronRight } from 'lucide-react';
+import { FileText, Upload, CheckCircle, Clock, AlertCircle, Receipt, Loader2, Download, ChevronRight, MessageSquare, Send, Paperclip, X } from 'lucide-react';
 import axios from 'axios';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -7,8 +7,12 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const ClientDashboard = ({ user, defaultTab }) => {
   const [activeTab, setActiveTab] = useState(defaultTab || 'documents');
   const [docData, setDocData] = useState({ checklist: [], service_type: '', client_name: '' });
-  const [workflowData, setWorkflowData] = useState({ engagements: [] });
+  const [workflowData, setWorkflowData] = useState({ engagements: [], partner_name: '' });
   const [invoices, setInvoices] = useState([]);
+  const [queries, setQueries] = useState({ queries: [], counts: { open: 0, answered: 0 } });
+  const [replyText, setReplyText] = useState({});
+  const [replyFile, setReplyFile] = useState({});
+  const [replying, setReplying] = useState(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(null);
   const fileInputRef = useRef(null);
@@ -17,14 +21,16 @@ const ClientDashboard = ({ user, defaultTab }) => {
 
   const loadAll = async () => {
     try {
-      const [docRes, wfRes, invRes] = await Promise.all([
+      const [docRes, wfRes, invRes, qryRes] = await Promise.all([
         axios.get(`${API}/client-portal/documents`, { withCredentials: true }),
         axios.get(`${API}/client-portal/workflow`, { withCredentials: true }),
         axios.get(`${API}/client-portal/invoices`, { withCredentials: true }),
+        axios.get(`${API}/client-portal/queries`, { withCredentials: true }).catch(() => ({ data: { queries: [], counts: { open: 0, answered: 0 } } })),
       ]);
       setDocData(docRes.data);
       setWorkflowData(wfRes.data);
       setInvoices(invRes.data);
+      setQueries(qryRes.data);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
@@ -40,14 +46,33 @@ const ClientDashboard = ({ user, defaultTab }) => {
     finally { setUploading(null); }
   };
 
+  const sendReply = async (qid) => {
+    const text = (replyText[qid] || '').trim();
+    const file = replyFile[qid];
+    if (!text && !file) return;
+    setReplying(qid);
+    const fd = new FormData();
+    fd.append('text', text);
+    if (file) fd.append('file', file);
+    try {
+      await axios.post(`${API}/client-portal/queries/${qid}/reply`, fd, { withCredentials: true, headers: { 'Content-Type': 'multipart/form-data' } });
+      setReplyText(p => ({ ...p, [qid]: '' }));
+      setReplyFile(p => ({ ...p, [qid]: null }));
+      await loadAll();
+    } catch (err) { alert(err.response?.data?.detail || 'Reply failed'); }
+    finally { setReplying(null); }
+  };
+
   const totalDocs = docData.checklist.length;
   const uploadedDocs = docData.checklist.filter(d => d.uploaded).length;
   const totalInvoices = invoices.length;
   const unpaidInvoices = invoices.filter(i => i.status === 'Unpaid').length;
 
+  const openQueries = (queries.counts?.open || 0) + (queries.counts?.answered || 0);
   const tabs = [
     { key: 'documents', label: 'Documents', icon: FileText, badge: totalDocs > 0 ? `${uploadedDocs}/${totalDocs}` : null },
     { key: 'workflow', label: 'Workflow Status', icon: Clock, badge: workflowData.engagements.length || null },
+    { key: 'queries', label: 'Queries', icon: MessageSquare, badge: openQueries > 0 ? `${openQueries} open` : null },
     { key: 'invoices', label: 'Invoices', icon: Receipt, badge: unpaidInvoices > 0 ? `${unpaidInvoices} unpaid` : null },
   ];
 
@@ -156,7 +181,12 @@ const ClientDashboard = ({ user, defaultTab }) => {
               <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--nn-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <h3 style={{ fontSize: 14, fontFamily: 'DM Sans', color: 'var(--text)' }}>{eng.service_type}</h3>
-                  <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>Current phase: {eng.phase || '—'}</p>
+                  <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+                    Current phase: {eng.phase || '—'}
+                    {(eng.contact_name || workflowData.partner_name) && (
+                      <> · Contact: <b style={{ color: 'var(--text)' }}>{eng.contact_name || workflowData.partner_name}</b>{eng.contact_name && workflowData.partner_name && eng.contact_name !== workflowData.partner_name ? ` (partner: ${workflowData.partner_name})` : ''}</>
+                    )}
+                  </p>
                 </div>
                 <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 10px', borderRadius: 10, background: eng.status === 'Active' ? 'rgba(34,197,94,0.08)' : 'var(--off)', color: eng.status === 'Active' ? 'var(--green)' : 'var(--muted)' }}>{eng.status}</span>
               </div>
@@ -175,6 +205,68 @@ const ClientDashboard = ({ user, defaultTab }) => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Queries Tab */}
+      {activeTab === 'queries' && (
+        <div data-testid="client-queries-section">
+          <div className="nn-card" style={{ padding: '14px 20px', marginBottom: 14 }}>
+            <h3 style={{ fontSize: 14, fontFamily: 'DM Sans', color: 'var(--text)', margin: 0 }}>Queries from your auditor</h3>
+            <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>Reply below with a message and attach any files they asked for — the auditor sees your reply instantly.</p>
+          </div>
+          {queries.queries.length === 0 && (
+            <div className="nn-card" style={{ padding: 40, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>No queries right now. Anything your auditor needs will appear here.</div>
+          )}
+          {queries.queries.map(q => {
+            const st = q.status === 'Open' ? { bg: '#fdf6ec', fg: '#b45309', label: 'Your reply needed' }
+              : q.status === 'Answered' ? { bg: '#eaf3fb', fg: '#0e6db4', label: 'Replied — with your auditor' }
+              : { bg: '#f0f7f2', fg: 'var(--green)', label: 'Resolved' };
+            return (
+              <div key={q.query_id} className="nn-card" style={{ padding: '14px 20px', marginBottom: 12 }} data-testid={`client-query-${q.query_id}`}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'flex-start' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{q.question}</div>
+                    <div style={{ fontSize: 10.5, color: 'var(--muted)', marginTop: 3 }}>
+                      {q.service_type ? q.service_type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) + ' · ' : ''}{q.asked_by} · {new Date(q.asked_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </div>
+                  <span style={{ fontSize: 9.5, fontWeight: 700, padding: '3px 10px', borderRadius: 10, background: st.bg, color: st.fg, whiteSpace: 'nowrap' }} data-testid={`client-query-status-${q.query_id}`}>{st.label}</span>
+                </div>
+                {(q.replies || []).map(r => (
+                  <div key={r.reply_id} style={{ marginTop: 10, marginLeft: 20, padding: '9px 12px', borderRadius: 8, background: r.by_role === 'client' ? '#f0f7f2' : '#eaf3fb', border: `1px solid ${r.by_role === 'client' ? '#cfe5d6' : '#cfe3f4'}` }} data-testid={`client-reply-${r.reply_id}`}>
+                    <div style={{ fontSize: 12.5, color: 'var(--text)' }}>{r.text}</div>
+                    {r.filename && (
+                      <a href={`${API}/files/${r.file_id}`} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11.5, color: '#0e6db4', marginTop: 5, fontWeight: 600 }}>
+                        <FileText size={12} /> {r.filename}
+                      </a>
+                    )}
+                    <div style={{ fontSize: 10.5, color: 'var(--muted)', marginTop: 3 }}>{r.by_name} · {new Date(r.at).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</div>
+                  </div>
+                ))}
+                {q.status !== 'Closed' && (
+                  <div style={{ marginTop: 12, marginLeft: 20 }}>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <input value={replyText[q.query_id] || ''}
+                        onChange={e => setReplyText(p => ({ ...p, [q.query_id]: e.target.value }))}
+                        onKeyDown={e => e.key === 'Enter' && sendReply(q.query_id)}
+                        placeholder="Type your reply…"
+                        data-testid={`client-reply-input-${q.query_id}`}
+                        style={{ flex: 2, minWidth: 200, padding: '9px 12px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', fontSize: 12.5 }} />
+                      <label data-testid={`client-reply-attach-${q.query_id}`} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--line)', cursor: 'pointer', fontSize: 12, color: replyFile[q.query_id] ? '#0e6db4' : 'var(--muted)', background: 'var(--white)' }}>
+                        {replyFile[q.query_id] ? <X size={13} onClick={(e) => { e.preventDefault(); setReplyFile(p => ({ ...p, [q.query_id]: null })); }} /> : <Paperclip size={13} />}
+                        {replyFile[q.query_id]?.name || 'Attach file'}
+                        <input type="file" style={{ display: 'none' }} onChange={e => setReplyFile(p => ({ ...p, [q.query_id]: e.target.files[0] || null }))} />
+                      </label>
+                      <button className="tbtn tbtn-gold" onClick={() => sendReply(q.query_id)} disabled={replying === q.query_id} data-testid={`client-reply-send-${q.query_id}`}>
+                        {replying === q.query_id ? <Loader2 size={12} className="spin" /> : <Send size={12} />} Send reply
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 

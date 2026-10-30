@@ -92,6 +92,33 @@ const GUIDES = [
     ],
   },
   {
+    role: 'Everyone', title: 'Work journal & handover (never lose context)', steps: [
+      'Every engagement has a Journal tab (open the engagement → "Journal"). It is the single timeline of everything that happened: checklist items ticked, phase moves, trial-balance imports and mapping changes, review notes opened/cleared, queries sent to the client, and any manual notes you write.',
+      'Write a journal note whenever you do something a colleague would need to know: calls with the client, promises made, documents awaited, blockers, what was sent where. Click "Add" (or press Enter).',
+      'Continuity nudge: when you tick a checklist item that has no working-paper note, the note box opens automatically — write one line on what was done. You can close it, but the item stays flagged.',
+      'The Handover brief (top of the Journal tab) shows the job at a glance: stage, status, person in charge, progress, open review notes, last activity and a "quiet N days" flag when nothing has moved for a week.',
+      'Documentation flag: items completed without a note are counted in the brief ("N completed items without a working-paper note") so nothing undocumented reaches partner review.',
+      'If an auditor is on leave: the covering person opens the engagement → Journal tab, reads the brief and the newest entries top-down, and continues from exactly where things stopped.',
+    ],
+  },
+  {
+    role: 'Everyone', title: 'Client queries (ask the client, get replies in the app)', steps: [
+      'Raise a query: open the engagement → "Client queries" tab → type what you need (be specific: periods, amounts, documents) → "Send to client". It appears in the client\u0027s portal instantly.',
+      'The client sees it under their Queries tab with an "Your reply needed" badge, replies in the portal with a message and attached files (PDF/JPG/Excel, up to 8 MB).',
+      'Replies land back on the same thread with the attached file — download directly from the thread. Every query and reply is also captured in the engagement Journal.',
+      'When the reply answers the question, click "Mark resolved" — the thread moves to Resolved and the count clears.',
+      'Use queries instead of WhatsApp/email for anything that belongs in the audit file: the question, the answer, the evidence and who said what stay together.',
+    ],
+  },
+  {
+    role: 'Everyone', title: 'Client portal (for your clients)', steps: [
+      'Clients get their own dashboard: create a user in Settings → user access with role "client" and pick the client record — they sign in at the same web address with their email.',
+      'The client dashboard shows: their active services with the current stage of each, their contact person at the firm (and the partner), documents requested with upload, queries from the auditor with reply + attachment, and their invoice history.',
+      'Clients only ever see their own data — never internal notes, checklists, other clients or firm finances.',
+      'There is also a no-login upload portal: Document requests (WORKSPACE) sends a secure link over WhatsApp/email and the client uploads against the checklist without signing in.',
+    ],
+  },
+  {
     role: 'Everyone', title: 'Client document requests (PBC portal)', steps: [
       'Document requests (sidebar → WORKSPACE) sends a document checklist to a client without them logging in.',
       'New request: pick the client (optionally link the engagement), apply a PBC template for the service (External Audit, VAT, AML…), edit the item list, create.',

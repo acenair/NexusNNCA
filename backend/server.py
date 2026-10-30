@@ -38,6 +38,8 @@ from routes import (
     doc_requests,
     insights,
     trial_balance,
+    journal,
+    queries,
 )
 
 app = FastAPI()
@@ -76,6 +78,8 @@ for router in (
     doc_requests.router,
     insights.router,
     trial_balance.router,
+    journal.router,
+    queries.router,
 ):
     app.include_router(router)
 

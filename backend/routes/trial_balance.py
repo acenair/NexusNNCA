@@ -13,6 +13,7 @@ from fastapi import APIRouter, Cookie, File, Header, HTTPException, UploadFile
 from typing import Optional
 
 from core import db, get_current_user
+from routes.journal import journal_event
 
 router = APIRouter(prefix="/api")
 
@@ -212,6 +213,10 @@ async def import_tb(engagement_id: str, file: UploadFile = File(...),
         "auto_mapped": auto,
     }
     await db.tb_imports.replace_one({"engagement_id": engagement_id}, doc, upsert=True)
+    await journal_event(engagement_id, "tb_imported",
+                        f"Trial balance imported: {file.filename} — {len(rows)} accounts, {mapped} mapped ({auto} auto-mapped)",
+                        by_name=user.get("name") or "User",
+                        client_id=eng.get("client_id") or "", client_name=eng.get("client_name") or "")
     return doc
 
 
@@ -236,6 +241,10 @@ async def set_mapping(engagement_id: str, body: Optional[dict] = None,
     doc["updated_by"] = user.get("name") or user.get("email")
     doc["updated_at"] = datetime.now(timezone.utc).isoformat()
     await db.tb_imports.replace_one({"engagement_id": engagement_id}, doc)
+    acct = doc["rows"][int(idx)]["account"] if doc["rows"] else ""
+    await journal_event(engagement_id, "tb_mapping_changed",
+                        f"TB mapping changed: '{acct}' → {line or 'unmapped'}",
+                        by_name=user.get("name") or "User")
     return doc
 
 
