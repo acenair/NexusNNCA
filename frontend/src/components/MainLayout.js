@@ -239,6 +239,7 @@ const MainLayout = ({ user }) => {
         { path: '/app/onboarding', label: 'Client Onboarding', icon: UserPlus, partnerOnly: true },
         { path: '/app/documents', label: 'Documents', icon: FolderOpen },
         { path: '/app/doc-requests', label: 'Document requests', icon: FileInput },
+        { path: '/app/customers', label: 'Customer overview', icon: Users },
         { path: '/app/client-master', label: 'Customers', icon: Database, managingPartnerOnly: true },
       ]
     },

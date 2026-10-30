@@ -42,6 +42,7 @@ import Reports from '@/pages/Reports';
 import Leads from '@/pages/Leads';
 import Compliance from '@/pages/Compliance';
 import Customer360 from '@/pages/Customer360';
+import CustomersOverview from '@/pages/CustomersOverview';
 import Documents from '@/pages/Documents';
 import Settings from '@/pages/Settings';
 import Tasks from '@/pages/Tasks';
@@ -140,6 +141,7 @@ function AppRouter() {
         <Route path="client-master" element={<ClientMaster />} />
         <Route path="documents" element={<Documents />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="customers" element={<CustomersOverview />} />
         <Route path="customers/:clientId" element={<Customer360 />} />
         <Route path="clients/:clientId/timeline" element={<ClientTimeline />} />
         <Route path="engagements" element={<Engagements />} />
