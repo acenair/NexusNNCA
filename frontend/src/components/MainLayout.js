@@ -225,31 +225,46 @@ const MainLayout = ({ user }) => {
       title: 'Workspace',
       items: [
         { path: '/app/dashboard', label: 'Overview', icon: LayoutDashboard },
-        { path: '/app/client-master', label: 'Customers', icon: Database, managingPartnerOnly: true },
         { path: '/app/engagements', label: 'Engagements', icon: Briefcase },
         { path: '/app/tasks', label: 'Task management', icon: ClipboardList },
         { path: '/app/deadlines', label: 'Deadline Tracker', icon: Clock },
         { path: '/app/calendar', label: 'Service calendar', icon: Calendar },
+        { path: '/app/invoices', label: 'Invoices & collections', icon: Receipt, partnerOnly: true },
+        { path: '/app/help', label: 'Help guide', icon: HelpCircle },
+      ]
+    },
+    {
+      title: 'Client management',
+      items: [
+        { path: '/app/onboarding', label: 'Client Onboarding', icon: UserPlus, partnerOnly: true },
         { path: '/app/documents', label: 'Documents', icon: FolderOpen },
         { path: '/app/doc-requests', label: 'Document requests', icon: FileInput },
-        { path: '/app/help', label: 'Help guide', icon: HelpCircle },
+        { path: '/app/client-master', label: 'Customers', icon: Database, managingPartnerOnly: true },
+      ]
+    },
+    {
+      title: 'Staff management',
+      items: [
+        { path: '/app/appreciation', label: 'Staff Appreciation', icon: Star, partnerOnly: true },
+        { path: '/app/performance', label: 'Work & performance', icon: Activity, partnerOnly: true },
+        { path: '/app/attendance', label: 'Attendance & leave', icon: CalendarDays },
+      ]
+    },
+    {
+      title: 'Lead management',
+      items: [
+        { path: '/app/leads', label: 'Lead management', icon: TrendingUp, partnerOnly: true },
+        { path: '/app/proposals', label: 'Proposals', icon: FileText, partnerOnly: true },
       ]
     },
     {
       title: 'Firm Management',
       items: [
-        { path: '/app/invoices', label: 'Invoices & collections', icon: Receipt, partnerOnly: true },
         { path: '/app/compliance', label: 'Compliance tracker', icon: Shield },
-        { path: '/app/attendance', label: 'Attendance & leave', icon: CalendarDays },
-        { path: '/app/leads', label: 'Lead management', icon: TrendingUp, partnerOnly: true },
-        { path: '/app/proposals', label: 'Proposals', icon: FileText, partnerOnly: true },
-        { path: '/app/performance', label: 'Work & performance', icon: Activity, partnerOnly: true },
         { path: '/app/reports', label: 'Reports', icon: FileBarChart, partnerOnly: true },
-        { path: '/app/reminders', label: 'Reminders', icon: Bell },
-        { path: '/app/ai-assistant', label: 'AI Assistant', icon: MessageSquare },
-        { path: '/app/appreciation', label: 'Staff Appreciation', icon: Star, partnerOnly: true },
-        { path: '/app/onboarding', label: 'Client Onboarding', icon: UserPlus, partnerOnly: true },
         { path: '/app/settings', label: 'Settings', icon: Settings, partnerOnly: true },
+        { path: '/app/ai-assistant', label: 'AI Assistant', icon: MessageSquare },
+        { path: '/app/reminders', label: 'Reminders', icon: Bell },
       ]
     },
 ];
