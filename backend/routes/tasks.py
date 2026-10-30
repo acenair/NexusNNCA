@@ -1,5 +1,5 @@
 """Routes / tasks — extracted from server.py without behavior changes."""
-from fastapi import APIRouter
+from fastapi import APIRouter, Body
 from pydantic import BaseModel
 from fastapi import Cookie
 from fastapi import File
@@ -47,6 +47,9 @@ class CreateTaskRequest(BaseModel):
     client_name: Optional[str] = None
     assigned_to: Optional[str] = None
     assigned_to_name: Optional[str] = None
+    status: Optional[str] = None   # Scheduled | In progress | In review | Awaiting client | Completed
+    progress: Optional[int] = None  # 0-100
+    blocker: Optional[str] = None   # what the client still owes, for the follow-ups queue
 
 
 @router.post("/tasks")
@@ -66,7 +69,9 @@ async def create_task(req: CreateTaskRequest,
         "priority": req.priority,
         "assigned_to": req.assigned_to or user["user_id"],
         "assigned_to_name": req.assigned_to_name,
-        "status": "Pending",
+        "status": req.status or ("Scheduled" if (req.progress or 0) == 0 else "In progress"),
+        "progress": max(0, min(100, req.progress if req.progress is not None else 0)),
+        "blocker": (req.blocker or "").strip() or None,
         "created_by": user["user_id"],
         "created_by_name": user.get("name"),
         "created_at": datetime.now(timezone.utc).isoformat()
@@ -79,7 +84,7 @@ async def create_task(req: CreateTaskRequest,
 
 
 @router.patch("/tasks/{task_id}")
-async def update_task(task_id: str, status: Optional[str] = None, authorization: str = Header(None), session_token: str = Cookie(None)):
+async def update_task(task_id: str, status: Optional[str] = None, payload: Optional[dict] = Body(default=None), authorization: str = Header(None), session_token: str = Cookie(None)):
     user = await get_current_user(authorization, session_token)
     
     update_data = {}
@@ -87,7 +92,17 @@ async def update_task(task_id: str, status: Optional[str] = None, authorization:
         update_data["status"] = status
         if status == "Completed":
             update_data["completed_at"] = datetime.now(timezone.utc).isoformat()
-    
+            update_data["progress"] = 100
+    if payload:
+        if payload.get("progress") is not None:
+            update_data["progress"] = max(0, min(100, int(payload["progress"])))
+        if "blocker" in payload:
+            update_data["blocker"] = (payload.get("blocker") or "").strip() or None
+        if payload.get("status") and not status:
+            update_data["status"] = payload["status"]
+            if payload["status"] == "Completed":
+                update_data["completed_at"] = datetime.now(timezone.utc).isoformat()
+                update_data["progress"] = 100
     await db.tasks.update_one({"task_id": task_id}, {"$set": update_data})
     return {"message": "Task updated"}
 
