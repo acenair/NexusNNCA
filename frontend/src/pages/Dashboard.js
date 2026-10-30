@@ -132,7 +132,7 @@ const Dashboard = () => {
 
   const chartMonths = [];
   for (let k = 5; k >= 0; k--) {
-    const d = new Date(today.getFullYear(), today.getMonth() - k, 1);
+    const d = new Date(Date.UTC(today.getFullYear(), today.getMonth() - k, 1));
     const key = d.toISOString().slice(0, 7);
     chartMonths.push({
       label: d.toLocaleDateString('en-GB', { month: 'short' }),
@@ -169,10 +169,11 @@ const Dashboard = () => {
 
   // ---- Overview panels data (all live, all linked) ----
   const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const periodDate = new Date(today.getFullYear(), today.getMonth() - period, 1);
+  const periodDate = new Date(Date.UTC(today.getFullYear(), today.getMonth() - period, 1));
   const periodKey = periodDate.toISOString().slice(0, 7);
-  const periodLabel = `${MONTHS[periodDate.getMonth()]} ${periodDate.getFullYear()}`;
-  const lastPeriodLabel = `${MONTHS[new Date(today.getFullYear(), today.getMonth() - period - 1, 1).getMonth()]} ${new Date(today.getFullYear(), today.getMonth() - period - 1, 1).getFullYear()}`;
+  const periodLabel = `${MONTHS[periodDate.getUTCMonth()]} ${periodDate.getUTCFullYear()}`;
+  const lastPeriodDate = new Date(Date.UTC(today.getFullYear(), today.getMonth() - period - 1, 1));
+  const lastPeriodLabel = `${MONTHS[lastPeriodDate.getUTCMonth()]} ${lastPeriodDate.getUTCFullYear()}`;
   const pBilled = live.filter(i => (i.date || '').slice(0, 7) === periodKey).reduce((n, i) => n + (i.amount || 0), 0);
   const pCollected = live.reduce((n, i) => n + (i.receipts || []).filter(r => (r.date || '').slice(0, 7) === periodKey).reduce((n, r) => n + (r.amount || 0), 0), 0);
 
