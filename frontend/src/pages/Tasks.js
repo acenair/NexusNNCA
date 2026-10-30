@@ -167,125 +167,133 @@ const Tasks = () => {
         <section className="af-card af-metric"><label>Ready for review</label><b>{kpis.review}</b><small>Manager / partner action needed</small></section>
       </div>
 
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', margin: '10px 0 4px' }} data-testid="work-summary">
-        {STATUSES.map(s => (
-          <span key={s} className={`af-badge ${badgeCls(s)}`}>{s} {tasks.filter(j => disp(j.status) === s).length}</span>
-        ))}
-      </div>
-      <p className="af-sub" style={{ margin: '0 0 12px' }}>Counts cover the full team. Deadline and delay counts can overlap active jobs. Staff workload counts scheduled jobs; completed jobs are excluded.</p>
+      <p className="af-sub" style={{ margin: '0 0 12px' }} data-testid="context-note">Counts cover the full team. Deadline and delay counts can overlap active jobs. Staff workload counts scheduled jobs; completed jobs are excluded.</p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, alignItems: 'start' }}>
-        <section className="af-card" data-testid="jobs-table-card">
-          <div className="af-cardhead"><div><h2>Jobs &amp; tasks</h2><div className="af-sub">Every job has an owner and target date</div></div></div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 320px', gap: 20, alignItems: 'start' }}>
+        <div>
+          <section className="af-card" style={{ marginBottom: 16 }} data-testid="jobs-table-card">
+            <div className="af-cardhead"><div><h2>Jobs &amp; tasks</h2><div className="af-sub">Every job has an owner and target date</div></div></div>
 
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
-            <Tab k="Active" label="Active" /><Tab k="All jobs" label="All jobs" /><Tab k="Upcoming" label="Upcoming" />
-            <Tab k="Delayed" label="Delayed" /><Tab k="Review" label="Review" /><Tab k="Client pending" label="Client pending" />
-          </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
-            <div style={{ position: 'relative', flex: 1, minWidth: 160 }}>
-              <Search size={13} style={{ position: 'absolute', left: 10, top: 10, color: 'var(--muted)' }} />
-              <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search jobs, customers…" data-testid="job-search"
-                style={{ width: '100%', padding: '9px 10px 9px 30px', borderRadius: 8, border: '1px solid var(--line, #e4eff6)', background: '#fff', color: 'var(--text)', fontSize: 12.5, boxSizing: 'border-box' }} />
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+              <Tab k="Active" label="Active" /><Tab k="All jobs" label="All jobs" /><Tab k="Upcoming" label="Upcoming" />
+              <Tab k="Delayed" label="Delayed" /><Tab k="Review" label="Review" /><Tab k="Client pending" label="Client pending" />
             </div>
-            <select value={svcFilter} onChange={e => setSvcFilter(e.target.value)} data-testid="job-service-filter"
-              style={{ padding: '9px 10px', borderRadius: 8, border: '1px solid var(--line, #e4eff6)', background: '#fff', color: 'var(--text)', fontSize: 12.5 }}>
-              <option>All services</option>
-              {serviceOptions.map(s => <option key={s} value={s}>{svcLabel(s)}</option>)}
-            </select>
-            <select value={ownerFilter} onChange={e => setOwnerFilter(e.target.value)} data-testid="job-staff-filter"
-              style={{ padding: '9px 10px', borderRadius: 8, border: '1px solid var(--line, #e4eff6)', background: '#fff', color: 'var(--text)', fontSize: 12.5 }}>
-              <option>All staff</option>
-              {staffOptions.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-            <button className="af-btn" onClick={() => { setQ(''); setSvcFilter('All services'); setOwnerFilter('All staff'); setTab('Active'); }} data-testid="job-clear-filters">Clear filters</button>
-          </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+              <div style={{ position: 'relative', flex: 1, minWidth: 160 }}>
+                <Search size={13} style={{ position: 'absolute', left: 10, top: 10, color: 'var(--muted)' }} />
+                <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search jobs, customers…" data-testid="job-search"
+                  style={{ width: '100%', padding: '9px 10px 9px 30px', borderRadius: 8, border: '1px solid var(--line, #e4eff6)', background: '#fff', color: 'var(--text)', fontSize: 12.5, boxSizing: 'border-box' }} />
+              </div>
+              <select value={svcFilter} onChange={e => setSvcFilter(e.target.value)} data-testid="job-service-filter"
+                style={{ padding: '9px 10px', borderRadius: 8, border: '1px solid var(--line, #e4eff6)', background: '#fff', color: 'var(--text)', fontSize: 12.5 }}>
+                <option>All services</option>
+                {serviceOptions.map(s => <option key={s} value={s}>{svcLabel(s)}</option>)}
+              </select>
+              <select value={ownerFilter} onChange={e => setOwnerFilter(e.target.value)} data-testid="job-staff-filter"
+                style={{ padding: '9px 10px', borderRadius: 8, border: '1px solid var(--line, #e4eff6)', background: '#fff', color: 'var(--text)', fontSize: 12.5 }}>
+                <option>All staff</option>
+                {staffOptions.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+              <button className="af-btn" onClick={() => { setQ(''); setSvcFilter('All services'); setOwnerFilter('All staff'); setTab('Active'); }} data-testid="job-clear-filters">Clear filters</button>
+            </div>
 
-          <div className="af-tablewrap">
-            <table className="af-table" data-testid="jobs-table">
-              <thead><tr><th>JOB / CUSTOMER</th><th>SERVICE / SCOPE</th><th>ASSIGNED STAFF</th><th>STATUS / PROGRESS</th><th>PRIORITY</th><th>TARGET DATE</th><th></th></tr></thead>
-              <tbody>
-                {visible.map(j => {
-                  const d = disp(j.status);
-                  return (
-                    <tr key={j.task_id} data-testid="task-row">
-                      <td><b>{j.client_name || j.title}</b><small>{j.client_name ? j.title : (j.task_id || '')}</small></td>
-                      <td><b>{svcLabel(j.service_module)}</b><small>{j.description || ''}</small></td>
-                      <td>{j.assigned_to_name || '—'}</td>
-                      <td>
-                        <span className={`af-badge ${badgeCls(d)}`}>{d}</span>
-                        <div style={{ height: 5, background: 'var(--line, #e4eff6)', borderRadius: 4, marginTop: 6, minWidth: 90 }}>
-                          <div style={{ height: 5, borderRadius: 4, width: `${j.progress || 0}%`, background: '#0e6db4' }} />
-                        </div>
-                        <small style={{ color: 'var(--muted)' }}>{j.progress || 0}%</small>
-                      </td>
-                      <td><span className={`af-badge ${priBadge(j.priority)}`}>{j.priority}</span></td>
-                      <td style={{ color: isLate(j) ? 'var(--red, #c0392b)' : 'var(--text)' }}>
-                        {fmtDate(j.due_date)}
-                        <br /><small>{isLate(j) ? `${daysLate(j)} days late` : d === 'Completed' ? 'Closed' : j.due_date === today ? 'Due today' : 'Target date'}</small>
-                      </td>
-                      <td>
-                        <button className="af-link" onClick={() => { setEditRow(j); setEditForm({ status: d, progress: j.progress || 0, blocker: j.blocker || '' }); }} data-testid={`edit-task-${j.task_id}`}>
-                          <Pencil size={12} />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {visible.length === 0 && (
-                  <tr><td colSpan={7} className="af-empty">No jobs match these filters.</td></tr>
-                )}
-              </tbody>
-            </table>
+            <div className="af-tablewrap">
+              <table className="af-table" data-testid="jobs-table">
+                <thead><tr><th>JOB / CUSTOMER</th><th>SERVICE / SCOPE</th><th>ASSIGNED STAFF</th><th>STATUS / PROGRESS</th><th>PRIORITY</th><th>TARGET DATE</th><th></th></tr></thead>
+                <tbody>
+                  {visible.map(j => {
+                    const d = disp(j.status);
+                    return (
+                      <tr key={j.task_id} data-testid="task-row">
+                        <td><b>{j.client_name || j.title}</b><small>{j.client_name ? j.title : (j.task_id || '')}</small></td>
+                        <td><b>{svcLabel(j.service_module)}</b><small>{j.description || ''}</small></td>
+                        <td>{j.assigned_to_name || '—'}</td>
+                        <td>
+                          <span className={`af-badge ${badgeCls(d)}`}>{d}</span>
+                          <div style={{ height: 5, background: 'var(--line, #e4eff6)', borderRadius: 4, marginTop: 6, minWidth: 90 }}>
+                            <div style={{ height: 5, borderRadius: 4, width: `${j.progress || 0}%`, background: '#0e6db4' }} />
+                          </div>
+                          <small style={{ color: 'var(--muted)' }}>{j.progress || 0}%</small>
+                        </td>
+                        <td><span className={`af-badge ${priBadge(j.priority)}`}>{j.priority}</span></td>
+                        <td style={{ color: isLate(j) ? 'var(--red, #c0392b)' : 'var(--text)' }}>
+                          {fmtDate(j.due_date)}
+                          <br /><small>{isLate(j) ? `${daysLate(j)} days late` : d === 'Completed' ? 'Closed' : j.due_date === today ? 'Due today' : 'Target date'}</small>
+                        </td>
+                        <td>
+                          <button className="af-link" onClick={() => { setEditRow(j); setEditForm({ status: d, progress: j.progress || 0, blocker: j.blocker || '' }); }} data-testid={`edit-task-${j.task_id}`}>
+                            <Pencil size={12} />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {visible.length === 0 && (
+                    <tr><td colSpan={7} className="af-empty">No jobs match these filters.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <small style={{ color: 'var(--muted)', padding: '8px 20px', display: 'block' }}>{visible.length} jobs shown · team summary on the right covers all staff</small>
+          </section>
+
+          <section className="af-card" style={{ marginBottom: 16 }} data-testid="staff-workload">
+            <div className="af-cardhead"><div><h2 style={{ fontSize: 14 }}>Staff workload</h2><div className="af-sub">Assigned open jobs · click to filter</div></div></div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
+              {workload.map(w => (
+                <div key={w.name} style={{ padding: '10px 12px', border: '1px solid var(--line, #e4eff6)', borderRadius: 10 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12.5, gap: 6 }}>
+                    <button className="af-link" style={{ padding: 0 }} onClick={() => { setOwnerFilter(w.name); setTab('All jobs'); }} data-testid={`workload-${w.name.replace(/\s/g, '-')}`}>{w.name}</button>
+                    <b style={{ whiteSpace: 'nowrap' }}>{w.open} open</b>
+                  </div>
+                  <div style={{ height: 5, background: 'var(--line, #e4eff6)', borderRadius: 4, margin: '6px 0' }}>
+                    <div style={{ height: 5, borderRadius: 4, width: `${Math.round(w.open / maxOpen * 100)}%`, background: '#0e7ec4' }} />
+                  </div>
+                  <small style={{ color: 'var(--muted)', fontSize: 10.5 }}>{w.act} active · {w.late} delayed · {w.rev} in review</small>
+                </div>
+              ))}
+            </div>
+            {workload.length === 0 && <p style={{ fontSize: 12, color: 'var(--muted)' }}>No open jobs assigned yet.</p>}
+            <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 10, borderTop: '1px solid var(--line, #e4eff6)', paddingTop: 8 }}>
+              Job counts show allocation, rather than hours or capacity. A delayed job remains assigned to its current owner.
+            </div>
+          </section>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <section className="af-card" data-testid="client-followups">
+              <div className="af-cardhead"><div><h2 style={{ fontSize: 14 }}>Client follow-ups</h2><span className="af-badge af-badge-amber">Documents pending</span></div></div>
+              {tasks.filter(j => j.blocker && open(j)).map(j => (
+                <div key={j.task_id} style={{ padding: '9px 0', borderBottom: '1px solid var(--line, #e4eff6)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>
+                    <div><b style={{ fontSize: 12.5 }}>{j.client_name || j.title}</b>
+                      <p style={{ fontSize: 11.5, color: 'var(--muted)', margin: '2px 0' }}>{j.blocker}</p>
+                      <small style={{ color: 'var(--muted)' }}>Owner: {j.assigned_to_name || '—'}</small></div>
+                    <button className="af-btn" onClick={() => sendReminder(j)} data-testid={`reminder-${j.task_id}`}><Bell size={11} style={{ marginRight: 3 }} />Reminder</button>
+                  </div>
+                </div>
+              ))}
+              {tasks.filter(j => j.blocker && open(j)).length === 0 && <p style={{ fontSize: 12, color: 'var(--muted)' }}>Nothing pending from clients.</p>}
+            </section>
+
+            <section className="af-card" data-testid="review-queue">
+              <div className="af-cardhead"><div><h2 style={{ fontSize: 14 }}>Review queue</h2><span className="af-badge af-badge-grey">Manager action</span></div></div>
+              {tasks.filter(j => disp(j.status) === 'In review').map(j => (
+                <div key={j.task_id} style={{ padding: '9px 0', borderBottom: '1px solid var(--line, #e4eff6)', fontSize: 12.5 }}>
+                  <b>{j.client_name || j.title}</b>
+                  <p style={{ fontSize: 11.5, color: 'var(--muted)', margin: '2px 0' }}>{svcLabel(j.service_module)} · {j.assigned_to_name || '—'}</p>
+                </div>
+              ))}
+              {tasks.filter(j => disp(j.status) === 'In review').length === 0 && <p style={{ fontSize: 12, color: 'var(--muted)' }}>Review queue is clear.</p>}
+            </section>
           </div>
-          <small style={{ color: 'var(--muted)', padding: '8px 20px', display: 'block' }}>{visible.length} jobs shown · team summary above covers all staff</small>
-        </section>
+        </div>
 
         <div>
-          <section className="af-card" style={{ marginBottom: 14 }} data-testid="staff-workload">
-            <div className="af-cardhead"><div><h2 style={{ fontSize: 14 }}>Staff workload</h2><div className="af-sub">Assigned open jobs · click to filter</div></div></div>
-            {workload.map(w => (
-              <div key={w.name} style={{ padding: '9px 0', borderBottom: '1px solid var(--line, #e4eff6)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5 }}>
-                  <button className="af-link" onClick={() => { setOwnerFilter(w.name); setTab('All jobs'); }} data-testid={`workload-${w.name.replace(/\s/g, '-')}`}>{w.name}</button>
-                  <b>{w.open} open</b>
-                </div>
-                <div style={{ height: 5, background: 'var(--line, #e4eff6)', borderRadius: 4, margin: '5px 0' }}>
-                  <div style={{ height: 5, borderRadius: 4, width: `${Math.round(w.open / maxOpen * 100)}%`, background: '#0e7ec4' }} />
-                </div>
-                <small style={{ color: 'var(--muted)' }}>{w.act} active · {w.late} delayed · {w.rev} in review</small>
-              </div>
-            ))}
-            {workload.length === 0 && <p style={{ fontSize: 12, color: 'var(--muted)' }}>No open jobs assigned yet.</p>}
-          </section>
-
-          <section className="af-card" style={{ marginBottom: 14 }} data-testid="client-followups">
-            <div className="af-cardhead"><div><h2 style={{ fontSize: 14 }}>Client follow-ups</h2><div className="af-sub">Documents pending</div></div></div>
-            {tasks.filter(j => j.blocker && open(j)).map(j => (
-              <div key={j.task_id} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: '9px 0', borderBottom: '1px solid var(--line, #e4eff6)' }}>
-                <div><b style={{ fontSize: 12.5 }}>{j.client_name || j.title}</b><p style={{ fontSize: 11.5, color: 'var(--muted)', margin: '2px 0' }}>{j.blocker}</p><small style={{ color: 'var(--muted)' }}>Owner: {j.assigned_to_name || '—'}</small></div>
-                <button className="af-btn" onClick={() => sendReminder(j)} data-testid={`reminder-${j.task_id}`}><Bell size={11} style={{ marginRight: 3 }} />Reminder</button>
-              </div>
-            ))}
-            {tasks.filter(j => j.blocker && open(j)).length === 0 && <p style={{ fontSize: 12, color: 'var(--muted)' }}>Nothing pending from clients.</p>}
-          </section>
-
-          <section className="af-card" style={{ marginBottom: 14 }} data-testid="review-queue">
-            <div className="af-cardhead"><div><h2 style={{ fontSize: 14 }}>Review queue</h2><div className="af-sub">Manager action</div></div></div>
-            {tasks.filter(j => disp(j.status) === 'In review').map(j => (
-              <div key={j.task_id} style={{ padding: '9px 0', borderBottom: '1px solid var(--line, #e4eff6)', fontSize: 12.5 }}>
-                <b>{j.client_name || j.title}</b>
-                <p style={{ fontSize: 11.5, color: 'var(--muted)', margin: '2px 0' }}>{svcLabel(j.service_module)} · {j.assigned_to_name || '—'}</p>
-              </div>
-            ))}
-            {tasks.filter(j => disp(j.status) === 'In review').length === 0 && <p style={{ fontSize: 12, color: 'var(--muted)' }}>Review queue is clear.</p>}
-          </section>
-
-          <section className="af-card" style={{ marginBottom: 14 }} data-testid="upcoming-deadlines">
-            <div className="af-cardhead"><div><h2 style={{ fontSize: 14 }}>Upcoming deadlines</h2><div className="af-sub">Next 7 days</div></div></div>
+          <section className="af-card" style={{ marginBottom: 16 }} data-testid="upcoming-deadlines">
+            <div className="af-cardhead"><div><h2 style={{ fontSize: 14 }}>Upcoming deadlines</h2><span className="af-badge af-badge-grey">Next 7 days</span></div></div>
             {tasks.filter(j => open(j) && j.due_date >= today && j.due_date <= new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10)).sort((a, b) => a.due_date.localeCompare(b.due_date)).map(j => (
               <div key={j.task_id} style={{ display: 'flex', gap: 10, padding: '9px 0', borderBottom: '1px solid var(--line, #e4eff6)' }}>
-                <div className="af-datebox" style={{ background: '#e7f1fa', borderRadius: 8, textAlign: 'center', padding: '4px 8px' }}>
+                <div style={{ background: '#e7f1fa', borderRadius: 8, textAlign: 'center', padding: '4px 8px', minWidth: 34 }}>
                   <b style={{ fontSize: 14, color: '#01457C' }}>{j.due_date.slice(-2)}</b><br /><small style={{ color: '#0e6db4' }}>{mon(j.due_date)}</small>
                 </div>
                 <div style={{ fontSize: 12.5 }}>
@@ -296,10 +304,11 @@ const Tasks = () => {
               </div>
             ))}
             {tasks.filter(j => open(j) && j.due_date >= today && j.due_date <= new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10)).length === 0 && <p style={{ fontSize: 12, color: 'var(--muted)' }}>Nothing due in the next 7 days.</p>}
+            <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 10 }}>Internal job targets only — statutory filing dates live in the Deadline tracker.</p>
           </section>
 
-          <section className="af-card" data-testid="delayed-jobs-card">
-            <div className="af-cardhead"><div><h2 style={{ fontSize: 14 }}>Delayed jobs</h2><div className="af-sub">Action required</div></div></div>
+          <section className="af-card" style={{ marginBottom: 16 }} data-testid="delayed-jobs-card">
+            <div className="af-cardhead"><div><h2 style={{ fontSize: 14 }}>Delayed jobs</h2><span className="af-badge af-badge-red">Action required</span></div></div>
             {tasks.filter(isLate).map(j => (
               <div key={j.task_id} style={{ padding: '9px 0', borderBottom: '1px solid var(--line, #e4eff6)', fontSize: 12.5 }}>
                 <b>{j.client_name || j.title}</b>
@@ -307,6 +316,16 @@ const Tasks = () => {
               </div>
             ))}
             {tasks.filter(isLate).length === 0 && <p style={{ fontSize: 12, color: 'var(--muted)' }}>No delayed jobs.</p>}
+          </section>
+
+          <section className="af-card" data-testid="work-summary">
+            <h2 style={{ fontSize: 14, margin: '0 0 8px' }}>Work summary</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {STATUSES.map(s => (
+                <span key={s} className={`af-badge ${badgeCls(s)}`} style={{ alignSelf: 'flex-start' }}>{s} {tasks.filter(j => disp(j.status) === s).length}</span>
+              ))}
+            </div>
+            <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 10 }}>Use the tabs above the jobs table for upcoming work and completed jobs.</p>
           </section>
         </div>
       </div>
