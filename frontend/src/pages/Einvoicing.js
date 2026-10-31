@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { FileCheck2, AlertTriangle, Pencil, Save, X, ExternalLink } from 'lucide-react';
 import axios from 'axios';
 
@@ -21,6 +22,8 @@ const URGENCY = {
 const aed = (n) => 'AED ' + Number(n || 0).toLocaleString('en-US');
 
 const Einvoicing = () => {
+  const { user } = useOutletContext();
+  const isPartner = user?.role === 'partner';
   const [clients, setClients] = useState([]);
   const [phases, setPhases] = useState({});
   const [facts, setFacts] = useState({});
