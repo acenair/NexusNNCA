@@ -141,6 +141,7 @@ const Dashboard = () => {
     });
   }
   const maxChart = Math.max(...chartMonths.map(m => Math.max(m.billed, m.collected)), 1);
+  const ytdBilled = live.filter(i => (i.date || '').slice(0, 4) === String(today.getFullYear())).reduce((n, i) => n + (i.amount || 0), 0);
 
   const perStaff = staff.filter(u => u.role !== 'client').map(u => ({
     name: u.name,
@@ -214,6 +215,26 @@ const Dashboard = () => {
   const totalCapacity = util.reduce((n, u) => n + (u.capacity || 0), 0);
   const totalAllocated = util.reduce((n, u) => n + (u.allocated || 0), 0);
   const overCapacity = util.filter(u => u.utilization_pct > 100);
+  // unbilled completed work: finished engagements with no invoice issued since completion
+  const completedEngs = engagements.filter(e => e.status === 'Completed');
+  const unbilled = completedEngs.filter(e => {
+    const from = (e.updated_at || e.created_at || '').slice(0, 10);
+    return !from || !live.some(i => i.client_id === e.client_id && (i.date || '') >= from);
+  });
+  const unbilledValue = unbilled.reduce((n, e) => n + (e.fee_amount || 0), 0);
+  // signed engagement letters pending: active engagements whose checklist has an unsigned engagement-letter item
+  const lettersPending = active.filter(e => (e.checklist || []).some(g => (g.items || []).some(i => /engagement letter/i.test(i.label || '') && !i.done))).length;
+  const mostFree = util.filter(u => u.utilization_pct <= 100).sort((a, b) => (b.capacity - b.allocated) - (a.capacity - a.allocated))[0];
+  // engagement join for owners (regulatory deadlines carry ref_id = engagement_id)
+  const engById = Object.fromEntries(engagements.map(e => [e.engagement_id, e]));
+  // merged deliverables for next 7 days: tasks + engagement/statutory deadlines
+  const deliverables = [
+    ...dueSoon.map(t => ({ kind: 'task', title: t.title, client: t.client_name, owner: t.assigned_to_name, due: t.due_date, status: t.status })),
+    ...regDeadlines.filter(x => x.days_left <= 7).map(x => ({
+      kind: 'statutory', title: x.label, client: x.client,
+      owner: engById[x.ref_id]?.assigned_to_name || '—', due: x.due, status: x.kind,
+    })),
+  ].sort((a, b) => (a.due || '').localeCompare(b.due || ''));
   // compliance
   const kycIncomplete = kycRecs.filter(r => ['Requested', 'Received'].includes(r.stage) || (r.date_basis !== 'review' && r.due_date && r.due_date < today.toISOString().slice(0, 10))).length;
   const licenceRenewals = regDeadlines.filter(x => x.kind === 'Trade licence').length;
@@ -326,6 +347,7 @@ const Dashboard = () => {
             ))}
           </div>
           <div className="af-chartfoot">
+            <span>YTD billed <strong>{aed(ytdBilled)}</strong></span>
             <span>Outstanding <strong>{aed(outstanding)}</strong></span>
             <span>Overdue <strong className="af-red-text">{aed(overdueInv)}</strong></span>
           </div>
@@ -363,22 +385,22 @@ const Dashboard = () => {
       <div className="af-grid af-grid-65">
         <section className="af-card">
           <div className="af-cardhead">
-            <div><h2>Upcoming deliverables</h2><div className="af-sub">Next 7 days · Tasks and deadlines</div></div>
+            <div><h2>Upcoming deliverables</h2><div className="af-sub">Next 7 days · Tasks, client work and statutory deadlines</div></div>
             <Link className="af-link" to="/app/deadlines">Full tracker ↗</Link>
           </div>
           <div className="af-tablewrap">
             <table className="af-table">
-              <thead><tr><th>TASK / CLIENT</th><th>OWNER</th><th>DUE</th><th>STATUS</th></tr></thead>
+              <thead><tr><th>DELIVERABLE / CLIENT</th><th>OWNER</th><th>DUE</th><th>STATUS</th></tr></thead>
               <tbody>
-                {dueSoon.slice(0, 6).map(t => (
-                  <tr key={t.task_id}>
-                    <td><b>{t.title}</b><small>{t.client_name || '—'}</small></td>
-                    <td>{t.assigned_to_name || '—'}</td>
-                    <td>{fmtDay(t.due_date)}</td>
-                    <td><span className="af-badge af-badge-blue">{t.status}</span></td>
+                {deliverables.slice(0, 8).map((t, i) => (
+                  <tr key={(t.kind === 'task' ? 't_' : 'r_') + i}>
+                    <td><b>{t.title}</b><small>{t.client || '—'}</small></td>
+                    <td>{t.owner || '—'}</td>
+                    <td>{fmtDay(t.due)}</td>
+                    <td><span className={`af-badge ${t.kind === 'statutory' ? 'af-badge-amber' : 'af-badge-blue'}`}>{t.status}</span></td>
                   </tr>
                 ))}
-                {dueSoon.length === 0 && <tr><td colSpan="4" className="af-empty">Nothing due in the next 7 days.</td></tr>}
+                {deliverables.length === 0 && <tr><td colSpan="4" className="af-empty">Nothing due in the next 7 days.</td></tr>}
               </tbody>
             </table>
           </div>
@@ -399,10 +421,17 @@ const Dashboard = () => {
       <div className="af-grid af-grid-3">
         <section className="af-card">
           <div className="af-cardhead">
-            <div><h2>Team capacity</h2><div className="af-sub">Open tasks per staff · Now</div></div>
-            <Link className="af-link" to="/app/tasks">Tasks ↗</Link>
+            <div><h2>Team capacity</h2><div className="af-sub">Planned hours / available hours · this month</div></div>
+            <Link className="af-link" to="/app/performance">Performance ↗</Link>
           </div>
-          {perStaff.map(s => {
+          {util.length ? util.map(u => (
+            <div className="af-staff" key={u.user_id}>
+              <span className="af-initial">{(u.name || '?').split(' ').map(x => x[0]).join('').slice(0, 2).toUpperCase()}</span>
+              <div className="af-staffname">{u.name}<small>{Math.round(u.allocated)} / {u.capacity} hrs</small></div>
+              <div className="af-track"><i style={{ width: Math.min(u.utilization_pct || 0, 100) + '%', background: u.utilization_pct > 100 ? '#e6b366' : '#45afe8' }} /></div>
+              <small>{u.utilization_pct}%</small>
+            </div>
+          )) : perStaff.map(s => {
             const max = Math.max(...perStaff.map(x => x.open), 1);
             return (
               <div className="af-staff" key={s.name}>
@@ -413,15 +442,19 @@ const Dashboard = () => {
               </div>
             );
           })}
+          {util.length > 0 && (overCapacity.length > 0
+            ? <p className="af-note" data-testid="overcapacity-note">{overCapacity.map(u => u.name).join(', ')} {overCapacity.length > 1 ? 'are' : 'is'} above capacity. Review assignments before accepting new work.</p>
+            : <p className="af-note">Everyone within planned capacity.</p>)}
         </section>
         <section className="af-card">
           <div className="af-cardhead">
             <div><h2>Growth &amp; service mix</h2><div className="af-sub">Business development · Now</div></div>
             {isPartner && <Link className="af-link" to="/app/proposals">Proposals ↗</Link>}
           </div>
-          <div className="af-mini"><span>Open proposals</span><b>{openProposals.length}</b></div>
-          <div className="af-mini"><span>Open proposal value</span><b>{aed(openProposalValue)}</b></div>
+          <div className="af-mini"><span>New enquiries</span><b>{leadsThisPeriod.length} in {periodLabel}</b></div>
+          <div className="af-mini"><span>Open proposals · Value</span><b>{openProposals.length} · {aed(openProposalValue)}</b></div>
           <div className="af-mini"><span>Confirmed engagements</span><b>{wonProposals.length}</b></div>
+          <div className="af-mini"><span>Renewals due</span><b>{renewals.length}</b></div>
           <div className="af-mini"><span>Active service mix</span><b>{mixText}</b></div>
         </section>
         <section className="af-card">
@@ -526,6 +559,7 @@ const Dashboard = () => {
               <div className="af-tablewrap">
                 <table className="af-table">
                   <tbody>
+                    <tr><td>Unbilled completed work</td><td><Link to="/app/engagements" style={{ color: '#01457C' }}><b>{unbilled.length}</b></Link></td><td>{unbilled.length ? `≈ ${aed(unbilledValue)} ready to invoice` : '—'}</td></tr>
                     <tr><td>Draft invoices pending</td><td><Link to="/app/invoices" style={{ color: '#01457C' }}><b>{draftInv.length}</b></Link></td><td>{aed(draftInv.reduce((n, i) => n + (i.amount || 0), 0))}</td></tr>
                     <tr><td>Credit notes this month</td><td><Link to="/app/invoices" style={{ color: '#01457C' }}><b>{creditsThisMonth ? '—' : '—'}</b></Link></td><td>{aed(creditsThisMonth)}</td></tr>
                     <tr><td>Cancelled invoices</td><td><Link to="/app/invoices" style={{ color: '#01457C' }}><b>{cancelledInv.length}</b></Link></td><td>{aed(cancelledInv.reduce((n, i) => n + (i.amount || 0), 0))}</td></tr>
@@ -611,12 +645,22 @@ const Dashboard = () => {
               </table>
             </div>
           </section>
-          <section className="af-card">
-            <div className="af-cardhead"><div><h2>Review capacity</h2><div className="af-sub">Management snapshot</div></div></div>
-            <div className="af-mini"><span>Manager review</span><Link to="/app/engagements" style={{ color: '#01457C' }}><b>{reviewQueue.length} engagements</b></Link></div>
-            <div className="af-mini"><span>Due within 7 days</span><Link to="/app/deadlines" style={{ color: '#01457C' }}><b>{dueSoon.length} deliverables</b></Link></div>
-            <div className="af-mini"><span>Open tasks</span><Link to="/app/tasks" style={{ color: '#01457C' }}><b>{openTasks.length}</b></Link></div>
-          </section>
+          <div className="af-grid af-grid-65" style={{ marginTop: 18 }}>
+            <section className="af-card">
+              <div className="af-cardhead"><div><h2>Suggested workload adjustment</h2><div className="af-sub">Planning recommendation</div></div></div>
+              {overCapacity.length > 0 && mostFree ? (
+                <p>Move ~{Math.ceil((mostFree ? overCapacity.reduce((n, u) => n + (u.allocated - u.capacity), 0) : 0))} hours of suitable work from {overCapacity.map(u => `${u.name} (${u.utilization_pct}%)`).join(' and ')} to {mostFree.name} ({Math.max(0, mostFree.capacity - Math.round(mostFree.allocated))} hrs available), after confirming skills and client ownership.</p>
+              ) : (
+                <p>Everyone is within planned capacity{totalCapacity ? ` — ${Math.max(0, totalCapacity - Math.round(totalAllocated))} hrs unallocated this month, available for new work.` : '.'}</p>
+              )}
+            </section>
+            <section className="af-card">
+              <div className="af-cardhead"><div><h2>Review capacity</h2><div className="af-sub">Management snapshot</div></div></div>
+              <div className="af-mini"><span>Manager review</span><Link to="/app/engagements" style={{ color: '#01457C' }}><b>{reviewQueue.length} engagements</b></Link></div>
+              <div className="af-mini"><span>Due within 7 days</span><Link to="/app/deadlines" style={{ color: '#01457C' }}><b>{dueSoon.length} deliverables</b></Link></div>
+              <div className="af-mini"><span>Open tasks</span><Link to="/app/tasks" style={{ color: '#01457C' }}><b>{openTasks.length}</b></Link></div>
+            </section>
+          </div>
         </div>
       )}
 
@@ -632,12 +676,13 @@ const Dashboard = () => {
             <div className="af-cardhead"><div><h2>Compliance calendar</h2><div className="af-sub">FTA / Corporate Tax / Licence · next 60 days</div></div></div>
             <div className="af-tablewrap">
               <table className="af-table">
-                <thead><tr><th>CLIENT</th><th>DELIVERABLE</th><th>DUE</th><th>DAYS LEFT</th></tr></thead>
+                <thead><tr><th>CLIENT</th><th>DELIVERABLE</th><th>OWNER</th><th>DUE</th><th>DAYS LEFT</th></tr></thead>
                 <tbody>
                   {regDeadlines.slice(0, 8).map((x, i) => (
                     <tr key={i}>
                       <td><b>{x.client}</b></td>
                       <td>{x.label}</td>
+                      <td>{engById[x.ref_id]?.assigned_to_name || '—'}</td>
                       <td>{fmtDay(x.due)}</td>
                       <td><span className={`af-badge ${x.days_left < 0 ? 'af-badge-red' : x.days_left <= 14 ? 'af-badge-amber' : 'af-badge-green'}`}>{x.days_left < 0 ? `${-x.days_left}d overdue` : `${x.days_left}d left`}</span></td>
                     </tr>
@@ -652,6 +697,8 @@ const Dashboard = () => {
             <div className="af-tablewrap">
               <table className="af-table">
                 <tbody>
+                  <tr><td>Signed engagement letters pending</td><td><Link to="/app/engagements" style={{ color: '#01457C' }}><b>{lettersPending}</b></Link></td></tr>
+                  <tr><td>Management confirmations for drafts sent</td><td><Link to="/app/engagements" style={{ color: '#01457C' }}><b>{pipeline[3].count}</b></Link></td></tr>
                   <tr><td> KYC records on file</td><td><Link to="/app/compliance" style={{ color: '#01457C' }}><b>{kycRecs.length}</b></Link></td></tr>
                   <tr><td>Expired documents</td><td><Link to="/app/compliance" style={{ color: '#01457C' }}><b>{kycExpired.length}</b></Link></td></tr>
                   <tr><td>Expiring within 30 days</td><td><Link to="/app/compliance" style={{ color: '#01457C' }}><b>{kycExpiring.length}</b></Link></td></tr>
