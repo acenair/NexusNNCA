@@ -227,6 +227,8 @@ async def seed_einvoicing_samples():
     now = datetime.now(timezone.utc).isoformat()
     demo_clients = await db.clients.find({}, {"_id": 0, "client_id": 1, "name": 1}).to_list(10)
     samples = [
+        ("Meridian Consultants LLC (Demo)", "phase1", 68000000, {"tin_confirmed": True, "fields_ready": True}, "Avalara Gulf Technologies LLC"),
+        ("Falcon Trading LLC (Demo)", "phase2", 2400000, {"tin_confirmed": True}, ""),
         ("Gulf Pharma Group", "phase1", 68000000, {"tin_confirmed": True, "fields_ready": True}, "Avalara Gulf Technologies LLC"),
         ("Al Baraka Trading LLC", "phase2", 2400000, {"tin_confirmed": True}, ""),
     ]
