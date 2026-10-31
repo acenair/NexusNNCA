@@ -378,9 +378,9 @@ async def statements_pdf(engagement_id: str, authorization: str = Header(None), 
         pdf.ln(2)
         for n in notes:
             pdf.set_font("helvetica", "B", 9.5)
-            pdf.multi_cell(0, 6, _safe(f"{n['title']}" + ("  [DRAFT — pending partner review]" if n["status"] != "Cleared" else "")))
+            pdf.multi_cell(0, 6, _safe(f"{n['title']}" + ("  [DRAFT — pending partner review]" if n["status"] != "Cleared" else "")), new_x="LMARGIN", new_y="NEXT")
             pdf.set_font("helvetica", "", 9)
-            pdf.multi_cell(0, 5, _safe(n.get("body") or "(to be written)"))
+            pdf.multi_cell(0, 5, _safe(n.get("body") or "(to be written)"), new_x="LMARGIN", new_y="NEXT")
             pdf.ln(3)
     pdf.set_font("helvetica", "I", 8)
     pdf.ln(4)
