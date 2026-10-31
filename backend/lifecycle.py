@@ -642,6 +642,24 @@ async def seed_demo_e2e():
             await db.service_engagements.update_one({"engagement_id": EID}, {"$set": {"checklist": eng["checklist"]}})
             logger.info(f"Marked planning checklist items done for engagement {EID}")
 
+    # 8 — firm policy library: standard IFRS for SMEs policy wordings (guarded)
+    if await db.policy_library.count_documents({}) == 0:
+        await db.policy_library.insert_many([
+            {"key": "basis", "title": "Note 1 — Basis of preparation and going concern",
+             "text": "The financial statements are prepared under the historical cost convention, in AED, in accordance with the applicable financial reporting framework and UAE Federal Decree-Law No. 47 of 2022. Going concern is assessed over at least twelve months from the reporting date.",
+             "updated_by": "system (sample data)", "updated_at": now},
+            {"key": "revenue", "title": "Note 2 — Revenue from services",
+             "text": "Service income is recognised as performance obligations are satisfied, in the period in which the services are rendered, at the transaction price agreed with the customer.",
+             "updated_by": "system (sample data)", "updated_at": now},
+            {"key": "ppe", "title": "Note 4 — Property, plant and equipment",
+             "text": "Property, plant and equipment is stated at cost less accumulated depreciation and any impairment. Depreciation is charged on a straight-line basis over estimated useful lives: office equipment 5 years, furniture and fittings 8 years, motor vehicles 5 years. Residual values, useful lives and methods are reviewed at each reporting date.",
+             "updated_by": "system (sample data)", "updated_at": now},
+            {"key": "staff_costs", "title": "Note 3 — Staff costs and end-of-service",
+             "text": "End-of-service benefits are accrued in full under IAS 19 as adopted by the applicable framework, based on statutory entitlements under UAE labour law and the years of service completed at the reporting date.",
+             "updated_by": "system (sample data)", "updated_at": now},
+        ])
+        logger.info("Seeded the firm policy library (4 standard policies)")
+
 
 async def startup():
     try:

@@ -356,12 +356,32 @@ async def statements_pdf(engagement_id: str, authorization: str = Header(None), 
 
     ok = data["balance_check"]["balanced"]
     pdf.ln(3)
-    pdf.set_font("helvetica", "B" if ok else "B", 9.5)
-    pdf.set_text_color(21, 122, 94 if ok else 0)
+    pdf.set_font("helvetica", "B" if ok else "B", 9)
+    pdf.set_text_color(21, 122, 94) if ok else pdf.set_text_color(200, 30, 30)
     pdf.cell(0, 6, _safe("Balance check: PASSED — assets equal liabilities and equity" if ok
                          else f"Balance check: FAILED — difference AED {_amt(data['balance_check']['difference'])}"),
              new_x="LMARGIN", new_y="NEXT")
     pdf.set_text_color(0, 0, 0)
+
+    # Notes to the financial statements — cleared notes in full, drafts marked
+    notes = []
+    async for n in db.statement_notes.find(
+            {"engagement_id": engagement_id, "status": {"$in": ("Cleared", "Pre-drafted", "Draft")}},
+            {"_id": 0, "title": 1, "body": 1, "status": 1}).sort("created_at", 1):
+        notes.append(n)
+    if notes:
+        pdf.add_page()
+        pdf.set_font("helvetica", "B", 11)
+        pdf.set_text_color(1, 69, 124)
+        pdf.cell(0, 6, "Notes to the financial statements", new_x="LMARGIN", new_y="NEXT")
+        pdf.set_text_color(0, 0, 0)
+        pdf.ln(2)
+        for n in notes:
+            pdf.set_font("helvetica", "B", 9.5)
+            pdf.multi_cell(0, 6, _safe(f"{n['title']}" + ("  [DRAFT — pending partner review]" if n["status"] != "Cleared" else "")))
+            pdf.set_font("helvetica", "", 9)
+            pdf.multi_cell(0, 5, _safe(n.get("body") or "(to be written)"))
+            pdf.ln(3)
     pdf.set_font("helvetica", "I", 8)
     pdf.ln(4)
     pdf.multi_cell(0, 5, _safe(

@@ -10,6 +10,7 @@ import AJEs from './AJEs';
 import ReceiptInbox from './ReceiptInbox';
 import VatRecon from './VatRecon';
 import Statements from './Statements';
+import NotesDisclosure from './NotesDisclosure';
 import { MessageSquare, Scale, Receipt, FileText } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -257,6 +258,7 @@ const EngagementDetail = () => {
             {VAT_RECON_TYPES.includes(eng.service_type) && tabBtn('vatrecon', 'tab-vat-recon', <Scale size={14} />, 'VAT Recon')}
             {isAudit && tabBtn('ajes', 'tab-ajes', <Scale size={14} />, 'Adjustments')}
             {isAudit && tabBtn('statements', 'tab-statements', <FileText size={14} />, 'Statements')}
+            {isAudit && tabBtn('notes', 'tab-notes', <ListChecks size={14} />, 'Notes & disclosures')}
             {tabBtn('journal', 'tab-journal', <BookOpen size={14} />, 'Journal')}
             {tabBtn('queries', 'tab-queries', <MessageSquare size={14} />, 'Client queries')}
           </div>
@@ -350,6 +352,8 @@ const EngagementDetail = () => {
         <AJEs engagementId={engagementId} isPartner={isPartner} />
       ) : activeTab === 'statements' && AUDIT_SERVICE_TYPES.includes(eng.service_type) ? (
         <Statements engagementId={engagementId} isPartner={isPartner} />
+      ) : activeTab === 'notes' && AUDIT_SERVICE_TYPES.includes(eng.service_type) ? (
+        <NotesDisclosure engagementId={engagementId} isPartner={isPartner} />
       ) : activeTab === 'journal' ? (
         <WorkJournal engagementId={engagementId} />
       ) : activeTab === 'queries' ? (

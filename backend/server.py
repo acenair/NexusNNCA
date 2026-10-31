@@ -46,6 +46,7 @@ from routes import (
     receipts,
     vat_recon,
     statements,
+    notes_disclosure,
 )
 
 app = FastAPI()
@@ -92,6 +93,7 @@ for router in (
     statements.router,
     receipts.router,
     vat_recon.router,
+    notes_disclosure.router,
 ):
     app.include_router(router)
 
