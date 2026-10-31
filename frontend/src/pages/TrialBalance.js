@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Upload, ShieldCheck, Wand2, RefreshCw, Trash2, FileSpreadsheet, FileSearch, CheckCircle2, ChevronDown, HardDriveDownload } from 'lucide-react';
+import { Upload, ShieldCheck, Wand2, RefreshCw, Trash2, FileSpreadsheet, FileSearch, CheckCircle2, ChevronDown, HardDriveDownload, BookOpen, AlertTriangle } from 'lucide-react';
 import axios from 'axios';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -77,6 +77,15 @@ const COLUMN_ROLES = [
   ['description', 'Description'],
 ];
 
+const GL_ROLES = [
+  ['date', 'Date *'],
+  ['account', 'Account name *'],
+  ['debit', 'Debit *'],
+  ['credit', 'Credit *'],
+  ['voucher_no', 'Voucher / doc no'],
+  ['narration', 'Narration'],
+];
+
 const TrialBalance = ({ engagementId }) => {
   const [tb, setTb] = useState(null);
   const [checks, setChecks] = useState(null);
@@ -89,16 +98,22 @@ const TrialBalance = ({ engagementId }) => {
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('');
   const [editingIdx, setEditingIdx] = useState(null);
+  const [ledger, setLedger] = useState(null);            // ingested-books summary
+  const [gl, setGl] = useState(null);                    // GL ingestion preview
+  const [glCols, setGlCols] = useState({});
   const fileRef = useRef(null);
+  const glFileRef = useRef(null);
 
   const load = async () => {
     try {
-      const [t, c] = await Promise.all([
+      const [t, c, l] = await Promise.all([
         axios.get(`${API}/tb/${engagementId}`, { withCredentials: true }),
         axios.get(`${API}/tb/${engagementId}/checks`, { withCredentials: true }),
+        axios.get(`${API}/ledger/${engagementId}`, { withCredentials: true }),
       ]);
       setTb(t.data.rows ? t.data : { rows: [] });
       setChecks(c.data);
+      setLedger(l.data);
     } catch (e) { setError('Failed to load trial balance'); }
     finally { setLoading(false); }
   };
@@ -143,6 +158,39 @@ const TrialBalance = ({ engagementId }) => {
     const fd = new FormData();
     fd.append('document_id', doc.file_id);
     startPreview(fd);
+  };
+
+  const startGlPreview = async (fd) => {
+    setError('');
+    try {
+      const res = await axios.post(`${API}/ledger/${engagementId}/ingest/preview`, fd, { withCredentials: true });
+      const w = res.data;
+      setGl(w);
+      setGlCols({ account: w.suggested?.account, debit: w.suggested?.debit, credit: w.suggested?.credit, date: w.suggested?.date, voucher_no: w.suggested?.voucher_no, narration: w.suggested?.narration });
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Ledger preview failed');
+    }
+  };
+
+  const onGlUpload = (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const fd = new FormData();
+    fd.append('file', f);
+    startGlPreview(fd);
+    if (glFileRef.current) glFileRef.current.value = '';
+  };
+
+  const confirmGlImport = async () => {
+    setConfirming(true); setError('');
+    try {
+      await axios.post(`${API}/ledger/${engagementId}/ingest/confirm`,
+        { staging_id: gl.staging_id, columns: glCols }, { withCredentials: true });
+      setGl(null);
+      await load();
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Ledger ingestion failed');
+    } finally { setConfirming(false); }
   };
 
   const confirmImport = async () => {
@@ -209,12 +257,18 @@ const TrialBalance = ({ engagementId }) => {
         ) : (
           <>
             <span style={{ fontSize: 12, color: 'var(--muted)', display: 'flex', gap: 6, alignItems: 'center' }}><FileSpreadsheet size={13} /> {tb.file_name} · imported {fmtWhen(tb.imported_at)} by {tb.imported_by}</span>
+            {tb.derived_from_ledger && (
+              <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 10, background: '#eaf3fb', color: '#0e6db4', display: 'flex', gap: 5, alignItems: 'center' }} data-testid="tb-derived-badge">
+                <BookOpen size={11} /> Derived from GL — {tb.ledger_source} · {tb.ledger_vouchers} vouchers
+              </span>
+            )}
             <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 10, background: unmapped ? '#fdf6ec' : '#f0f7f2', color: unmapped ? '#b45309' : 'var(--green)' }}>
               {rows.length} accounts · {rows.length - unmapped} mapped{unmapped ? ` · ${unmapped} unmapped` : ''}
             </span>
             <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
               <button className="af-btn" onClick={automap} data-testid="tb-automap"><Wand2 size={12} /> Auto-map</button>
-              <button className="af-btn" onClick={() => fileRef.current?.click()} data-testid="tb-reimport"><RefreshCw size={12} /> Re-import</button>
+              <button className="af-btn" onClick={() => fileRef.current?.click()} data-testid="tb-reimport"><RefreshCw size={12} /> Re-import TB</button>
+              <button className="af-btn" onClick={() => glFileRef.current?.click()} data-testid="tb-reingest" style={{ color: '#0e6db4', borderColor: '#45afe8' }}><BookOpen size={12} /> Re-ingest GL</button>
               <button className="af-btn" onClick={removeTb} data-testid="tb-delete" style={{ color: 'var(--red)' }}><Trash2 size={12} /> Remove</button>
             </div>
           </>
@@ -222,6 +276,121 @@ const TrialBalance = ({ engagementId }) => {
       </div>
 
       {error && <div className="af-note" style={{ color: 'var(--red)', marginBottom: 10 }} data-testid="tb-error">{error}</div>}
+
+      {/* hidden pickers (used by both the empty state and the status-bar buttons) */}
+      <input ref={glFileRef} type="file" accept=".xml,.csv,.xlsx,.xlsm" onChange={onGlUpload} style={{ display: 'none' }} data-testid="gl-file-input" />
+
+      {/* Ingested-books summary */}
+      {ledger?.available && (
+        <div className="nn-card" style={{ padding: '14px 20px', marginBottom: 14 }} data-testid="ledger-summary">
+          <div style={{ fontSize: 11, fontWeight: 650, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--gold)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <BookOpen size={13} /> Books ledger — {ledger.source}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 8, marginBottom: ledger.duplicates ? 8 : 0 }}>
+            {[
+              ['Period', ledger.period_from && ledger.period_to ? `${fmtWhen(ledger.period_from)} – ${fmtWhen(ledger.period_to)}` : '—'],
+              ['Vouchers', String(ledger.vouchers ?? '—')],
+              ['Entries', String(ledger.entries ?? '—')],
+              ['Accounts', String(ledger.accounts ?? '—')],
+              ['VAT output (AED)', fmt(ledger.vat_output || 0)],
+              ['VAT input (AED)', fmt(ledger.vat_input || 0)],
+            ].map(([k, v]) => (
+              <div key={k} style={{ padding: '8px 12px', borderRadius: 8, background: 'var(--off, #f7fafc)', border: '1px solid var(--nn-border)' }}>
+                <div style={{ fontSize: 9.5, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>{k}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, fontFamily: 'DM Sans', color: 'var(--text)' }}>{v}</div>
+              </div>
+            ))}
+          </div>
+          {!!ledger.duplicates && (
+            <div style={{ fontSize: 11.5, padding: '7px 10px', borderRadius: 6, background: '#fdf6ec', color: '#b45309', display: 'flex', alignItems: 'center', gap: 6 }} data-testid="ledger-duplicates">
+              <AlertTriangle size={12} /> {ledger.duplicates} possible duplicate line{ledger.duplicates > 1 ? 's' : ''} flagged (same date, voucher number, account and amount) — review in the books before signing anything off.
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* GL ingestion wizard — Tally XML shows a straight summary; spreadsheets get column labelling */}
+      {gl && (
+        <div className="nn-card" style={{ padding: '16px 20px', marginBottom: 14 }} data-testid="gl-wizard">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <h3 style={{ fontSize: 14, fontFamily: 'DM Sans', color: 'var(--text)', margin: 0, display: 'flex', alignItems: 'center', gap: 7 }}>
+              <BookOpen size={15} color="#0e6db4" /> Books ledger detected: {gl.source}
+              <span style={{ fontWeight: 400, fontSize: 11.5, color: 'var(--muted)' }}>— {gl.filename}</span>
+            </h3>
+            <button className="af-btn" onClick={() => setGl(null)} data-testid="gl-wizard-cancel">Cancel</button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 8, marginBottom: 10 }}>
+            {[
+              ['Vouchers', String(gl.vouchers ?? '—')],
+              ['Ledger entries', String(gl.entries ?? '—')],
+              ['Distinct accounts', String(gl.account_count ?? '—')],
+              ['Period', gl.period_from ? `${gl.period_from} → ${gl.period_to}` : 'dates not in file'],
+              ['VAT output / input', `${fmt(gl.vat_output || 0)} / ${fmt(gl.vat_input || 0)}`],
+              ['Duplicate lines', String(gl.duplicates || 0)],
+            ].map(([k, v]) => (
+              <div key={k} style={{ padding: '8px 12px', borderRadius: 8, background: 'var(--off, #f7fafc)', border: '1px solid var(--nn-border)' }}>
+                <div style={{ fontSize: 9.5, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>{k}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, fontFamily: 'DM Sans', color: 'var(--text)' }}>{v}</div>
+              </div>
+            ))}
+          </div>
+
+          {gl.source === 'Tally XML' ? (
+            <p className="af-note" style={{ fontSize: 11.5, marginBottom: 10 }}>
+              Vouchers parsed from the Tally Day Book export. On confirm, the app aggregates every ledger account,
+              applies the firm mapping memory and derives the trial balance — the same checks, adjustments register and
+              IFRS feed as a manual import.
+            </p>
+          ) : (
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 12 }}>
+                {GL_ROLES.map(([role, label]) => (
+                  <div key={role}>
+                    <label style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', display: 'block', marginBottom: 3 }}>{label}</label>
+                    <select value={glCols[role] ?? ''} onChange={e => setGlCols(p => ({ ...p, [role]: e.target.value === '' ? null : Number(e.target.value) }))}
+                      style={{ width: '100%', padding: '7px 8px', fontSize: 12, borderRadius: 6, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)' }}
+                      data-testid={`gl-col-${role}`}>
+                      <option value="">— none —</option>
+                      {gl.headers.map((h, i) => <option key={i} value={i}>{h || `column ${i + 1}`}</option>)}
+                    </select>
+                  </div>
+                ))}
+              </div>
+              <div style={{ overflowX: 'auto', border: '1px solid var(--nn-border)', borderRadius: 8, marginBottom: 10 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+                  <thead>
+                    <tr style={{ background: 'var(--off, #f7fafc)' }}>
+                      {gl.headers.map((h, i) => {
+                        const role = Object.entries(glCols).find(([, v]) => v === i)?.[0];
+                        return <th key={i} style={{ padding: '6px 8px', fontSize: 9.5, textTransform: 'uppercase', color: role ? '#0e6db4' : 'var(--muted)', borderBottom: '2px solid ' + (role ? '#45afe8' : 'transparent') }}>
+                          {role ? `▸ ${role}` : (h || `col ${i + 1}`)}
+                        </th>;
+                      })}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {gl.preview.map((r, ri) => (
+                      <tr key={ri} style={{ borderBottom: '1px solid var(--nn-border)' }}>
+                        {r.map((cell, ci) => <td key={ci} style={{ padding: '5px 8px', color: 'var(--text)', whiteSpace: 'nowrap' }}>{String(cell).slice(0, 40)}</td>)}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <button className="tbtn tbtn-gold" onClick={confirmGlImport}
+              disabled={confirming || (gl.source !== 'Tally XML' && (glCols.account == null || glCols.debit == null || glCols.credit == null || glCols.date == null))}
+              data-testid="gl-confirm-ingest">
+              {confirming ? 'Ingesting…' : (<><CheckCircle2 size={13} /> Confirm ingestion</>)}
+            </button>
+          </div>
+          {gl.source !== 'Tally XML' && (glCols.account == null || glCols.debit == null || glCols.credit == null || glCols.date == null) &&
+            <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 6 }}>Choose the date, account, debit and credit columns to continue.</div>}
+        </div>
+      )}
 
       {/* Import wizard (two-step: source → column labelling) */}
       {wizard && (
@@ -285,18 +454,24 @@ const TrialBalance = ({ engagementId }) => {
       )}
 
       {/* Import panel (empty state) */}
-      {rows.length === 0 && !wizard && (
+      {rows.length === 0 && !wizard && !gl && (
         <div className="nn-card" style={{ padding: 32, textAlign: 'center' }} data-testid="tb-empty">
           <Upload size={28} color="var(--muted)" style={{ margin: '0 auto 10px' }} />
-          <h3 style={{ fontSize: 14, fontFamily: 'DM Sans', color: 'var(--text)', marginBottom: 4 }}>Import the client's trial balance</h3>
+          <h3 style={{ fontSize: 14, fontFamily: 'DM Sans', color: 'var(--text)', marginBottom: 4 }}>Import the client's books</h3>
           <p style={{ fontSize: 12, color: 'var(--muted)', maxWidth: 520, margin: '0 auto 14px' }}>
-            Accepts CSV or Excel (.xlsx). You'll label the columns on the next step — mappings from previous imports
-            apply automatically. Total rows must balance; totals are checked on import.
+            Bring in a full general ledger (Tally Day Book XML, or a GL report export from QuickBooks, Zoho Books or
+            Xero, or any ledger spreadsheet) and the trial balance is derived automatically — or import a summary
+            trial balance (CSV/Excel) directly. Mappings from previous imports apply either way.
           </p>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button className="tbtn tbtn-gold" onClick={() => fileRef.current?.click()} data-testid="tb-upload-btn">
+              <Upload size={13} /> Trial balance file
+            </button>
+            <button className="af-btn" onClick={() => glFileRef.current?.click()} data-testid="tb-gl-upload-btn" style={{ color: '#0e6db4', borderColor: '#45afe8' }}>
+              <BookOpen size={13} /> General ledger / books file (Tally, QuickBooks, Zoho…)
+            </button>
+          </div>
           <input ref={fileRef} type="file" accept=".csv,.xlsx,.xlsm" onChange={onUpload} style={{ display: 'none' }} data-testid="tb-file-input" />
-          <button className="tbtn tbtn-gold" onClick={() => fileRef.current?.click()} data-testid="tb-upload-btn">
-            <Upload size={13} /> Choose file
-          </button>
 
           {clientDocs.length > 0 && (
             <div style={{ marginTop: 22, borderTop: '1px solid var(--nn-border)', paddingTop: 16, textAlign: 'left' }} data-testid="tb-client-docs">

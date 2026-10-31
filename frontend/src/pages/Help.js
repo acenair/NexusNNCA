@@ -207,6 +207,17 @@ const GUIDES = [
       'Overview dashboard: firm-wide snapshot — billing & collections, pipeline, team capacity, growth mix.',
     ],
   },
+  {
+    role: 'Staff', title: 'Books ingestion and integrations (Tally, QuickBooks, Zoho, Xero)', steps: [
+      'Set each client\u0027s accounting system in Settings → Integrations — pick Tally, QuickBooks, Zoho Books, Xero, Excel / Google Sheets or Other from the dropdown in the Accounting System column. This tells the ingestion engine how to read the client\u0027s books.',
+      'For audit and assurance engagements, the Trial Balance tab can ingest a full general-ledger file instead of a summary TB — a Tally DayBook XML, a GL report export from QuickBooks, Zoho Books or Xero, or any GL spreadsheet with date / account / debit / credit columns.',
+      'The app parses the vouchers, derives the trial balance automatically, applies the firm\u0027s mapping memory, and runs the same integrity checks as a manually imported TB.',
+      'Re-ingesting a period replaces the previous data cleanly — always ingest the full period from one source so vouchers are never double-counted.',
+      'The ledger summary shows the period covered, the voucher count, VAT output / input totals and any flagged duplicates — check it before relying on the derived TB.',
+      'The derived TB feeds the adjustments register and the IFRS statement builder exactly like a manually imported TB — map, adjust and build statements as usual.',
+      'CSV / Excel fallback: if the client\u0027s system cannot export XML, export the general ledger report to Excel and use the column labelling wizard to mark the date, account, debit and credit columns.',
+    ],
+  },
 ];
 
 const Help = () => {

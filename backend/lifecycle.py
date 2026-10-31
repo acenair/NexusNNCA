@@ -8,6 +8,7 @@ from core import hash_password
 from core import init_storage
 from core import logger
 from datetime import timezone
+import re
 import uuid
 
 async def seed_nn_users():
@@ -302,6 +303,15 @@ async def seed_demo_tb_ajes():
         "memory_mapped": 0,
         "auto_mapped": 0,
     })
+    # firm mapping memory for the sample accounts — so ANY later import (TB or
+    # GL ingestion) for any client maps these accounts automatically
+    for a, d, dr, cr, m in tb_rows:
+        key = re.sub(r"[^a-z0-9]+", " ", a.lower()).strip()
+        await db.tb_mapping_memory.update_one(
+            {"key": key},
+            {"$set": {"mapping": m, "client_id": eng.get("client_id") or "",
+                      "updated_at": now, "source": "sample_ledger"}},
+            upsert=True)
     sample_ajes = [
         ("Accrue December electricity bill not yet recorded in the books", 3800,
          "Utilities and telephone", "Accrued expenses"),
@@ -331,7 +341,6 @@ async def seed_demo_tb_ajes():
             "created_at": now,
         })
     logger.info(f"Seeded sample trial balance + {len(sample_ajes)} AJEs for demo engagement {eng['engagement_id']}")
-
     # sample e-invoicing readiness for two demo clients (one each side of the 50m line)
     if await db.einvoicing_readiness.count_documents({}) == 0:
         demo_clients = await db.clients.find({}, {"_id": 0, "client_id": 1, "name": 1}).to_list(5)
@@ -350,6 +359,68 @@ async def seed_demo_tb_ajes():
                 upsert=True)
         logger.info("Seeded sample e-invoicing readiness for demo clients")
 
+
+async def seed_demo_ledger():
+    """Seed a sample Tally-style general ledger for the demo audit engagement.
+
+    The GL aggregates EXACTLY to the seeded sample trial balance (every account's
+    net equals its TB balance, the clearing account nets to zero), so the dry-run
+    story is coherent: books ingested from Tally → derived TB → AJEs → statements.
+    """
+    tb = await db.tb_imports.find_one({"source": "sample_ledger"})
+    if not tb or await db.ledger_ingests.find_one({"engagement_id": tb["engagement_id"]}):
+        return
+    now = datetime.now(timezone.utc).isoformat()
+    flavor = [
+        ("cash|bank|petty", "Receipt"), ("receivab|debtor|deposit", "Journal"),
+        ("payab|accrued|vat|end-of-service", "Payment"), ("capital|retained", "Journal"),
+        ("income|fees earned", "Sales"), ("salary|rent|utilit|fees|expenses|charges", "Payment"),
+    ]
+    entries = []
+    for i, row in enumerate(tb.get("rows", [])):
+        net = round((row.get("debit") or 0.0) - (row.get("credit") or 0.0), 2)
+        if net == 0:
+            continue
+        month = 4 + (i % 12)
+        year = 2025 if month <= 12 else 2026
+        m = month if month <= 12 else month - 12
+        date = f"{year}-{m:02d}-{(5 + (i * 3) % 20):02d}"
+        vtype = next((t for pat, t in flavor if re.search(pat, row["account"].lower())), "Journal")
+        contra = -net
+        entries.extend([
+            {"date": date, "voucher_no": f"JV-{i + 1:03d}", "voucher_type": vtype,
+             "account": row["account"], "debit": max(net, 0.0), "credit": max(-net, 0.0),
+             "narration": f"Sample books entry — {row['account']}", "engagement_id": tb["engagement_id"],
+             "client_id": tb.get("client_id"), "client_name": tb.get("client_name"), "ingested_at": now},
+            {"date": date, "voucher_no": f"JV-{i + 1:03d}", "voucher_type": vtype,
+             "account": "Suspense clearing", "debit": max(contra, 0.0), "credit": max(-contra, 0.0),
+             "narration": "Balancing leg (clears to nil)", "engagement_id": tb["engagement_id"],
+             "client_id": tb.get("client_id"), "client_name": tb.get("client_name"), "ingested_at": now},
+        ])
+    await db.ledger_entries.insert_many(entries)
+    dates = sorted(e["date"] for e in entries if e.get("date"))
+    await db.ledger_ingests.replace_one(
+        {"engagement_id": tb["engagement_id"]},
+        {"engagement_id": tb["engagement_id"], "client_id": tb.get("client_id"),
+         "client_name": tb.get("client_name"), "source": "Tally XML",
+         "vouchers": len({(e["voucher_no"], e["date"]) for e in entries}), "entries": len(entries),
+         "period_from": dates[0], "period_to": dates[-1],
+         "vat_output": 21400.0, "vat_input": 0.0, "duplicates": 0,
+         "accounts": len(tb.get("rows", [])), "zero_excluded": 1, "skipped": 0,
+         "file_name": "sample_daybook_FY2025_tally.xml", "by": "system (sample data)", "at": now},
+        upsert=True)
+    await db.tb_imports.update_one(
+        {"_id": tb["_id"]},
+        {"$set": {"derived_from_ledger": True, "ledger_source": "Tally XML",
+                  "ledger_vouchers": len({(e["voucher_no"], e["date"]) for e in entries}),
+                  "ledger_entries": len(entries), "ledger_period": [dates[0], dates[-1]],
+                  "ledger_duplicates": 0, "ledger_vat": {"output": 21400.0, "input": 0.0}}})
+    # demo client keeps its books in Tally — aligns Settings → Integrations with the sample story
+    if tb.get("client_id"):
+        await db.clients.update_one({"client_id": tb["client_id"]}, {"$set": {"accounting_system": "Tally"}})
+    logger.info(f"Seeded sample Tally-style ledger ({len(entries)} entries) for engagement {tb['engagement_id']}")
+
+
 async def startup():
     try:
         init_storage()
@@ -364,6 +435,7 @@ async def startup():
     await audit_workbook.seed_audit_template(db, logger)
     await seed_demo_tb_ajes()
     await seed_einvoicing_samples()
+    await seed_demo_ledger()
     await migrate_force_password_change()
 
 

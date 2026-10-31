@@ -62,6 +62,15 @@ const STORAGE_PROVIDERS = [
   ]},
 ];
 
+const LEDGER_ACC_SYSTEMS = ['', 'Tally', 'QuickBooks', 'Zoho Books', 'Xero', 'Excel / Google Sheets', 'Other'];
+
+const fmtLedgerDate = (d) => {
+  if (!d) return '';
+  const dt = new Date(d);
+  if (isNaN(dt.getTime())) return String(d);
+  return dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+};
+
 const Settings = () => {
   const { user } = useOutletContext();
   const [tab, setTab] = useState('firm');
@@ -127,7 +136,13 @@ const Settings = () => {
   // Drive
   const [driveStatus, setDriveStatus] = useState(null);
 
+  // Ledger integrations
+  const [integrations, setIntegrations] = useState([]);
+  const [integrationsLoading, setIntegrationsLoading] = useState(true);
+  const [accsysSaving, setAccsysSaving] = useState(null);
+
   useEffect(() => { loadSettings(); }, []);
+  useEffect(() => { loadIntegrations(); }, []);
   useEffect(() => { if (tab === 'reset') loadDataStats(); }, [tab]);
   useEffect(() => { if (tab === 'storage') loadDriveStatus(); }, [tab]);
   useEffect(() => { if (tab === 'reminders') loadReminderConfig(); }, [tab]);
@@ -189,6 +204,29 @@ const Settings = () => {
       const res = await axios.get(`${API}/drive/status`, { withCredentials: true });
       setDriveStatus(res.data);
     } catch (err) { console.error(err); }
+  };
+
+  const loadIntegrations = async () => {
+    setIntegrationsLoading(true);
+    try {
+      const res = await axios.get(`${API}/ledger/integrations`, { withCredentials: true });
+      setIntegrations(res.data.integrations || []);
+    } catch (err) { console.error(err); }
+    finally { setIntegrationsLoading(false); }
+  };
+
+  const handleAccsysChange = async (clientId, value) => {
+    setAccsysSaving(clientId);
+    const prevList = integrations;
+    setIntegrations(prev => prev.map(i => i.client_id === clientId ? { ...i, accounting_system: value } : i));
+    try {
+      await axios.patch(`${API}/ledger/integrations/${clientId}`, { accounting_system: value }, { withCredentials: true });
+      loadIntegrations();
+    } catch (err) {
+      setIntegrations(prev => prev.map(i => i.client_id === clientId ? { ...i, accounting_system: (prevList.find(p => p.client_id === clientId) || {}).accounting_system } : i));
+      alert(err.response?.data?.detail || 'Failed to update accounting system');
+    }
+    finally { setAccsysSaving(null); }
   };
 
   const handleReset = async () => {
@@ -532,6 +570,63 @@ const Settings = () => {
                 <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Address</label><input value={firmTax.address} onChange={(e) => setFirmTax({ ...firmTax, address: e.target.value })} style={inputStyle} placeholder="Office, building, city" /></div>
                 <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Bank details (shown on invoices)</label><input value={firmTax.bank_details} onChange={(e) => setFirmTax({ ...firmTax, bank_details: e.target.value })} style={inputStyle} placeholder="Bank name · IBAN / account no." /></div>
               </div>
+            </div>
+          </div>
+
+          {/* Integrations */}
+          <div className="nn-card" style={{ overflow: 'hidden', marginBottom: 16 }} data-testid="integrations-card">
+            <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--nn-border)' }}>
+              <h3 style={{ fontSize: 14, fontFamily: 'DM Sans', color: 'var(--text)' }}>Integrations</h3>
+              <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>Clients accounting systems and books ingestion</p>
+            </div>
+            <div style={{ padding: '16px 20px' }}>
+              {integrationsLoading ? (
+                <p className="af-note" style={{ margin: 0 }}>Loading integrations&hellip;</p>
+              ) : integrations.length === 0 ? (
+                <p className="af-note" style={{ margin: 0 }}>No clients yet</p>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 640 }} data-testid="integrations-table">
+                    <thead>
+                      <tr style={{ background: 'var(--off)' }}>
+                        <th style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', textAlign: 'left', letterSpacing: 0.5 }}>Client</th>
+                        <th style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', textAlign: 'left', letterSpacing: 0.5 }}>Accounting System</th>
+                        <th style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', textAlign: 'left', letterSpacing: 0.5 }}>Books Sync</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {integrations.map(i => {
+                        const li = i.last_ingest;
+                        return (
+                          <tr key={i.client_id} style={{ borderBottom: '1px solid var(--nn-border)' }}>
+                            <td style={{ padding: '10px 16px', fontSize: 12, fontWeight: 600, color: 'var(--text)', fontFamily: 'DM Sans' }}>{i.client_name}</td>
+                            <td style={{ padding: '10px 16px' }}>
+                              <select
+                                value={i.accounting_system || ''}
+                                onChange={(e) => handleAccsysChange(i.client_id, e.target.value)}
+                                disabled={accsysSaving === i.client_id}
+                                style={{ padding: '6px 10px', borderRadius: 'var(--rs)', border: '1px solid var(--nn-border)', fontSize: 12, fontFamily: 'DM Sans, sans-serif', outline: 'none', background: 'var(--white)', color: 'var(--text)', minWidth: 180 }}
+                                data-testid={`accsys-select-${i.client_id}`}
+                              >
+                                {LEDGER_ACC_SYSTEMS.map(s => <option key={s} value={s}>{s || '\u2014 Not set \u2014'}</option>)}
+                              </select>
+                            </td>
+                            <td style={{ padding: '10px 16px', fontSize: 11 }}>
+                              {li ? (
+                                <span style={{ color: 'var(--text)', fontFamily: 'DM Sans' }}>
+                                  {li.source || 'Books'} &middot; {li.vouchers} vouchers &middot; {fmtLedgerDate(li.period_from)} to {fmtLedgerDate(li.period_to)}
+                                </span>
+                              ) : (
+                                <span style={{ color: 'var(--muted)', fontFamily: 'DM Sans' }}>Not ingested yet</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
 
