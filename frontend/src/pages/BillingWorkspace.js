@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useOutletContext, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { Plus, Download, TrendingUp, TrendingDown, Wallet, AlertTriangle, FileCheck2 } from 'lucide-react';
-import EinvoiceModal from './EinvoiceModal';
+import EinvoiceModal from '../components/EinvoiceModal';
 import AnimatedNumber from '../components/AnimatedNumber';
 import Sparkline from '../components/Sparkline';
 import Skeleton from '../components/Skeleton';
