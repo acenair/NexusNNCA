@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useOutletContext, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import { Plus, Download, TrendingUp, TrendingDown, Wallet, AlertTriangle } from 'lucide-react';
+import { Plus, Download, TrendingUp, TrendingDown, Wallet, AlertTriangle, FileCheck2 } from 'lucide-react';
+import EinvoiceModal from './EinvoiceModal';
 import AnimatedNumber from '../components/AnimatedNumber';
 import Sparkline from '../components/Sparkline';
 import Skeleton from '../components/Skeleton';
@@ -251,6 +252,9 @@ const BillingWorkspace = ({ initialTab }) => {
   };
   const badge = (s) => s === 'Paid' ? 'af-badge-green' : s === 'Part paid' ? 'af-badge-blue' : s === 'Overdue' ? 'af-badge-red' : s === 'Cancelled' ? 'af-badge-grey' : 'af-badge-amber';
 
+  // e-invoicing modal
+  const [einvFor, setEinvFor] = useState(null);
+
   return (
     <div className="ov-wrap" data-testid="billing-workspace">
       <div className="ov-heading">
@@ -356,7 +360,7 @@ const BillingWorkspace = ({ initialTab }) => {
           </div>
           <div className="af-tablewrap">
             <table className="af-table">
-              <thead><tr><th>INVOICE / CUSTOMER</th><th>SERVICE / STAFF</th><th>DATE / DUE</th><th>BILLED</th><th>COLLECTED</th><th>CREDIT</th><th>PENDING</th><th>STATUS</th><th></th><th></th></tr></thead>
+              <thead><tr><th>INVOICE / CUSTOMER</th><th>SERVICE / STAFF</th><th>DATE / DUE</th><th>BILLED</th><th>COLLECTED</th><th>CREDIT</th><th>PENDING</th><th>STATUS</th><th></th><th></th><th></th></tr></thead>
               <tbody>
                 {shownInv.slice(0, 60).map(i => {
                   const credits = (i.credits || []).reduce((n, c) => n + c.amount, 0);
@@ -371,6 +375,7 @@ const BillingWorkspace = ({ initialTab }) => {
                       <td><b>{aed(pendingOf(i))}</b></td>
                       <td><span className={`af-badge ${badge(statusOf(i))}`}>{statusOf(i)}</span></td>
                       <td><a className="af-link" href={`${API}/invoices/${i.invoice_id}/pdf`} target="_blank" rel="noreferrer" data-testid={`pdf-${i.invoice_id}`}>PDF</a></td>
+                      <td><button className="af-link" data-testid={`einvoicing-btn-${i.invoice_id}`} onClick={() => setEinvFor(i)}>E-invoice</button></td>
                       <td>{isPartner && i.status === 'Draft' && (
                         <button className="af-link" data-testid={`issue-${i.invoice_id}`} onClick={async () => {
                           await axios.post(`${API}/invoices/${i.invoice_id}/issue`, {}, { withCredentials: true }); await load();
@@ -657,6 +662,8 @@ const BillingWorkspace = ({ initialTab }) => {
           </div>
         </div>
       )}
+
+      {einvFor && <EinvoiceModal invoice={einvFor} onClose={() => { setEinvFor(null); load(); }} />}
     </div>
   );
 };

@@ -1,17 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { Receipt, Plus, X, Edit2, Trash2, Download, Search, Filter, FileCheck2, ShieldCheck, Loader2 } from 'lucide-react';
+import { Receipt, Plus, X, Edit2, Trash2, Download, Search, Filter, FileCheck2 } from 'lucide-react';
 import axios from 'axios';
+import EinvoiceModal from '../components/EinvoiceModal';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
-
-const EINV_TXN_TYPES = [
-  ['standard', 'Standard B2B supply'], ['free_zone', 'Free Zone supply'],
-  ['deemed_supply', 'Deemed supply'], ['margin_scheme', 'Margin scheme'],
-  ['summary', 'Summary invoice'], ['continuous', 'Continuous supply'],
-  ['agent_billing', 'Disclosed agent billing'], ['ecommerce', 'Supply through e-commerce'],
-  ['export', 'Export'],
-];
 
 const Invoices = () => {
   const { user } = useOutletContext();
@@ -27,37 +20,9 @@ const Invoices = () => {
   const [form, setForm] = useState({ client_id: '', service_name: '', amount: '', date: '', status: 'Unpaid', notes: '' });
   // e-invoice modal state
   const [einvOpen, setEinvOpen] = useState(null);        // invoice object
-  const [einvType, setEinvType] = useState('standard');
-  const [einvAddr, setEinvAddr] = useState('');
-  const [einvResult, setEinvResult] = useState(null);    // validation result
-  const [einvBusy, setEinvBusy] = useState(false);
 
   const openEinv = async (inv) => {
     setEinvOpen(inv);
-    setEinvResult(null);
-    setEinvBusy(true);
-    try {
-      // load current einvoicing data via validate (also gives us the issues)
-      const res = await axios.get(`${API}/einvoicing/invoices/${inv.invoice_id}/validate`, { withCredentials: true });
-      setEinvType(res.data.einvoicing?.type_code || 'standard');
-      setEinvAddr(res.data.einvoicing?.buyer_address || '');
-      setEinvResult(res.data);
-    } catch (e) { setEinvResult({ valid: false, issues: [{ severity: 'fail', field: 'load', message: 'Failed to validate' }] }); }
-    finally { setEinvBusy(false); }
-  };
-
-  const saveEinv = async () => {
-    setEinvBusy(true);
-    try {
-      await axios.patch(`${API}/einvoicing/invoices/${einvOpen.invoice_id}`, { type_code: einvType, buyer_address: einvAddr }, { withCredentials: true });
-      const res = await axios.get(`${API}/einvoicing/invoices/${einvOpen.invoice_id}/validate`, { withCredentials: true });
-      setEinvResult(res.data);
-    } catch (e) { alert('Save failed'); }
-    finally { setEinvBusy(false); }
-  };
-
-  const downloadXml = () => {
-    window.open(`${API}/einvoicing/invoices/${einvOpen.invoice_id}/pintae?download=true`, '_blank');
   };
 
   useEffect(() => { loadData(); }, []);
@@ -287,64 +252,8 @@ const Invoices = () => {
         </div>
       )}
 
-      {/* E-invoice (PINT AE) Modal */}
-      {einvOpen && (
-        <div className="modal-overlay" onClick={() => setEinvOpen(null)} data-testid="einvoicing-modal">
-          <div className="modal-box" style={{ maxWidth: 560, maxHeight: '85vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-              <h3 style={{ fontSize: 15, fontFamily: 'DM Sans', color: 'var(--text)', margin: 0, display: 'flex', alignItems: 'center', gap: 7 }}>
-                <FileCheck2 size={15} color="#0e6db4" /> E-invoice (PINT AE) — {einvOpen.invoice_number || einvOpen.invoice_id}
-              </h3>
-              <button onClick={() => setEinvOpen(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }}><X size={16} /></button>
-            </div>
-            <p style={{ fontSize: 11.5, color: 'var(--muted)', margin: '0 0 12px' }}>{einvOpen.client_name} · {einvOpen.service_name}</p>
-
-            <div style={{ display: 'grid', gap: 10, marginBottom: 12 }}>
-              <div>
-                <label style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', display: 'block', marginBottom: 3 }}>Transaction-type code</label>
-                <select value={einvType} onChange={e => setEinvType(e.target.value)} data-testid="einvoicing-type-select"
-                  style={{ width: '100%', padding: '8px 10px', fontSize: 12.5, borderRadius: 'var(--rs)', border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)' }}>
-                  {EINV_TXN_TYPES.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', display: 'block', marginBottom: 3 }}>Buyer address (mandatory for the e-invoice)</label>
-                <input value={einvAddr} onChange={e => setEinvAddr(e.target.value)} placeholder="Office, building, city"
-                  data-testid="einvoicing-address-input"
-                  style={{ width: '100%', padding: '8px 10px', fontSize: 12.5, borderRadius: 'var(--rs)', border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', boxSizing: 'border-box' }} />
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-              <button className="tbtn tbtn-gold" onClick={saveEinv} disabled={einvBusy} data-testid="einvoicing-save-btn">
-                {einvBusy ? <Loader2 size={12} className="spin" /> : <ShieldCheck size={12} />} Save & validate
-              </button>
-              <button className="tbtn" onClick={downloadXml} disabled={einvBusy || !einvResult?.valid}
-                title={einvResult?.valid ? 'Download PINT AE XML' : 'Fix failing fields first'}
-                data-testid="einvoicing-download-btn">
-                <Download size={12} /> PINT AE XML
-              </button>
-            </div>
-
-            {einvResult && (
-              <div data-testid="einvoicing-validation">
-                <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, color: einvResult.valid ? 'var(--green)' : 'var(--red)' }}>
-                  {einvResult.valid ? '✓ Ready for transmission to an accredited ASP' : '✗ Not e-invoice ready — fix the failing fields'}
-                </div>
-                {(einvResult.issues || []).map((i, ix) => (
-                  <div key={ix} style={{ fontSize: 11.5, padding: '6px 10px', borderRadius: 6, marginBottom: 4, background: i.severity === 'fail' ? '#fdecec' : '#fdf6ec', color: i.severity === 'fail' ? 'var(--red)' : '#b45309' }} data-testid={`einv-issue-${i.field}`}>
-                    {i.severity === 'fail' ? '✕' : '⚠'} <b>{i.field.replace(/_/g, ' ')}:</b> {i.message}
-                  </div>
-                ))}
-                {(einvResult.issues || []).length === 0 && <div style={{ fontSize: 11.5, color: 'var(--green)' }}>All mandatory field groups present.</div>}
-                <p className="af-note" style={{ fontSize: 10.5 }}>
-                  The XML is generated as Corner-1 data (UBL 2.1, PINT AE) and archived with a SHA-256 hash. After your client appoints their ASP, this file is what transmits — or connect the ASP API and it flows automatically.
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {/* E-invoice (PINT AE) Modal — shared component */}
+      {einvOpen && <EinvoiceModal invoice={einvOpen} onClose={() => setEinvOpen(null)} />}
     </div>
   );
 };
