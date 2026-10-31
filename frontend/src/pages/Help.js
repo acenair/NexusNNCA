@@ -243,6 +243,7 @@ const GUIDES = [
       'The balance check must PASS before the statements mean anything: assets equal liabilities plus equity. A FAIL means an unmapped account, a missing adjustment or an unbalanced trial balance — the Trial Balance and Adjustments tabs show where.',
       'The reporting framework defaults to IFRS for SMEs; switch to Full IFRS per engagement from the framework selector when the engagement calls for it (recorded in the work journal).',
       'Export the statements as a PDF for review or to send to the client — the basis of preparation and the adjustment totals are stated on the face of the statements.',
+      'The statement of cash flows (indirect method) builds itself from the ingested books: opening positions come from the general ledger before the period, closing from the adjusted trial balance — profit, working-capital movements, investing and financing reconcile to the movement in cash with an automatic tie check.',
       'Notes and disclosures are prepared at the review stage (notes builder comes with the disclosures module).',
     ],
   },

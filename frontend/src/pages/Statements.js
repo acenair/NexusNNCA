@@ -160,10 +160,106 @@ const Statements = ({ engagementId, isPartner }) => {
           <ShieldCheck size={12} /> Basis: {data.framework}. Figures are the adjusted trial balance — {data.posted_ajes} posted AJEs (AED {fmt(data.total_adjustments)}). Notes and disclosures are prepared at the review stage.
         </p>
       </div>
+
+      <CashFlow engagementId={engagementId} />
     </div>
   );
 };
 
 const round2 = (n) => Math.round(n * 100) / 100;
+
+/* Cash flow (indirect) panel */
+const CashFlow = ({ engagementId }) => {
+  const [cf, setCf] = useState(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await axios.get(`${API}/statements/${engagementId}/cashflow`, { withCredentials: true });
+        setCf(res.data);
+      } catch (e) { setCf({ available: false, reason: 'Failed to load' }); }
+      finally { setLoading(false); }
+    })();
+  }, [engagementId]);
+
+  if (loading) return <div className="nn-card" style={{ padding: '14px 20px', marginTop: 14, color: 'var(--muted)', fontSize: 12 }}>Building the cash flow…</div>;
+  if (!cf?.available) {
+    return (
+      <div className="nn-card" style={{ padding: '12px 20px', marginTop: 14 }} data-testid="cashflow-unavailable">
+        <p style={{ fontSize: 11.5, color: 'var(--muted)', margin: 0 }}>{cf?.reason || 'Cash flow not available yet.'}</p>
+      </div>
+    );
+  }
+
+  const o = cf.operating;
+  return (
+    <div className="nn-card" style={{ padding: '14px 20px', marginTop: 14 }} data-testid="cashflow-view">
+      <h3 style={{ fontSize: 14, fontFamily: 'DM Sans', color: 'var(--text)', margin: '0 0 2px' }}>Statement of cash flows (indirect method)</h3>
+      <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 10 }}>For the period {cf.period} — movements from the ingested books</div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#15803d', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Operating</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', borderBottom: '1px solid var(--nn-border)' }}>
+            <span style={{ color: 'var(--text)' }}>Net profit</span><b style={{ fontFamily: 'DM Sans' }}>{fmt(o.net_profit)}</b>
+          </div>
+          {Math.abs(o.depreciation) > 0.005 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', borderBottom: '1px solid var(--nn-border)' }}>
+              <span style={{ color: 'var(--text)' }}>Depreciation & amortisation</span><b style={{ fontFamily: 'DM Sans' }}>{fmt(o.depreciation)}</b>
+            </div>
+          )}
+          {o.working_capital.map(([ln, a]) => (
+            <div key={ln} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', borderBottom: '1px solid var(--nn-border)' }}>
+              <span style={{ color: 'var(--muted)' }}>(inc)/dec in {ln.toLowerCase()}</span><b style={{ fontFamily: 'DM Sans' }}>{fmt(a)}</b>
+            </div>
+          ))}
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, padding: '7px 0', fontWeight: 800, color: 'var(--text)' }}>
+            <span>Net cash from operations</span><span style={{ fontFamily: 'DM Sans' }}>{fmt(o.net_operating)}</span>
+          </div>
+        </div>
+
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#0e6db4', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Investing</div>
+          {cf.investing.rows.map(([ln, a]) => (
+            <div key={ln} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', borderBottom: '1px solid var(--nn-border)' }}>
+              <span style={{ color: 'var(--muted)' }}>Purchase of {ln.toLowerCase()}</span><b style={{ fontFamily: 'DM Sans' }}>{fmt(a)}</b>
+            </div>
+          ))}
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, padding: '7px 0', fontWeight: 800, color: 'var(--text)' }}>
+            <span>Net cash used in investing</span><span style={{ fontFamily: 'DM Sans' }}>{fmt(cf.investing.net_investing)}</span>
+          </div>
+
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#7c3aed', textTransform: 'uppercase', letterSpacing: 0.5, margin: '10px 0 4px' }}>Financing</div>
+          {cf.financing.rows.map(([ln, a]) => (
+            <div key={ln} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', borderBottom: '1px solid var(--nn-border)' }}>
+              <span style={{ color: 'var(--muted)' }}>{ln} — movement</span><b style={{ fontFamily: 'DM Sans' }}>{fmt(a)}</b>
+            </div>
+          ))}
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, padding: '7px 0', fontWeight: 800, color: 'var(--text)' }}>
+            <span>Net cash from financing</span><span style={{ fontFamily: 'DM Sans' }}>{fmt(cf.financing.net_financing)}</span>
+          </div>
+        </div>
+
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Cash reconciliation</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', borderBottom: '1px solid var(--nn-border)' }}>
+            <span style={{ color: 'var(--muted)' }}>Net change in cash</span><b style={{ fontFamily: 'DM Sans' }} data-testid="cashflow-net-change">{fmt(cf.net_change)}</b>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', borderBottom: '1px solid var(--nn-border)' }}>
+            <span style={{ color: 'var(--muted)' }}>Cash at start of period</span><b style={{ fontFamily: 'DM Sans' }}>{fmt(cf.cash_opening)}</b>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, padding: '7px 0', fontWeight: 800, color: 'var(--text)' }}>
+            <span>Cash at end of period</span><span style={{ fontFamily: 'DM Sans' }}>{fmt(cf.cash_closing)}</span>
+          </div>
+          <div style={{ marginTop: 10, padding: '8px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700,
+            background: cf.tie.reconciled ? '#f0f7f2' : '#fdecec', color: cf.tie.reconciled ? 'var(--green)' : 'var(--red)' }}
+            data-testid="cashflow-tie">
+            {cf.tie.reconciled ? '✓ Ties to the movement in the books' : `✗ Difference AED ${fmt(cf.tie.difference)}`}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default Statements;
