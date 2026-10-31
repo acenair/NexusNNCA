@@ -120,8 +120,7 @@ def test_recon_classify_unit():
     os.environ.setdefault("MONGO_URL", "mongodb://localhost:27017")
     os.environ.setdefault("DB_NAME", "ca_ai_test")
     from routes.vat_recon import _classify
-    mk = lambda s, o, i: {"status": s, "filed_output": o, "filed_input": i}
-    assert _classify(mk("Filed", 100, 50), {"entries": 0, "output": 0, "input": 0}) == "Books missing"
-    assert _classify(mk("Pending", 100, 50), {"entries": 5, "output": 100, "input": 50}) == "Not filed"
-    assert _classify(mk("Filed", 100, 50), {"entries": 5, "output": 100.5, "input": 50}) == "Reconciled"
-    assert _classify(mk("Filed", 100, 50), {"entries": 5, "output": 1100, "input": 50}) == "Variance"
+    assert _classify("Filed", {"entries": 0, "output": 0, "input": 0}, 100, 50) == "Books missing"
+    assert _classify("Pending", {"entries": 5, "output": 100, "input": 50}, 100, 50) == "Not filed"
+    assert _classify("Filed", {"entries": 5, "output": 100.5, "input": 50}, 100, 50) == "Reconciled"
+    assert _classify("Filed", {"entries": 5, "output": 1100, "input": 50}, 100, 50) == "Variance"

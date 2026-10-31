@@ -80,13 +80,13 @@ async def receipts_vat_by_quarter(client_id):
     return quarters
 
 
-def _classify(filing, books):
+def _classify(filing_status, books, filed_output, filed_input):
     if books is None or books["entries"] == 0:
         return "Books missing"
-    if (filing.get("status") or "Pending") != "Filed":
+    if (filing_status or "Pending") != "Filed":
         return "Not filed"
-    if abs(books["output"] - filing["filed_output"]) <= TOLERANCE and \
-       abs(books["input"] - filing["filed_input"]) <= TOLERANCE:
+    if abs(books["output"] - filed_output) <= TOLERANCE and \
+       abs(books["input"] - filed_input) <= TOLERANCE:
         return "Reconciled"
     return "Variance"
 
@@ -132,9 +132,11 @@ async def vat_reconciliation(engagement_id: str, authorization: str = Header(Non
         if b:
             row["variance_output"] = round(b["output"] - row["filed_output"], 2)
             row["variance_input"] = round(b["input"] - row["filed_input"], 2)
-        row["status"] = _classify(f, {"entries": b["entries"] if b else 0,
-                                      "output": b["output"] if b else 0,
-                                      "input": b["input"] if b else 0})
+        row["status"] = _classify(f.get("status", "Pending"),
+                                  {"entries": b["entries"] if b else 0,
+                                   "output": b["output"] if b else 0,
+                                   "input": b["input"] if b else 0},
+                                  row["filed_output"], row["filed_input"])
         rows.append(row)
 
     # book quarters with no filing at all — an unfiled period is a finding

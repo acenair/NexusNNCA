@@ -593,15 +593,22 @@ async def seed_demo_e2e():
             and await db.ledger_entries.count_documents({"client_id": CID}) > 0:
         from routes.vat_recon import books_vat_by_quarter, _quarter_key
         books = await books_vat_by_quarter(CID)
-        quarters = sorted(qk for qk, b in books.items() if b["output"] or b["input"])
+        vat_quarters = sorted(qk for qk, b in books.items() if b["output"] or b["input"])
+        # the story needs TWO contrasting quarters: one that reconciles exactly,
+        # one that carries a variance. When the books only move VAT in a single
+        # quarter, the variance example files a made-up figure for the NEXT
+        # quarter (entries exist but no VAT movement → clean amber flag).
+        story = [(qk, 0.0) for qk in vat_quarters[:1]] + [(qk, 1000.0) for qk in vat_quarters[1:3]]
+        if len(story) == 1:
+            nxt = [qk for qk in sorted(books) if qk > story[0][0] and books[qk]["entries"] > 0]
+            if nxt:
+                story.append((nxt[0], 1000.0))
         seed_filings = []
-        for i, qk in enumerate(quarters[:3]):
+        for qk, drift in story:
             y, q = qk.split("-Q")
             last_month = int(q) * 3
             period_end = f"{y}-{last_month:02d}-{(28 if last_month in (2,) else (30 if last_month in (4,6,9,11) else 31))}"
             b = books[qk]
-            # quarter 1 of the story reconciles exactly; quarter 2 carries a variance
-            filed_out, filed_in = (b["output"], b["input"]) if i == 0 else (round(b["output"] + 1000, 2), b["input"])
             seed_filings.append({
                 "filing_id": f"vat_filing_{uuid.uuid4().hex[:12]}",
                 "client_id": CID, "client_name": CNAME,
@@ -609,12 +616,13 @@ async def seed_demo_e2e():
                 "period_end_date": period_end,
                 "filing_due_date": f"{int(y) + (1 if last_month == 12 else 0)}-{(1 if last_month == 12 else last_month + 1):02d}-28",
                 "status": "Filed",
-                "box_1a": filed_out, "box_1b": 0, "box_2": 0, "box_3": 0, "box_4": filed_in,
+                "box_1a": round(b["output"] + drift, 2), "box_1b": 0, "box_2": 0, "box_3": 0,
+                "box_4": b["input"],
                 "source": "sample_vat_recon", "created_at": now,
             })
         if seed_filings:
             await db.vat_filings.insert_many(seed_filings)
-            var_q = quarters[1] if len(quarters) > 1 else None
+            var_q = next((qk for qk, d in story if d), None)
             await journal_event(EID, "vat_recon_seeded",
                                 f"Sample VAT filings recorded for {len(seed_filings)} period(s)"
                                 + (f" — {var_q} deliberately carries an AED 1,000 output-VAT variance so the reconciliation shows a live flag" if var_q else ""),
