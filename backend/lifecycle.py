@@ -548,7 +548,45 @@ async def seed_demo_e2e():
             "author_id": "system", "author_name": "Arjun S.", "status": "Open",
             "created_at": now, "cleared_at": None, "cleared_by": None})
 
-    # 6 — planning checklist reflects the story (idempotent)
+    # 6b — sample receipts in the engagement's receipt inbox (incl. one flagged duplicate
+    # so the dry run shows the duplicate firewall working)
+    if await db.receipts.count_documents({"engagement_id": EID}) == 0:
+        samples = [
+            ("Emirates Telecommunications (Etisalat)", "100234567890003", "INV-ETI-88213", "2025-10-05", 641.25, 30.53, 5, "Telecommunications", "Office internet and mobile — September"),
+            ("Union Properties — Building Management", "100456789000123", "SRV-2025-0344", "2025-10-07", 16800.0, 800.0, 5, "Rent", "Office rent — Q3 service charge"),
+            ("Sharaf DG Business", "100678901234567", "SD-77812", "2025-10-18", 4410.0, 210.0, 5, "Office equipment", "Laptop dock and monitors for new joiner"),
+            ("Careem Business", None, None, "2025-10-22", 87.50, None, None, "Travel", "Client site visits — Al Quoz"),
+        ]
+        seed_receipts = []
+        for vendor, trn, inv_no, date, total, vat, vpct, cat, note in samples:
+            body = f"receipt:{vendor}:{inv_no or 'xtra'}".encode()
+            seed_receipts.append({
+                "receipt_id": f"rcp_{uuid.uuid4().hex[:12]}", "engagement_id": EID,
+                "client_id": CID, "client_name": CNAME,
+                "file_path": f"sample/receipts/{uuid.uuid4().hex}.png", "file_name": f"{vendor.split(' ')[0].lower()}_receipt_{date}.png",
+                "mime_type": "image/png", "size": len(body), "sha256": __import__("hashlib").sha256(body).hexdigest(),
+                "vendor": vendor, "vendor_key": re.sub(r"[^a-z0-9]+", "", vendor.lower()),
+                "vendor_trn": trn, "invoice_no": inv_no, "receipt_date": date,
+                "currency": "AED", "total": total, "vat_amount": vat, "vat_percent": vpct,
+                "category": cat, "line_items": [], "payment_method": "Card",
+                "confidence": 0.92, "extraction_notes": note, "status": "Pending review",
+                "duplicate_of": None, "uploaded_by": "system", "uploaded_by_name": "system (sample data)",
+                "is_deleted": False, "created_at": now})
+        dupe_src = seed_receipts[0]
+        seed_receipts.append({**dupe_src,
+            "receipt_id": f"rcp_{uuid.uuid4().hex[:12]}",
+            "file_name": "etisalat_receipt_2025-10-05 (1).png",
+            "sha256": __import__("hashlib").sha256(b"re-upload-same-receipt").hexdigest(),
+            "status": "Flagged duplicate", "duplicate_of": dupe_src["receipt_id"],
+            "uploaded_by_name": "Client portal"})
+        for r in seed_receipts:
+            r.update(tag)
+        await db.receipts.insert_many(seed_receipts)
+        await journal_event(EID, "receipt", "Sample receipts added to the inbox: 4 parsed (vendors, totals, VAT extracted) and 1 re-upload flagged as duplicate",
+                            by_name="system (sample data)", client_id=CID or "", client_name=CNAME or "")
+        logger.info(f"Seeded {len(seed_receipts)} sample receipts for engagement {EID}")
+
+    # 7 — planning checklist reflects the story (idempotent)
     if eng.get("checklist"):
         changed = False
         done_labels = {"Engagement letter", "Risk assessment", "Audit plan", "Team briefing"}
