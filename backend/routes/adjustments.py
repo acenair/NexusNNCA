@@ -230,13 +230,12 @@ async def delete_aje(aje_id: str, authorization: str = Header(None), session_tok
 
 # ---------- Final (adjusted) figures ----------
 
-@router.get("/tb/{engagement_id}/final")
-async def tb_final(engagement_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
-    """Statement lines and account balances as adjusted by POSTED AJEs."""
-    await _staff_only(await get_current_user(authorization, session_token))
+async def _compute_final(engagement_id):
+    """Statement lines and account balances as adjusted by POSTED AJEs.
+    Shared by the /final route and the IFRS statement builder."""
     tb = await _load_tb(engagement_id)
     if not tb or not tb.get("rows"):
-        return {"available": False}
+        return None
     ajes = await db.engagement_ajes.find(
         {"engagement_id": engagement_id, "status": "Posted"}, {"_id": 0}).to_list(500)
 
@@ -265,5 +264,15 @@ async def tb_final(engagement_id: str, authorization: str = Header(None), sessio
                 L["final"] = round(L["final"] + sign * a["amount"], 2)
 
     total_adj = round(sum(a["amount"] for a in ajes), 2)
-    return {"available": True, "lines": list(lines.values()), "accounts": list(accounts.values()),
+    return {"lines": list(lines.values()), "accounts": list(accounts.values()),
             "posted_ajes": len(ajes), "total_adjustments": total_adj}
+
+
+@router.get("/tb/{engagement_id}/final")
+async def tb_final(engagement_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
+    """Statement lines and account balances as adjusted by POSTED AJEs."""
+    await _staff_only(await get_current_user(authorization, session_token))
+    result = await _compute_final(engagement_id)
+    if not result:
+        return {"available": False}
+    return {"available": True, **result}

@@ -236,6 +236,16 @@ const GUIDES = [
       'Mark each period Reviewed with a note once reconciled — the sign-off is attributed and undoable.',
     ],
   },
+  {
+    role: 'Auditor / Staff', title: 'IFRS statements (trial balance to statements)', steps: [
+      'Once the trial balance is in place (imported directly or derived from the ingested books) and the adjustments are posted, the Statements tab builds the primary financial statements automatically: statement of profit or loss and statement of financial position.',
+      'Everything flows from one source: mapped statement lines from the Trial Balance tab, adjusted by POSTED entries from the Adjustments register — nothing is keyed twice.',
+      'The balance check must PASS before the statements mean anything: assets equal liabilities plus equity. A FAIL means an unmapped account, a missing adjustment or an unbalanced trial balance — the Trial Balance and Adjustments tabs show where.',
+      'The reporting framework defaults to IFRS for SMEs; switch to Full IFRS per engagement from the framework selector when the engagement calls for it (recorded in the work journal).',
+      'Export the statements as a PDF for review or to send to the client — the basis of preparation and the adjustment totals are stated on the face of the statements.',
+      'Notes and disclosures are prepared at the review stage (notes builder comes with the disclosures module).',
+    ],
+  },
 ];
 
 const Help = () => {
