@@ -13589,6 +13589,62 @@
     }
    }
   },
+  "/api/statements/{engagement_id}/pack": {
+   "get": {
+    "summary": "Deliverable Pack",
+    "description": "One download: cover page, the three statements, notes, the disclosure\nchecklist, the adjustments register and the adjusted trial balance.",
+    "operationId": "deliverable_pack_api_statements__engagement_id__pack_get",
+    "parameters": [
+     {
+      "name": "engagement_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Engagement Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "title": "Authorization"
+      }
+     },
+     {
+      "name": "session_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "title": "Session Token"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/api/receipts/{engagement_id}/upload": {
    "post": {
     "summary": "Upload Receipt",

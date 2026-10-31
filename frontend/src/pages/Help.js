@@ -247,6 +247,7 @@ const GUIDES = [
       'Notes & disclosures: the disclosure checklist lists the standard IFRS for SMEs notes — untick any that do not apply to the engagement, and tick each one off once disclosed. Progress shows at the top.',
       'Each note can be AI pre-drafted from the engagement\u2019s own figures and the firm\u2019s saved policy wording (Notes & disclosures → Firm policy library — keep the standard policies current; they flow into every pre-draft). If AI is not configured, a template wording is used instead.',
       'Staff edit any note; the partner clears it when review-complete (cleared notes are locked until reopened). Cleared notes appear in full in the statements PDF; drafts are marked [DRAFT — pending partner review].',
+      'Deliverable pack: the Statements tab can download the complete client-ready PDF in one click — cover page with the balance and cash-flow checks, the three statements, notes, the disclosure checklist, the adjustments register and the adjusted trial balance.',
       'Notes and disclosures are prepared at the review stage (notes builder comes with the disclosures module).',
     ],
   },

@@ -1617,6 +1617,13 @@
   "name": "statements_pdf"
  },
  {
+  "path": "/api/statements/{engagement_id}/pack",
+  "methods": [
+   "GET"
+  ],
+  "name": "deliverable_pack"
+ },
+ {
   "path": "/api/receipts/{engagement_id}/upload",
   "methods": [
    "POST"

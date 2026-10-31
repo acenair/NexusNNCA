@@ -43,6 +43,21 @@ const Statements = ({ engagementId, isPartner }) => {
   };
   useEffect(() => { load(); }, [engagementId]);
 
+  const exportPack = async () => {
+    setBusy('pack'); setError('');
+    try {
+      const res = await axios.get(`${API}/statements/${engagementId}/pack`, { withCredentials: true, responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `deliverable-pack-${(data?.client_name || 'client').replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.pdf`;
+      document.body.appendChild(a); a.click(); a.remove();
+      window.URL.revokeObjectURL(url);
+      await load();
+    } catch (e) { setError('Deliverable pack export failed'); }
+    finally { setBusy(''); }
+  };
+
   const setFramework = async (framework) => {
     setBusy('framework'); setError('');
     try {
@@ -106,6 +121,10 @@ const Statements = ({ engagementId, isPartner }) => {
           </select>
           <button className="af-btn" onClick={exportPdf} disabled={busy === 'pdf'} data-testid="statements-export-pdf">
             {busy === 'pdf' ? <Loader2 size={12} className="spin" /> : <Download size={12} />} Export PDF
+          </button>
+          <button className="af-btn" onClick={exportPack} disabled={busy === 'pack'} title="Cover + statements + cash flow + notes + checklist + AJE register + adjusted TB"
+            data-testid="statements-export-pack" style={{ color: '#0e6db4', borderColor: '#45afe8' }}>
+            {busy === 'pack' ? <Loader2 size={12} className="spin" /> : <FileText size={12} />} Deliverable pack
           </button>
         </div>
       </div>
