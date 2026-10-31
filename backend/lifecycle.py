@@ -469,7 +469,7 @@ async def seed_demo_e2e():
         logger.info(f"Seeded {len(work)} sample time entries for {CNAME}")
 
     # 2 — sample documents for each stage (inline data so previews + TB import work)
-    if await db.documents.count_documents({"client_id": CID, "source": {"$in": ("sample_stage_doc", "sample_onboarding")}}) == 0:
+    if await db.documents.count_documents({"client_id": CID, "engagement_id": EID, "source": "sample_e2e"}) == 0:
         tb_csv = "Account,Debit,Credit\n" + "\n".join(
             f"{r['account']},{r.get('debit') or 0},{r.get('credit') or 0}" for r in tb.get("rows", []))
         docs = [
