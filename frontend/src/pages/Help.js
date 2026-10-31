@@ -218,6 +218,15 @@ const GUIDES = [
       'CSV / Excel fallback: if the client\u0027s system cannot export XML, export the general ledger report to Excel and use the column labelling wizard to mark the date, account, debit and credit columns.',
     ],
   },
+  {
+    role: 'Auditor / Staff', title: 'Receipt inbox (AI-parsed receipts, duplicate firewall)', steps: [
+      'Open an audit engagement and switch to the Receipts tab. Upload a photo or PDF of any purchase receipt / tax invoice — the AI reads the vendor, TRN, date, invoice number, total, VAT amount, category and line items automatically.',
+      'Every receipt gets a review status. Accept a receipt once you have verified it against the books; keep it Pending while you check; Reject if it does not belong in the file.',
+      'Duplicate firewall: uploading the exact same file twice is blocked outright, and a receipt with the same vendor + date + total as an earlier one is stored but flagged — confirm it is a genuinely different document before accepting.',
+      'The totals strip shows accepted spend and accepted input VAT for the engagement — a quick cross-check against the VAT input in the books.',
+      'Fields are editable — if the AI misreads a digit, fix the value on the receipt card (edits are attributed). Delete is partner-only.',
+    ],
+  },
 ];
 
 const Help = () => {
