@@ -47,7 +47,9 @@ async def get_reminders(authorization: str = Header(None), session_token: str = 
         task_query["$or"] = service_or
 
     staff_names = {u["email"]: u["name"] async for u in db.users.find({}, {"_id": 0, "email": 1, "name": 1})}
-    tasks = await db.tasks.find(task_query, {"_id": 0}).to_list(200)
+    # No silent cap: a fixed limit cut reminders for recently created tasks once the
+    # task count grew; overdue-first ordering keeps the most urgent ones at the front.
+    tasks = await db.tasks.find(task_query, {"_id": 0}).sort("due_date", 1).to_list(2000)
     for t in tasks:
         due = t.get("due_date")
         if not due:
