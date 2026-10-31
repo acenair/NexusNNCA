@@ -117,6 +117,15 @@ const GUIDES = [
     ],
   },
   {
+    role: 'Auditor / Staff', title: 'Audit workbench — adjustments (AJEs)', steps: [
+      'Open the audit engagement → "Adjustments" tab. This is the adjustments register: corrections your team proposes to the client\u0027s trial balance (accruals, provisions, depreciation, reclassifications).',
+      'Import the trial balance first — adjustments are booked against its accounts. Pick the debit and credit accounts with typeahead search and enter the amount; the reference (AJE-001…) is assigned automatically.',
+      'New entries start as Proposed. Partner signs off ("Sign off") to post them — posted AJEs are locked and only the partner can undo the sign-off. Every action is captured in the Journal.',
+      'The "Final statement figures" table shows each statement line: PER TB (client\u0027s books), the ADJUSTMENTS column, and FINAL (what the IFRS statements will show). The net effect on profit is summarised at the top.',
+      'Sample data: the demo engagement (Al Baraka Trading LLC) carries a sample trial balance with three example adjustments so you can see the flow.',
+    ],
+  },
+  {
     role: 'Everyone', title: 'Client document requests (PBC portal)', steps: [
       'Document requests (sidebar → WORKSPACE) sends a document checklist to a client without them logging in.',
       'New request: pick the client (optionally link the engagement), apply a PBC template for the service (External Audit, VAT, AML…), edit the item list, create.',

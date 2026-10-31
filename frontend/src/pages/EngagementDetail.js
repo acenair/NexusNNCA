@@ -6,7 +6,8 @@ import AuditWorkbook from './AuditWorkbook';
 import TrialBalance from './TrialBalance';
 import WorkJournal from './WorkJournal';
 import ClientQueries from './ClientQueries';
-import { MessageSquare } from 'lucide-react';
+import AJEs from './AJEs';
+import { MessageSquare, Scale } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const AUDIT_SERVICE_TYPES = ['statutory_audit', 'internal_audit', 'stock_audit', 'fraud_audit'];
@@ -248,6 +249,7 @@ const EngagementDetail = () => {
             {isAudit && tabBtn('audit', 'tab-audit-workbook', <BookOpen size={14} />, 'Audit Workbook')}
             {isAudit && tabBtn('review', 'tab-review', <ListChecks size={14} />, 'Review & assumptions')}
             {isAudit && tabBtn('tb', 'tab-trial-balance', <BookOpen size={14} />, 'Trial Balance')}
+            {isAudit && tabBtn('ajes', 'tab-ajes', <Scale size={14} />, 'Adjustments')}
             {tabBtn('journal', 'tab-journal', <BookOpen size={14} />, 'Journal')}
             {tabBtn('queries', 'tab-queries', <MessageSquare size={14} />, 'Client queries')}
           </div>
@@ -333,6 +335,8 @@ const EngagementDetail = () => {
 
       {activeTab === 'tb' && AUDIT_SERVICE_TYPES.includes(eng.service_type) ? (
         <TrialBalance engagementId={engagementId} />
+      ) : activeTab === 'ajes' && AUDIT_SERVICE_TYPES.includes(eng.service_type) ? (
+        <AJEs engagementId={engagementId} isPartner={isPartner} />
       ) : activeTab === 'journal' ? (
         <WorkJournal engagementId={engagementId} />
       ) : activeTab === 'queries' ? (

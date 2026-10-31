@@ -220,6 +220,93 @@ async def seed_preset_workflows():
     logger.info(f"Seeded {len(presets)} preset workflows")
 
 
+async def seed_demo_tb_ajes():
+    """Seed a sample trial balance + adjusting entries onto the demo audit
+    engagement (once), so the audit workbench has consistent sample data."""
+    # any demo audit engagement still without a trial balance?
+    demo_engs = await db.service_engagements.find(
+        {"service_type": "statutory_audit", "status": "Active"},
+        {"_id": 0, "engagement_id": 1, "client_id": 1, "client_name": 1}).to_list(50)
+    if await db.tb_imports.find_one({"source": "sample_ledger"}):
+        return  # already seeded
+    eng = None
+    for e in demo_engs:
+        if not await db.tb_imports.find_one({"engagement_id": e["engagement_id"]}, {"_id": 1}):
+            eng = e
+            break
+    if not eng:
+        return
+    now = datetime.now(timezone.utc).isoformat()
+    tb_rows = [
+        # account, description, debit, credit, mapping
+        ("Cash at bank - Emirates NBD", "Bank current account", 614900, 0, "Cash and bank balances"),
+        ("Petty cash", "", 3500, 0, "Cash and bank balances"),
+        ("Accounts receivable - trade", "", 286400, 0, "Trade receivables"),
+        ("Other deposits", "Office deposit", 60000, 0, "Other receivables and advances"),
+        ("Office equipment - cost", "", 148000, 0, "Property, plant and equipment"),
+        ("Furniture and fittings - cost", "", 52000, 0, "Property, plant and equipment"),
+        ("Accounts payable - trade", "", 0, 143800, "Trade payables"),
+        ("Accrued expenses", "", 0, 28500, "Accruals and other payables"),
+        ("VAT payable", "", 0, 21400, "VAT and taxes payable"),
+        ("End-of-service obligation", "", 0, 46200, "Provisions and end-of-service"),
+        ("Share capital", "", 0, 300000, "Share capital"),
+        ("Retained earnings - b/fwd", "", 0, 131000, "Retained earnings"),
+        ("Management fees earned", "", 0, 1240000, "Revenue"),
+        ("Other operating income", "", 0, 18000, "Other income"),
+        ("Staff salaries and benefits", "", 486000, 0, "Staff costs"),
+        ("Office rent", "", 168000, 0, "Operating expenses"),
+        ("Utilities and telephone", "", 32400, 0, "Operating expenses"),
+        ("Professional and licence fees", "", 47500, 0, "Operating expenses"),
+        ("Office expenses and sundry", "", 24100, 0, "Operating expenses"),
+        ("Bank charges", "", 6100, 0, "Finance costs"),
+    ]
+    await db.tb_imports.insert_one({
+        "tb_id": f"tb_{uuid.uuid4().hex[:12]}",
+        "engagement_id": eng["engagement_id"],
+        "client_id": eng["client_id"],
+        "client_name": eng["client_name"],
+        "file_name": "sample_trial_balance_FY2025.csv",
+        "imported_by": "system (sample data)",
+        "imported_at": now,
+        "columns": {"account": 0, "description": 1, "debit": 2, "credit": 3},
+        "source": "sample_ledger",
+        "rows": [{"account": a, "description": d, "debit": dr, "credit": cr,
+                  "mapping": m, "source": "memory"} for a, d, dr, cr, m in tb_rows],
+        "mapped_count": len(tb_rows),
+        "memory_mapped": 0,
+        "auto_mapped": 0,
+    })
+    sample_ajes = [
+        ("Accrue December electricity bill not yet recorded in the books", 3800,
+         "Utilities and telephone", "Accrued expenses"),
+        ("Provide for end-of-service benefit shortfall for the year", 15400,
+         "Staff salaries and benefits", "End-of-service obligation"),
+        ("Reverse bank charge duplicated on 12 March statement", 275,
+         "Bank charges", "Cash at bank - Emirates NBD"),
+    ]
+    for i, (desc, amt, dr, cr) in enumerate(sample_ajes, 1):
+        await db.engagement_ajes.insert_one({
+            "aje_id": f"aje_{uuid.uuid4().hex[:12]}",
+            "engagement_id": eng["engagement_id"],
+            "client_id": eng["client_id"],
+            "client_name": eng["client_name"],
+            "ref": f"AJE-{i:03d}",
+            "description": desc,
+            "amount": amt,
+            "debit_account": dr,
+            "credit_account": cr,
+            "debit_line": next(m for a2, d2, dr2, cr2, m in tb_rows if a2 == dr),
+            "credit_line": next(m for a2, d2, dr2, cr2, m in tb_rows if a2 == cr),
+            "status": "Posted" if i <= 2 else "Proposed",
+            "raised_by": "system (sample data)",
+            "signed_off_by": "Arjun Srinivas" if i <= 2 else None,
+            "signed_off_at": now if i <= 2 else None,
+            "source": "sample_ledger",
+            "created_at": now,
+        })
+    logger.info(f"Seeded sample trial balance + {len(sample_ajes)} AJEs for demo engagement {eng['engagement_id']}")
+
+
 async def startup():
     try:
         init_storage()
@@ -232,6 +319,7 @@ async def startup():
     await seed_nn_engagements()
     await seed_preset_workflows()
     await audit_workbook.seed_audit_template(db, logger)
+    await seed_demo_tb_ajes()
     await migrate_force_password_change()
 
 

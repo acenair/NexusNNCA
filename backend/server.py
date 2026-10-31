@@ -40,6 +40,7 @@ from routes import (
     trial_balance,
     journal,
     queries,
+    adjustments,
 )
 
 app = FastAPI()
@@ -80,6 +81,7 @@ for router in (
     trial_balance.router,
     journal.router,
     queries.router,
+    adjustments.router,
 ):
     app.include_router(router)
 
