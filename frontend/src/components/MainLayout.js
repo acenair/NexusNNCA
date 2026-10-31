@@ -320,7 +320,7 @@ const MainLayout = ({ user }) => {
       )}
 
       {/* Navigation */}
-      <nav style={{ flex: 1, padding: collapsed && !isMobile ? '8px 6px' : '8px 10px', overflowY: 'auto' }}>
+      <nav style={{ flex: 1, minHeight: 0, padding: collapsed && !isMobile ? '8px 6px' : '8px 10px', overflowY: 'auto' }}>
         {menuSections.filter(section => isSectionAllowed(section.title)).map((section) => {
           const SectionIcon = sectionIcons[section.title] || FileText;
           const isExpanded = expandedSections[section.title];
@@ -478,6 +478,13 @@ const MainLayout = ({ user }) => {
             <span className="topbar-date" style={{ fontSize: 11, color: 'var(--muted)' }}>{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {/* Logout — always reachable in the topbar on phones (sidebar footer is below the fold there) */}
+            {user && (
+              <button className="topbar-logout-mobile" onClick={handleLogout} title="Logout" data-testid="topbar-logout-btn"
+                style={{ display: 'none', alignItems: 'center', justifyContent: 'center', gap: 5, background: '#eaf3fb', border: 'none', color: '#698398', cursor: 'pointer', padding: '7px 10px', borderRadius: 8, fontSize: 12, fontWeight: 600, fontFamily: 'DM Sans, sans-serif' }}>
+                <LogOut size={14} /> <span className="btn-label">Logout</span>
+              </button>
+            )}
             {isPartner && (
               <>
                 <button className="tbtn tbtn-green topbar-action-btn" onClick={() => openEventModal('meeting')} data-testid="topbar-meeting-btn"><Users size={13} /> <span className="btn-label">+ Meeting</span></button>
@@ -608,6 +615,7 @@ const MainLayout = ({ user }) => {
         @media (max-width: 768px) {
           .sidebar-desktop { display: none !important; }
           .mobile-menu-btn { display: flex !important; }
+          .topbar-logout-mobile { display: flex !important; }
           .topbar-date { display: none !important; }
           .btn-label { display: none; }
           .topbar-action-btn { padding: 7px 8px !important; gap: 0 !important; }
