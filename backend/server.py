@@ -41,6 +41,7 @@ from routes import (
     journal,
     queries,
     adjustments,
+    einvoicing,
 )
 
 app = FastAPI()
@@ -82,6 +83,7 @@ for router in (
     journal.router,
     queries.router,
     adjustments.router,
+    einvoicing.router,
 ):
     app.include_router(router)
 

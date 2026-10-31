@@ -220,6 +220,30 @@ async def seed_preset_workflows():
     logger.info(f"Seeded {len(presets)} preset workflows")
 
 
+async def seed_einvoicing_samples():
+    """Sample e-invoicing readiness rows for demo clients (once)."""
+    if await db.einvoicing_readiness.count_documents({}) > 0:
+        return
+    now = datetime.now(timezone.utc).isoformat()
+    demo_clients = await db.clients.find({}, {"_id": 0, "client_id": 1, "name": 1}).to_list(10)
+    samples = [
+        ("Gulf Pharma Group", "phase1", 68000000, {"tin_confirmed": True, "fields_ready": True}, "Avalara Gulf Technologies LLC"),
+        ("Al Baraka Trading LLC", "phase2", 2400000, {"tin_confirmed": True}, ""),
+    ]
+    n = 0
+    for name, phase, revenue, checks, asp in samples:
+        c = next((x for x in demo_clients if x["name"] == name), None)
+        if not c:
+            continue
+        await db.einvoicing_readiness.update_one(
+            {"client_id": c["client_id"]},
+            {"$set": {"phase": phase, "annual_revenue_aed": revenue, "asp_name": asp,
+                      **checks, "client_name": name, "updated_by": "system (sample data)", "updated_at": now}},
+            upsert=True)
+        n += 1
+    logger.info(f"Seeded sample e-invoicing readiness for {n} demo clients")
+
+
 async def seed_demo_tb_ajes():
     """Seed a sample trial balance + adjusting entries onto the demo audit
     engagement (once), so the audit workbench has consistent sample data."""
@@ -306,6 +330,23 @@ async def seed_demo_tb_ajes():
         })
     logger.info(f"Seeded sample trial balance + {len(sample_ajes)} AJEs for demo engagement {eng['engagement_id']}")
 
+    # sample e-invoicing readiness for two demo clients (one each side of the 50m line)
+    if await db.einvoicing_readiness.count_documents({}) == 0:
+        demo_clients = await db.clients.find({}, {"_id": 0, "client_id": 1, "name": 1}).to_list(5)
+        samples = [
+            ("Gulf Pharma Group", "phase1", 68000000, {"tin_confirmed": True, "fields_ready": True}, "Avalara Gulf Technologies LLC"),
+            ("Al Baraka Trading LLC", "phase2", 2400000, {"tin_confirmed": True}, ""),
+        ]
+        for name, phase, revenue, checks, asp in samples:
+            c = next((x for x in demo_clients if x["name"] == name), None)
+            if not c:
+                continue
+            await db.einvoicing_readiness.update_one(
+                {"client_id": c["client_id"]},
+                {"$set": {"phase": phase, "annual_revenue_aed": revenue, "asp_name": asp,
+                          **checks, "client_name": name, "updated_by": "system (sample data)", "updated_at": now}},
+                upsert=True)
+        logger.info("Seeded sample e-invoicing readiness for demo clients")
 
 async def startup():
     try:
@@ -320,6 +361,7 @@ async def startup():
     await seed_preset_workflows()
     await audit_workbook.seed_audit_template(db, logger)
     await seed_demo_tb_ajes()
+    await seed_einvoicing_samples()
     await migrate_force_password_change()
 
 

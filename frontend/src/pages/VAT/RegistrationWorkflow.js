@@ -375,7 +375,7 @@ const VATRegistrationWorkflow = () => {
                   <li>You may be contacted for clarifications or additional documents</li>
                   <li>Once approved, you'll receive your TRN via EmaraTax portal</li>
                   <li>You must begin charging 5% VAT on taxable supplies from TRN issue date</li>
-                  <li>E-invoicing is mandatory from July 2026</li>
+                  <li>E-invoicing: voluntary from July 2026 — mandatory 1 Jan 2027 for revenue ≥ AED 50m, 1 July 2027 for smaller businesses (PINT AE XML via an accredited ASP)</li>
                 </ul>
               </div>
             </div>

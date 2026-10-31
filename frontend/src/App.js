@@ -55,6 +55,7 @@ import ClientOnboarding from '@/pages/ClientOnboarding';
 import OnboardingTracker from '@/pages/OnboardingTracker';
 import Invoices from '@/pages/Invoices';
 import AgeingReport from '@/pages/AgeingReport';
+import Einvoicing from '@/pages/Einvoicing';
 import Proposals from '@/pages/Proposals';
 import ClientLayout from '@/components/ClientLayout';
 import ClientDocuments from '@/pages/ClientDocuments';
@@ -151,6 +152,7 @@ function AppRouter() {
         <Route path="clients/:clientId/timeline" element={<ClientTimeline />} />
         <Route path="engagements" element={<Engagements />} />
         <Route path="compliance" element={<Compliance />} />
+        <Route path="einvoicing" element={<Einvoicing />} />
         <Route path="attendance" element={<AttendanceLeave />} />
         <Route path="leads" element={<Leads />} />
         <Route path="performance" element={<WorkPerformance />} />

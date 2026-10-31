@@ -126,6 +126,16 @@ const GUIDES = [
     ],
   },
   {
+    role: 'Partner', title: 'E-invoicing readiness (UAE mandate)', steps: [
+      'E-invoicing (FIRM MANAGEMENT → "E-invoicing") tracks every client\u0027s route to the UAE eInvoicing mandate: PINT AE structured XML invoices sent through a Ministry-accredited service provider (ASP) — a PDF stops being a valid invoice at the client\u0027s mandate date.',
+      'Dates: voluntary/pilot since 1 July 2026 (test now, no penalty risk); mandatory 1 Jan 2027 for clients with revenue ≥ AED 50m (ASP appointed by 30 Oct 2026); 1 July 2027 for smaller clients (ASP by 31 Mar 2027); government suppliers 1 Oct 2027. B2B/B2G only — B2C excluded for now.',
+      'Per client, work the five readiness checks: TIN confirmed (first 10 digits of the TRN) → invoice data covers the 51 mandatory PINT AE fields → ASP appointed via EmaraTax (only providers on the MoF accredited register, with an accreditation number) → Peppol participant ID issued (0235 + TIN) → test invoice exchanged end-to-end.',
+      'Classify each client\u0027s phase and record the revenue estimate and ASP name — the list sorts clients whose ASP deadline is overdue or imminent to the top, with days remaining.',
+      'Penalties if a client ignores the mandate: AED 5,000/month (no ASP), AED 100 per late invoice or credit note (cap AED 5,000/month), AED 1,000/day for unnotified data changes — use this in readiness conversations.',
+      'Run a readiness assessment for every active client before 31 March 2027 — package the tracker output as the deliverable.',
+    ],
+  },
+  {
     role: 'Everyone', title: 'Client document requests (PBC portal)', steps: [
       'Document requests (sidebar → WORKSPACE) sends a document checklist to a client without them logging in.',
       'New request: pick the client (optionally link the engagement), apply a PBC template for the service (External Audit, VAT, AML…), edit the item list, create.',
