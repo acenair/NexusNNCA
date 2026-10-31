@@ -408,6 +408,46 @@ h1, h2, h3, h4, h5, h6 {
   .af-grid-65, .af-grid-3 { grid-template-columns: 1fr; }
 }
 
+/* ===== Mobile view polish — stop widget text bleeding ===== */
+@media (max-width: 640px) {
+  /* Inline-styled grids (dashboard tiles, detail forms, wizard columns) collapse */
+  [style*="repeat(4, 1fr)"], [style*="repeat(4,1fr)"] { grid-template-columns: 1fr 1fr !important; }
+  [style*="repeat(3, 1fr)"], [style*="1fr 1fr 1fr"], [style*="repeat(3,1fr)"] { grid-template-columns: 1fr !important; }
+  [style*="1.65fr"] { grid-template-columns: 1fr !important; }
+  [style*="repeat(2, 1fr)"] { grid-template-columns: 1fr !important; }
+
+  /* Content gutters: tighten the inline '0 20px' margins used by tab panels */
+  [style*="margin: 0 20px"], [style*="margin: '0 20px'"] { margin-left: 12px !important; margin-right: 12px !important; }
+
+  /* Cards never force horizontal scroll; long tokens wrap */
+  .af-card, .nn-card, .ov-card { min-width: 0; overflow-wrap: break-word; word-break: normal; }
+  .af-card > div, .nn-card > div { min-width: 0; }
+  .af-mini, .af-attention, .af-staff, .af-activity { flex-wrap: wrap; row-gap: 4px; }
+  .af-mini b, .af-attention b, .af-activity b { overflow-wrap: anywhere; }
+  .af-tablewrap td, .af-tablewrap th { overflow-wrap: anywhere; }
+  .af-kpis { grid-template-columns: 1fr 1fr !important; gap: 10px; }
+  .af-metric b { font-size: 22px !important; }
+  .af-movement { grid-template-columns: 1fr 1fr !important; }
+
+  /* Hero stacks; action buttons keep inside the card */
+  .af-hero { flex-direction: column; align-items: flex-start !important; gap: 10px; }
+  .af-hero .af-btn-primary { align-self: flex-start; }
+
+  /* Modals hug the screen */
+  .modal-box, .af-dialog { margin: 0 10px; width: auto !important; max-width: calc(100vw - 20px) !important; }
+
+  /* Headings + action rows wrap instead of pushing width */
+  .ov-heading, .af-cardhead { min-width: 0; }
+  .ov-heading h1 { font-size: 22px !important; }
+  .af-cardhead { flex-wrap: wrap; row-gap: 6px; }
+  .nn-progress { min-width: 40px; }
+}
+
+@media (max-width: 768px) {
+  .topbar-date { display: none !important; }
+  body { overflow-x: hidden; }
+}
+
 /* Customer 360 */
 .af-tabs { display: flex; gap: 6px; overflow: auto; margin: 18px 0 14px; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
 .af-tabs button { white-space: nowrap; border: 0; background: transparent; color: #6b8799; padding: 10px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; }
