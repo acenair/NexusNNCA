@@ -12,13 +12,11 @@ if BASE_URL:
 API = f"{BASE_URL}/api" if BASE_URL else None
 
 PARTNER_EMAIL = "srinivas.anup@gmail.com"
-PARTNER_PASSWORD = "AdminPass2026!"
+PARTNER_PASSWORD = "nn123456"
 STAFF_EMAIL = "subin@nnadvisory.ae"
 STAFF_PASSWORD = "SubinNewPass2026"
 CLIENT_EMAIL = "test.client.portal@example.test"
 CLIENT_PASSWORD = "ClientNewPass2026"
-FORCED_GATE_EMAIL = "sooraj@nnadvisory.ae"
-FORCED_GATE_PASSWORD = "nn123456"
 
 
 def _login(email: str, password: str):
@@ -95,22 +93,59 @@ def test_logout_invalidates_session_for_disposable_account():
     assert me.status_code == 401
 
 
+GATE_TEST_PASSWORD = "GateTestPass123"  # >= 10 chars; satisfies MIN_PASSWORD_LENGTH
+
+
 def test_forced_password_change_gate_blocks_gated_endpoints():
-    login = _login(FORCED_GATE_EMAIL, FORCED_GATE_PASSWORD)
-    if login.status_code != 200:
-        pytest.skip(f"Forced-gate account unavailable: {login.status_code} {login.text}")
+    """Exercise the must_change_password gate against a THROWAWAY user (the
+    shared conftest clears gate flags on seeded users at session start)."""
+    import uuid
+    from datetime import datetime, timezone
 
-    body = login.json()
-    assert body.get("must_change_password") is True
-    token = body["session_token"]
+    import bcrypt
+    from pymongo import MongoClient
 
-    me = requests.get(f"{API}/auth/me", headers={"Authorization": f"Bearer {token}"}, timeout=30)
-    assert me.status_code == 200
-    assert me.json().get("must_change_password") is True
+    mongo = MongoClient(
+        os.environ.get("MONGO_URL", "mongodb://localhost:27017"),
+        serverSelectionTimeoutMS=10000,
+    )
+    db = mongo[os.environ.get("DB_NAME", "ca_ai_test")]
+    user_id = f"user_{uuid.uuid4().hex[:12]}"
+    email = f"TEST_gate_smoke_{uuid.uuid4().hex[:8]}@example.test"
+    hashed = bcrypt.hashpw(GATE_TEST_PASSWORD.encode(), bcrypt.gensalt()).decode()
+    db.users.insert_one(
+        {
+            "user_id": user_id,
+            "email": email,
+            "name": "TEST Gate Smoke",
+            "password": hashed,
+            "role": "staff",
+            "status": "approved",
+            "must_change_password": True,
+            "picture": None,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+    )
+    try:
+        login = _login(email, GATE_TEST_PASSWORD)
+        if login.status_code != 200:
+            pytest.skip(f"Forced-gate account unavailable: {login.status_code} {login.text}")
 
-    blocked = requests.get(f"{API}/dashboard/stats", headers={"Authorization": f"Bearer {token}"}, timeout=30)
-    assert blocked.status_code == 403
-    assert "PASSWORD_CHANGE_REQUIRED" in blocked.text
+        body = login.json()
+        assert body.get("must_change_password") is True
+        token = body["session_token"]
+
+        me = requests.get(f"{API}/auth/me", headers={"Authorization": f"Bearer {token}"}, timeout=30)
+        assert me.status_code == 200
+        assert me.json().get("must_change_password") is True
+
+        blocked = requests.get(f"{API}/dashboard/stats", headers={"Authorization": f"Bearer {token}"}, timeout=30)
+        assert blocked.status_code == 403
+        assert "PASSWORD_CHANGE_REQUIRED" in blocked.text
+    finally:
+        db.users.delete_many({"user_id": user_id})
+        db.user_sessions.delete_many({"user_id": user_id})
+        mongo.close()
 
 
 def test_partner_staff_client_permission_boundary(partner_token):

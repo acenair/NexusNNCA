@@ -100,6 +100,9 @@ Guidelines:
 - If you don't know something, say so clearly
 - Format responses with markdown for clarity"""
 
+    if not GEMINI_API_KEY:
+        raise HTTPException(status_code=503, detail="AI assistant is not configured (GEMINI_API_KEY missing)")
+
     chat = LlmChat(
         api_key=GEMINI_API_KEY,
         session_id=req.session_id,

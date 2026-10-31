@@ -126,7 +126,9 @@ async def logout(authorization: str = Header(None), session_token: str = Cookie(
     # Prefer Authorization header over cookie (consistent with get_current_user)
     token = _extract_token(authorization, session_token)
     if token:
-        await db.user_sessions.delete_one({"session_token": token})
+        # delete_many: same-second logins can mint identical JWTs, producing
+        # duplicate session docs — logout must kill every copy of this token.
+        await db.user_sessions.delete_many({"session_token": token})
     return {"message": "Logged out"}
 
 

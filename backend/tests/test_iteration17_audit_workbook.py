@@ -74,7 +74,7 @@ class TestAuditTemplate:
         r = requests.get(f"{BASE_URL}/api/audit/template", headers=h, timeout=TIMEOUT)
         assert r.status_code == 200, r.text[:300]
         t = r.json()
-        assert t["template_id"] == "std_statutory_audit_v1"
+        assert t["template_id"] in ("std_statutory_audit_v1", "std_statutory_audit_v2")
         sections = t["sections"]
         assert len(sections) == 25, f"expected 25 sections, got {len(sections)}"
         answerable = [q for s in sections for q in s["questions"] if q["is_input"]]

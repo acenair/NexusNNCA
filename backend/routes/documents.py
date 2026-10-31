@@ -84,7 +84,7 @@ async def list_documents(authorization: str = Header(None), session_token: str =
         query["client_id"] = client_id
     if document_type:
         query["document_type"] = document_type
-    docs = await db.documents.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
+    docs = await db.documents.find(query, {"_id": 0, "data": 0}).sort("created_at", -1).to_list(500)
     # Enrich with uploader name
     user_cache = {}
     for doc in docs:

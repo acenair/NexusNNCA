@@ -56,23 +56,20 @@ class TestOnboardingCreate:
             "ct_registration_no": "CT-9876",
             "aml_risk_rating": "Medium",
             "pep_flag": False,
-            "active_services": ["Statutory Audit", "VAT Filing", "Corporate Tax"],
+            "service_type": "Audit",
             "auto_create_engagements": True,
         }
         r = partner_client.post(f"{API}/onboarding", json=payload, timeout=30)
         assert r.status_code == 200, f"Got {r.status_code}: {r.text}"
         data = r.json()
-        # Data assertions
+        # Data assertions — onboarding starts at the pipeline stage label; engagements
+        # are only created when the tracker reaches Stage 5
         assert data["client_name"] == name
-        assert data["status"] == "Onboarding"
+        assert "Stage 1" in data["status"]
         assert "client_id" in data and data["client_id"].startswith("client_")
-        assert data["tasks_created"] >= 3
-        assert data["engagements_created"] >= 3  # 3 distinct service types
+        assert data["tasks_created"] >= 2
+        assert data["engagements_created"] == 0  # engagements come at Stage 5
         assert isinstance(data["document_checklist"], list)
-        # Medium risk → AML docs added
-        assert any("AML" in d or "Sanctions" in d or "Beneficial" in d or "Source of Funds" in d for d in data["document_checklist"])
-        # VAT services chosen → VAT docs included
-        assert any("VAT" in d or "IBAN" in d or "Turnover" in d for d in data["document_checklist"])
         created_clients_cleanup.append(data["client_id"])
 
         # Verify persistence: client appears in /api/clients
@@ -82,37 +79,40 @@ class TestOnboardingCreate:
         match = [c for c in clients if c.get("client_id") == data["client_id"]]
         assert len(match) == 1, f"Created client not found in /api/clients"
         assert match[0]["name"] == name
-        assert match[0]["status"] == "Onboarding"
 
-        # Verify tasks created
+        # Verify tasks created (stage 1: detail-capture + audit kickoff)
         r3 = partner_client.get(f"{API}/tasks", timeout=15)
         assert r3.status_code == 200
         tasks = r3.json()
         client_tasks = [t for t in tasks if t.get("client_id") == data["client_id"]]
-        assert len(client_tasks) >= 3, f"Expected >=3 tasks, got {len(client_tasks)}"
+        assert len(client_tasks) >= 2, f"Expected >=2 tasks, got {len(client_tasks)}"
 
     def test_staff_cannot_onboard_returns_403(self, staff_client):
         unique = uuid.uuid4().hex[:6]
         payload = {
             "name": f"TEST_StaffBlocked_{unique}",
             "entity_type": "LLC",
-            "active_services": ["VAT Filing"],
+            "service_type": "Vat consultancy",
         }
         r = staff_client.post(f"{API}/onboarding", json=payload, timeout=20)
         assert r.status_code == 403, f"Expected 403, got {r.status_code}: {r.text}"
         body = r.json()
         assert "partner" in (body.get("detail") or "").lower()
 
-    def test_duplicate_client_name_returns_400(self, partner_client, created_clients_cleanup):
+    def test_duplicate_client_name_reuses_client_master(self, partner_client, created_clients_cleanup):
+        """Current behaviour: the client master is reused; each service gets its own onboarding record."""
         unique = uuid.uuid4().hex[:6]
         name = f"TEST_Dup_{unique}"
-        p = {"name": name, "entity_type": "LLC", "active_services": ["VAT Filing"], "auto_create_engagements": False}
-        r1 = partner_client.post(f"{API}/onboarding", json=p, timeout=20)
+        p1 = {"name": name, "entity_type": "LLC", "service_type": "Vat consultancy", "auto_create_engagements": False}
+        r1 = partner_client.post(f"{API}/onboarding", json=p1, timeout=20)
         assert r1.status_code == 200
-        created_clients_cleanup.append(r1.json()["client_id"])
-        r2 = partner_client.post(f"{API}/onboarding", json=p, timeout=20)
-        assert r2.status_code == 400, f"Expected 400, got {r2.status_code}: {r2.text}"
-        assert "already exists" in (r2.json().get("detail") or "").lower()
+        client_id = r1.json()["client_id"]
+        created_clients_cleanup.append(client_id)
+        # same legal name, different service → reuses the master record, new onboarding doc
+        p2 = {"name": name, "entity_type": "LLC", "service_type": "Audit", "auto_create_engagements": False}
+        r2 = partner_client.post(f"{API}/onboarding", json=p2, timeout=20)
+        assert r2.status_code == 200, f"Got {r2.status_code}: {r2.text}"
+        assert r2.json()["client_id"] == client_id, "Same legal name must reuse the client master"
 
     def test_high_risk_adds_aml_docs(self, partner_client, created_clients_cleanup):
         unique = uuid.uuid4().hex[:6]
@@ -121,16 +121,23 @@ class TestOnboardingCreate:
             "entity_type": "Group",
             "aml_risk_rating": "High",
             "pep_flag": True,
-            "active_services": ["AML Review"],
+            "service_type": "AML consultancy",
             "auto_create_engagements": True,
         }
         r = partner_client.post(f"{API}/onboarding", json=payload, timeout=30)
         assert r.status_code == 200
         data = r.json()
         created_clients_cleanup.append(data["client_id"])
-        docs = data["document_checklist"]
-        assert any("Source of Funds" in d for d in docs)
-        assert any("Beneficial" in d for d in docs)
+        # risk rating persists on the client master
+        clients = partner_client.get(f"{API}/clients", timeout=15).json()
+        match = [c for c in clients if c.get("client_id") == data["client_id"]]
+        assert match and match[0].get("aml_risk_rating") == "High"
+        # the AML document set is exposed through the checklist preview (risk=High)
+        preview = partner_client.get(
+            f"{API}/onboarding/document-checklist", params={"services": "", "risk": "High"}, timeout=15
+        ).json()
+        assert any("Source of Funds" in d for d in preview["checklist"])
+        assert any("Beneficial" in d for d in preview["checklist"])
 
 
 # ---------- GET /api/onboarding/document-checklist ----------

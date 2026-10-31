@@ -9,6 +9,15 @@ import time
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://nexus-compliance.preview.emergentagent.com')
 
+# AI tests need a configured Gemini key; they skip cleanly when it's absent (the
+# server answers 503 "AI assistant is not configured").
+AI_CONFIGURED = bool(os.environ.get("GEMINI_API_KEY"))
+
+def _skip_if_ai_unavailable(response):
+    if response.status_code == 503 and "not configured" in response.text:
+        pytest.skip("GEMINI_API_KEY not configured — AI assistant unavailable")
+    return response
+
 class TestAuth:
     """Authentication tests"""
     
@@ -86,6 +95,7 @@ class TestAIAssistant:
                 "message": "What is the VAT rate in UAE?"
             }
         )
+        _skip_if_ai_unavailable(response)
         assert response.status_code == 200
         data = response.json()
         assert "response" in data
@@ -105,6 +115,7 @@ class TestAIAssistant:
                 "message": "Which clients have overdue tasks?"
             }
         )
+        _skip_if_ai_unavailable(response)
         assert response.status_code == 200
         data = response.json()
         assert "response" in data
@@ -126,7 +137,7 @@ class TestAIAssistant:
         """Test getting chat history for a session"""
         # First create a session
         session_id = f"test_history_{int(time.time())}"
-        requests.post(
+        chat_resp = requests.post(
             f"{BASE_URL}/api/ai/chat",
             headers={"Authorization": f"Bearer {auth_token}"},
             json={
@@ -134,7 +145,8 @@ class TestAIAssistant:
                 "message": "Hello"
             }
         )
-        
+        _skip_if_ai_unavailable(chat_resp)
+
         # Get history
         response = requests.get(
             f"{BASE_URL}/api/ai/chat/{session_id}",

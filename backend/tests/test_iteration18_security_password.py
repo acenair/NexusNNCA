@@ -22,7 +22,7 @@ BASE_URL = os.environ.get("REACT_APP_BACKEND_URL").rstrip("/")
 API = f"{BASE_URL}/api"
 
 PARTNER_EMAIL = "srinivas.anup@gmail.com"
-PARTNER_PASSWORD = "NewSecurePass123"
+PARTNER_PASSWORD = "nn123456"
 
 SUBIN_EMAIL = "subin@nnadvisory.ae"
 SUBIN_PASSWORD = "SubinNewPass2026"
@@ -85,36 +85,77 @@ class TestSecuritySync:
 
 # ------------------ forced password change gate ------------------
 
-class TestForcedPasswordChangeGate:
-    """Login as an UNTOUCHED account and verify the gate works, WITHOUT changing anything."""
+GATE_PASSWORD = "GateTestPass123"  # >= 10 chars; satisfies MIN_PASSWORD_LENGTH
 
-    @pytest.fixture(scope="class")
-    def anju_login(self):
-        r = _login("anju@nnadvisory.ae", "nn123456")
+
+@pytest.fixture(scope="class")
+def gated_account():
+    """Create a THROWAWAY user with must_change_password=True (the shared
+    conftest resets seeded users' gate flags at session start, so the gate can
+    only be exercised against a user this fixture owns). Cleans up after."""
+    import uuid
+    from datetime import datetime, timezone
+
+    import bcrypt
+    from pymongo import MongoClient
+
+    mongo_url = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
+    db_name = os.environ.get("DB_NAME", "ca_ai_test")
+    client = MongoClient(mongo_url, serverSelectionTimeoutMS=10000)
+    db = client[db_name]
+    user_id = f"user_{uuid.uuid4().hex[:12]}"
+    email = f"TEST_forced_gate_{uuid.uuid4().hex[:8]}@example.test"
+    hashed = bcrypt.hashpw(GATE_PASSWORD.encode(), bcrypt.gensalt()).decode()
+    db.users.insert_one(
+        {
+            "user_id": user_id,
+            "email": email,
+            "name": "TEST Forced Gate",
+            "password": hashed,
+            "role": "staff",
+            "status": "approved",
+            "must_change_password": True,
+            "picture": None,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+    )
+    try:
+        r = _login(email, GATE_PASSWORD)
         if r.status_code != 200:
-            pytest.skip(f"Anju login failed (may have been mutated): {r.status_code} {r.text}")
+            pytest.skip(f"Gated throwaway login failed: {r.status_code} {r.text}")
         data = r.json()
-        return data
+        if data.get("email") != email:
+            pytest.skip("Login returned an unexpected user (token collision?)")
+        yield data
+    finally:
+        db.users.delete_many({"user_id": user_id})
+        db.user_sessions.delete_many({"user_id": user_id})
+        client.close()
 
-    def test_login_response_flags_must_change(self, anju_login):
-        assert anju_login.get("must_change_password") is True, "Untouched account should have must_change_password=true"
-        assert "session_token" in anju_login
 
-    def test_auth_me_bypasses_gate(self, anju_login):
-        h = {"Authorization": f"Bearer {anju_login['session_token']}"}
+class TestForcedPasswordChangeGate:
+    """Login as a THROWAWAY gated account and verify the gate works,
+    WITHOUT touching any shared account."""
+
+    def test_login_response_flags_must_change(self, gated_account):
+        assert gated_account.get("must_change_password") is True, "Gated account should have must_change_password=true"
+        assert "session_token" in gated_account
+
+    def test_auth_me_bypasses_gate(self, gated_account):
+        h = {"Authorization": f"Bearer {gated_account['session_token']}"}
         r = requests.get(f"{API}/auth/me", headers=h, timeout=10)
         assert r.status_code == 200, r.text
         body = r.json()
         assert body.get("must_change_password") is True
 
-    def test_gated_endpoint_blocks_with_password_change_required(self, anju_login):
-        h = {"Authorization": f"Bearer {anju_login['session_token']}"}
+    def test_gated_endpoint_blocks_with_password_change_required(self, gated_account):
+        h = {"Authorization": f"Bearer {gated_account['session_token']}"}
         r = requests.get(f"{API}/dashboard/stats", headers=h, timeout=10)
         assert r.status_code == 403
         assert "PASSWORD_CHANGE_REQUIRED" in r.text
 
-    def test_change_password_wrong_current(self, anju_login):
-        h = {"Authorization": f"Bearer {anju_login['session_token']}"}
+    def test_change_password_wrong_current(self, gated_account):
+        h = {"Authorization": f"Bearer {gated_account['session_token']}"}
         r = requests.post(
             f"{API}/auth/change-password",
             headers=h,
@@ -124,12 +165,12 @@ class TestForcedPasswordChangeGate:
         assert r.status_code == 401
         assert "incorrect" in r.text.lower()
 
-    def test_change_password_too_short(self, anju_login):
-        h = {"Authorization": f"Bearer {anju_login['session_token']}"}
+    def test_change_password_too_short(self, gated_account):
+        h = {"Authorization": f"Bearer {gated_account['session_token']}"}
         r = requests.post(
             f"{API}/auth/change-password",
             headers=h,
-            json={"current_password": "nn123456", "new_password": "short"},
+            json={"current_password": GATE_PASSWORD, "new_password": "short"},
             timeout=10,
         )
         assert r.status_code == 400

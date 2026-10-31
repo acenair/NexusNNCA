@@ -1,5 +1,6 @@
 """Iteration 15 regression tests for Bearer auth, navigation APIs, and reset-data RBAC."""
 
+import os
 import re
 from pathlib import Path
 
@@ -9,7 +10,11 @@ from dotenv import dotenv_values
 
 
 FRONTEND_ENV = dotenv_values(Path(__file__).resolve().parents[2] / "frontend" / ".env")
-BASE_URL = (FRONTEND_ENV.get("REACT_APP_BACKEND_URL") or "").rstrip("/")
+# The environment variable (how the suite is invoked) wins over frontend/.env
+BASE_URL = (
+    os.environ.get("REACT_APP_BACKEND_URL")
+    or (FRONTEND_ENV.get("REACT_APP_BACKEND_URL") or "")
+).rstrip("/")
 CREDENTIALS_PATH = Path(__file__).resolve().parents[1] / "test_credentials.md"
 TIMEOUT = 30
 

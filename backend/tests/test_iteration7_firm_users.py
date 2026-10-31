@@ -366,14 +366,14 @@ class TestPasswordChange:
         shamil = next((u for u in users if u["email"] == "shamil@nnadvisory.ae"), None)
         assert shamil is not None, "Shamil user not found"
         
-        # Try to set short password (should be ignored)
+        # Try to set a short password — the server rejects it outright (min 10 chars)
         response = requests.patch(
             f"{BASE_URL}/api/settings/users/{shamil['user_id']}",
             headers={"Authorization": f"Bearer {partner_token}"},
             json={"new_password": "abc", "title": "TEST_Title"}  # Include title so request isn't empty
         )
-        assert response.status_code == 200, f"PATCH failed: {response.text}"
-        
+        assert response.status_code == 400, f"Expected 400 rejection, got: {response.status_code} {response.text}"
+
         # Original password should still work
         login_response = requests.post(f"{BASE_URL}/api/auth/login", json={
             "email": "shamil@nnadvisory.ae",

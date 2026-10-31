@@ -22,7 +22,7 @@ if not base_url:
 BASE_URL = base_url.rstrip("/")
 TIMEOUT = 90
 # local test-DB password (see nexusnnca-verify: test DB uses the tests' password)
-PASSWORD = os.environ.get("NNCA_TEST_PASSWORD", "AdminPass2026!")
+PASSWORD = os.environ.get("NNCA_TEST_PASSWORD", "nn123456")
 
 
 def login(email):

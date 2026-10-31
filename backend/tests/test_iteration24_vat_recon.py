@@ -1,7 +1,7 @@
 """B3 — VAT reconciliation tests: books-vs-filed comparison, review signoff.
 
 Runs against the LIVE dev server (REACT_APP_BACKEND_URL, port 8101).
-Local baseline state (no VAT seed locally, admin password AdminPass2026!):
+Local baseline state (no VAT seed locally, admin password nn123456):
 the suite seeds its own filing + ledger-backed fixtures via the API where
 possible and tolerates books-missing states.
 """
@@ -18,7 +18,7 @@ if not base_url:
     raise RuntimeError("REACT_APP_BACKEND_URL missing")
 BASE_URL = base_url.rstrip("/")
 TIMEOUT = 90
-PASSWORD = os.environ.get("NNCA_TEST_PASSWORD", "AdminPass2026!")
+PASSWORD = os.environ.get("NNCA_TEST_PASSWORD", "nn123456")
 
 
 def login(email):

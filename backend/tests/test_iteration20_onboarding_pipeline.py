@@ -14,7 +14,7 @@ if BASE_URL:
 API = f"{BASE_URL}/api" if BASE_URL else None
 
 PARTNER_EMAIL = "srinivas.anup@gmail.com"
-PARTNER_PASSWORD = "AdminPass2026!"
+PARTNER_PASSWORD = "nn123456"
 
 
 @pytest.fixture(scope="module")

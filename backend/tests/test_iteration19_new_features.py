@@ -14,7 +14,7 @@ BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
 # Test credentials from /app/memory/test_credentials.md
 PARTNER_EMAIL = "srinivas.anup@gmail.com"
-PARTNER_PASSWORD = "AdminPass2026!"
+PARTNER_PASSWORD = "nn123456"
 
 @pytest.fixture(scope="module")
 def partner_session():

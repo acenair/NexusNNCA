@@ -98,7 +98,10 @@ def verify_password(password: str, hashed: str) -> bool:
     return bcrypt.checkpw(password.encode(), hashed.encode())
 
 def create_jwt_token(user_id: str) -> str:
-    payload = {"user_id": user_id, "exp": datetime.now(timezone.utc) + timedelta(days=7)}
+    # jti makes every login's token unique: without it, two logins within the
+    # same second minted IDENTICAL tokens (same user_id + second-resolution exp),
+    # so logout/delete of one session doc killed (or failed to kill) the others.
+    payload = {"user_id": user_id, "exp": datetime.now(timezone.utc) + timedelta(days=7), "jti": uuid.uuid4().hex}
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 async def get_current_user_raw(authorization: str = Header(None), session_token: str = Cookie(None)) -> dict:
