@@ -136,6 +136,16 @@ const GUIDES = [
     ],
   },
   {
+    role: 'Partner', title: 'E-invoice generation (PINT AE XML)', steps: [
+      'Every invoice row in Invoices & collections has an E-invoice button (blue document icon). Open it to make that invoice e-invoice ready.',
+      'Pick the transaction-type code (standard B2B, Free Zone, deemed supply, margin scheme, summary, continuous, disclosed agent, e-commerce, export) and enter the buyer address — then "Save & validate".',
+      'Validation checks the PINT AE mandatory-field groups and lists every failing field with a fix-it message: supplier TRN must be 15 digits (Settings → Firm Identity), buyer TRN 15 digits (client record), addresses, net/VAT split (legacy invoices without VAT breakdown are flagged — re-enter them), transaction type. Drafts and cancelled invoices cannot transmit.',
+      'When validation is green, "PINT AE XML" downloads the structured UBL 2.1 e-invoice — that file is what an accredited ASP transmits and reports to the FTA. Every generation is archived with a SHA-256 hash for the statutory record.',
+      'Credit notes: record a credit note on the invoice as usual; formal e-credit-note transmission rides the ASP integration (Layer 3).',
+      'Client self-service: keep client TRNs and addresses current in their records — the validator reads them directly, so invoices become e-invoice ready without re-keying.',
+    ],
+  },
+  {
     role: 'Everyone', title: 'Client document requests (PBC portal)', steps: [
       'Document requests (sidebar → WORKSPACE) sends a document checklist to a client without them logging in.',
       'New request: pick the client (optionally link the engagement), apply a PBC template for the service (External Audit, VAT, AML…), edit the item list, create.',
