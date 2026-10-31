@@ -19,6 +19,7 @@ const AGEING_KEYS = [['current', 'Not yet due'], ['d30', '1–30 days past due']
 const BillingWorkspace = ({ initialTab }) => {
   const { user } = useOutletContext();
   const [params] = useSearchParams();
+  const [einvFor, setEinvFor] = useState(null);
   const [tab, setTab] = useState(params.get('tab') === 'ageing' ? 'Ageing' : (initialTab || 'Invoices & collections'));
   const [invoices, setInvoices] = useState([]);
   const [summary, setSummary] = useState(null);
@@ -251,9 +252,6 @@ const BillingWorkspace = ({ initialTab }) => {
     alert(`Collection reminder PREVIEW — nothing is sent.\n\nDear client,\nPlease note the following outstanding invoices:\n\n${lines.join('\n')}\n\nTotal overdue: ${aed(S.overdue_total)} across ${S.overdue_count} invoice(s).\n\nKindly arrange settlement at your earliest convenience.\n\n— Nair & Nelliyatt Chartered Accountants`);
   };
   const badge = (s) => s === 'Paid' ? 'af-badge-green' : s === 'Part paid' ? 'af-badge-blue' : s === 'Overdue' ? 'af-badge-red' : s === 'Cancelled' ? 'af-badge-grey' : 'af-badge-amber';
-
-  // e-invoicing modal
-  const [einvFor, setEinvFor] = useState(null);
 
   return (
     <div className="ov-wrap" data-testid="billing-workspace">
