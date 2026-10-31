@@ -145,3 +145,39 @@ async def create_vat_filing(client_id: str, tax_period: str, period_end_date: st
         "box_4": 0,
         "created_at": filing_doc["created_at"]
     }
+
+
+@router.patch("/vat/filings/{filing_id}")
+async def update_vat_filing(filing_id: str, body: Optional[dict] = None,
+                            authorization: str = Header(None), session_token: str = Cookie(None)):
+    """Capture the FTA return boxes / mark a filing Filed — the feed that the
+    VAT reconciliation (routes/vat_recon.py) compares against the books."""
+    user = await get_current_user(authorization, session_token)
+    filing = await db.vat_filings.find_one({"filing_id": filing_id})
+    if not filing:
+        raise HTTPException(status_code=404, detail="Filing not found")
+    body = body or {}
+    updates = {}
+    for box in ("box_1a", "box_1b", "box_2", "box_3", "box_4"):
+        if box in body:
+            try:
+                updates[box] = round(float(body[box] or 0), 2)
+            except (TypeError, ValueError):
+                raise HTTPException(status_code=400, detail=f"{box} must be a number")
+    if "status" in body:
+        if body["status"] not in ("Pending", "Filed", "Late filing"):
+            raise HTTPException(status_code=400, detail="status must be Pending, Filed or Late filing")
+        updates["status"] = body["status"]
+    if "filing_due_date" in body:
+        updates["filing_due_date"] = str(body["filing_due_date"])[:10]
+    if "period_end_date" in body:
+        updates["period_end_date"] = str(body["period_end_date"])[:10]
+    if not updates:
+        raise HTTPException(status_code=400, detail="Nothing to update")
+    updates["updated_by"] = user.get("name") or user.get("email")
+    updates["updated_at"] = datetime.now(timezone.utc).isoformat()
+    await db.vat_filings.update_one({"filing_id": filing_id}, {"$set": updates})
+    if updates.get("status") and updates["status"] != filing.get("status"):
+        await log_activity("VAT filing", f"VAT filing for {filing.get('client_name')} marked {updates['status']}",
+                           user["user_id"], filing.get("client_id"), filing.get("client_name"))
+    return {k: v for k, v in {**filing, **updates}.items() if k != "_id"}

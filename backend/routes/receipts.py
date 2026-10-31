@@ -185,9 +185,11 @@ async def upload_receipt(engagement_id: str, file: UploadFile = File(...),
         doc["duplicate_of"] = prob.get("receipt_id")
 
     await db.receipts.insert_one(doc)
-    await journal_event(engagement_id, user,
+    await journal_event(engagement_id, "receipt_uploaded",
                         f"Receipt uploaded: {doc['vendor'] or 'unknown vendor'} "
-                        f"{doc['currency']} {doc['total']} ({doc['status']})")
+                        f"{doc['currency']} {doc['total']} ({doc['status']})",
+                        by_name=user.get("name") or user.get("email"),
+                        client_id=eng.get("client_id") or "", client_name=eng.get("client_name") or "")
     doc.pop("_id", None)
     return doc
 
@@ -255,8 +257,10 @@ async def update_receipt(engagement_id: str, receipt_id: str,
     await db.receipts.update_one({"receipt_id": receipt_id}, {"$set": updates})
 
     if updates.get("status") and updates["status"] != doc.get("status"):
-        await journal_event(engagement_id, user,
-                            f"Receipt {doc.get('vendor') or receipt_id} → {updates['status']}")
+        await journal_event(engagement_id, "receipt_status",
+                            f"Receipt {doc.get('vendor') or receipt_id} → {updates['status']}",
+                            by_name=user.get("name") or user.get("email"),
+                            client_id=doc.get("client_id") or "", client_name=doc.get("client_name") or "")
     return {**doc, **updates, "_id": None}
 
 

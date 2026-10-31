@@ -586,6 +586,41 @@ async def seed_demo_e2e():
                             by_name="system (sample data)", client_id=CID or "", client_name=CNAME or "")
         logger.info(f"Seeded {len(seed_receipts)} sample receipts for engagement {EID}")
 
+    # 6c — VAT filings that reconcile against the demo books (B3 story: one
+    # quarter files EXACTLY what the books say, the next carries a real variance
+    # so the recon tab shows both a green tick and a red flag)
+    if CID and await db.vat_filings.count_documents({"client_id": CID}) == 0 \
+            and await db.ledger_entries.count_documents({"client_id": CID}) > 0:
+        from routes.vat_recon import books_vat_by_quarter, _quarter_key
+        books = await books_vat_by_quarter(CID)
+        quarters = sorted(qk for qk, b in books.items() if b["output"] or b["input"])
+        seed_filings = []
+        for i, qk in enumerate(quarters[:3]):
+            y, q = qk.split("-Q")
+            last_month = int(q) * 3
+            period_end = f"{y}-{last_month:02d}-{(28 if last_month in (2,) else (30 if last_month in (4,6,9,11) else 31))}"
+            b = books[qk]
+            # quarter 1 of the story reconciles exactly; quarter 2 carries a variance
+            filed_out, filed_in = (b["output"], b["input"]) if i == 0 else (round(b["output"] + 1000, 2), b["input"])
+            seed_filings.append({
+                "filing_id": f"vat_filing_{uuid.uuid4().hex[:12]}",
+                "client_id": CID, "client_name": CNAME,
+                "tax_period": qk.replace("-", " "),
+                "period_end_date": period_end,
+                "filing_due_date": f"{int(y) + (1 if last_month == 12 else 0)}-{(1 if last_month == 12 else last_month + 1):02d}-28",
+                "status": "Filed",
+                "box_1a": filed_out, "box_1b": 0, "box_2": 0, "box_3": 0, "box_4": filed_in,
+                "source": "sample_vat_recon", "created_at": now,
+            })
+        if seed_filings:
+            await db.vat_filings.insert_many(seed_filings)
+            var_q = quarters[1] if len(quarters) > 1 else None
+            await journal_event(EID, "vat_recon_seeded",
+                                f"Sample VAT filings recorded for {len(seed_filings)} period(s)"
+                                + (f" — {var_q} deliberately carries an AED 1,000 output-VAT variance so the reconciliation shows a live flag" if var_q else ""),
+                                by_name="system (sample data)", client_id=CID or "", client_name=CNAME or "")
+            logger.info(f"Seeded {len(seed_filings)} sample VAT filings for {CNAME}")
+
     # 7 — planning checklist reflects the story (idempotent)
     if eng.get("checklist"):
         changed = False

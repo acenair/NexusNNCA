@@ -44,6 +44,7 @@ from routes import (
     einvoicing,
     ledger,
     receipts,
+    vat_recon,
 )
 
 app = FastAPI()
@@ -88,6 +89,7 @@ for router in (
     einvoicing.router,
     ledger.router,
     receipts.router,
+    vat_recon.router,
 ):
     app.include_router(router)
 

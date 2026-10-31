@@ -8,10 +8,12 @@ import WorkJournal from './WorkJournal';
 import ClientQueries from './ClientQueries';
 import AJEs from './AJEs';
 import ReceiptInbox from './ReceiptInbox';
+import VatRecon from './VatRecon';
 import { MessageSquare, Scale, Receipt } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const AUDIT_SERVICE_TYPES = ['statutory_audit', 'internal_audit', 'stock_audit', 'fraud_audit'];
+const VAT_RECON_TYPES = [...AUDIT_SERVICE_TYPES, 'vat_filing', 'vat_registration', 'vat_amendments', 'accounting'];
 
 const EngagementDetail = () => {
   const { engagementId } = useParams();
@@ -251,6 +253,7 @@ const EngagementDetail = () => {
             {isAudit && tabBtn('review', 'tab-review', <ListChecks size={14} />, 'Review & assumptions')}
             {isAudit && tabBtn('tb', 'tab-trial-balance', <BookOpen size={14} />, 'Trial Balance')}
             {isAudit && tabBtn('receipts', 'tab-receipts', <Receipt size={14} />, 'Receipts')}
+            {VAT_RECON_TYPES.includes(eng.service_type) && tabBtn('vatrecon', 'tab-vat-recon', <Scale size={14} />, 'VAT Recon')}
             {isAudit && tabBtn('ajes', 'tab-ajes', <Scale size={14} />, 'Adjustments')}
             {tabBtn('journal', 'tab-journal', <BookOpen size={14} />, 'Journal')}
             {tabBtn('queries', 'tab-queries', <MessageSquare size={14} />, 'Client queries')}
@@ -339,6 +342,8 @@ const EngagementDetail = () => {
         <TrialBalance engagementId={engagementId} />
       ) : activeTab === 'receipts' && AUDIT_SERVICE_TYPES.includes(eng.service_type) ? (
         <ReceiptInbox engagementId={engagementId} isPartner={isPartner} />
+      ) : activeTab === 'vatrecon' && VAT_RECON_TYPES.includes(eng.service_type) ? (
+        <VatRecon engagementId={engagementId} />
       ) : activeTab === 'ajes' && AUDIT_SERVICE_TYPES.includes(eng.service_type) ? (
         <AJEs engagementId={engagementId} isPartner={isPartner} />
       ) : activeTab === 'journal' ? (

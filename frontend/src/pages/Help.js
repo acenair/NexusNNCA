@@ -227,6 +227,15 @@ const GUIDES = [
       'Fields are editable — if the AI misreads a digit, fix the value on the receipt card (edits are attributed). Delete is partner-only.',
     ],
   },
+  {
+    role: 'Auditor / Staff', title: 'VAT reconciliation (books vs filed returns)', steps: [
+      'Open an engagement for a VAT-registered client and switch to the VAT Recon tab. It compares, quarter by quarter, what the ingested books say the VAT was against what was filed with the FTA.',
+      'Filed amounts come from the client\u0027s VAT filings (Boxes 1a + 1b output, Box 4 recoverable input). Enter or correct them from the VAT workflow — reconciliation updates live.',
+      'Green = reconciled within AED 1. Amber variance = books and return disagree — investigate before partner review. Red = a quarter with books VAT but no return filed at all.',
+      'Accepted receipts in the inbox appear as an input-VAT sampling signal per period.',
+      'Mark each period Reviewed with a note once reconciled — the sign-off is attributed and undoable.',
+    ],
+  },
 ];
 
 const Help = () => {
