@@ -68,7 +68,14 @@ const AIAssistant = () => {
       setMessages(prev => [...prev, { role: 'assistant', content: res.data.response }]);
       loadSessions();
     } catch (err) {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' }]);
+      const detail = err.response?.data?.detail;
+      let content = 'Sorry, I encountered an error. Please try again.';
+      if (err.response?.status === 503 || /not configured/i.test(detail || '')) {
+        content = 'The AI service is not configured on the server yet — the admin needs to set GEMINI_API_KEY in the backend environment. Your message was not lost, please retry once it is enabled.';
+      } else if (err.response?.status === 429) {
+        content = 'The AI service is rate-limited right now. Please wait a moment and try again.';
+      }
+      setMessages(prev => [...prev, { role: 'assistant', content }]);
     } finally {
       setLoading(false);
     }

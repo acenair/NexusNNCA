@@ -62,7 +62,7 @@ async def login(req: LoginRequest):
     session_doc = {
         "user_id": user_doc["user_id"],
         "session_token": session_token,
-        "expires_at": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
+        "expires_at": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.user_sessions.insert_one(session_doc)
@@ -203,7 +203,7 @@ async def reset_password(req: ResetPasswordRequest):
     new_session_token = create_jwt_token(user_doc["user_id"])
     await db.user_sessions.insert_one({
         "user_id": user_doc["user_id"], "session_token": new_session_token,
-        "expires_at": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
+        "expires_at": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
         "created_at": datetime.now(timezone.utc).isoformat(),
     })
     await log_activity("Password reset via self-service code", f"{user_doc.get('name')} reset their password", user_doc["user_id"])

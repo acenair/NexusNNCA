@@ -30,6 +30,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
         // Clear stale tokens
         localStorage.removeItem('session_token');
         setIsAuthenticated(false);
+        navigate('/login?expired=1', { replace: true });
       }
     };
 

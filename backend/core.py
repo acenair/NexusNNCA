@@ -101,7 +101,9 @@ def create_jwt_token(user_id: str) -> str:
     # jti makes every login's token unique: without it, two logins within the
     # same second minted IDENTICAL tokens (same user_id + second-resolution exp),
     # so logout/delete of one session doc killed (or failed to kill) the others.
-    payload = {"user_id": user_id, "exp": datetime.now(timezone.utc) + timedelta(days=7), "jti": uuid.uuid4().hex}
+    # 30-day sessions: 7-day expiry caused frequent mid-use "logouts" when the
+    # stored token expired between visits (full page load → /auth/me 401 → login page).
+    payload = {"user_id": user_id, "exp": datetime.now(timezone.utc) + timedelta(days=30), "jti": uuid.uuid4().hex}
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 async def get_current_user_raw(authorization: str = Header(None), session_token: str = Cookie(None)) -> dict:

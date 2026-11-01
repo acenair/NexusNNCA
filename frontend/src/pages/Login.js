@@ -11,6 +11,7 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [pendingMsg, setPendingMsg] = useState('');
+  const [expiredMsg, setExpiredMsg] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -18,6 +19,11 @@ const Login = () => {
   const [googleError, setGoogleError] = useState('');
 
   useEffect(() => {
+    // Session expired (stale token bounced from an /app route)
+    if (new URLSearchParams(window.location.search).get('expired') === '1') {
+      setExpiredMsg('Your session expired — please sign in again.');
+      window.history.replaceState({}, '', '/login');
+    }
     // Check for pending approval redirect
     if (location.state?.pendingApproval) {
       setPendingMsg(location.state.message || 'Your account is pending admin approval.');
@@ -133,6 +139,11 @@ const Login = () => {
             </div>
           )}
 
+          {expiredMsg && (
+            <div style={{ padding: '8px 14px', borderRadius: 8, background: '#fff8e6', color: '#a07a1e', fontSize: 12, marginBottom: 14, fontWeight: 500 }} data-testid="session-expired">
+              {expiredMsg}
+            </div>
+          )}
           {error && (
             <div style={{ padding: '8px 14px', borderRadius: 8, background: '#fff0f0', color: '#d36b6b', fontSize: 12, marginBottom: 14, fontWeight: 500 }} data-testid="login-error">
               {error}

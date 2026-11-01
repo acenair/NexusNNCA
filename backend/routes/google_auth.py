@@ -125,7 +125,7 @@ async def google_callback(code: str = "", state: str = "", error: str = ""):
     await db.user_sessions.insert_one({
         "user_id": user_doc["user_id"],
         "session_token": session_token,
-        "expires_at": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
+        "expires_at": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
         "created_at": datetime.now(timezone.utc).isoformat(),
         "via": "google",
     })
