@@ -170,6 +170,9 @@ const GUIDES = [
       'Marking a record Verified requires a verification date and reviewer name — the app enforces this.',
       'The document-windows view groups records by type and highlights expired and expiring windows (30/60/90 days). Metric cards are clickable filters.',
       'Only masked references are stored — never full ID numbers or document scans.',
+      'Firm dues tab: recurring organisation expenses with due dates — DEWA, telecom, office rent, WPS payroll, insurance premiums, trade-licence renewal. Buckets show what is due now / in 7 / in 30 days and the monthly committed amount.',
+      'Mark paid on a recurring due rolls the next due date forward automatically (monthly, quarterly, semi-annual, annual). Only partners can add, edit or delete dues.',
+      'The Firm scope also covers operational records (day-to-day operating documents) alongside licences, tenancy and insurance.',
     ],
   },
   {

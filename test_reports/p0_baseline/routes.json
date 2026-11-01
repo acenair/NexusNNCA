@@ -1085,6 +1085,34 @@
   "name": "delete_record"
  },
  {
+  "path": "/api/compliance/dues",
+  "methods": [
+   "GET"
+  ],
+  "name": "list_dues"
+ },
+ {
+  "path": "/api/compliance/dues",
+  "methods": [
+   "POST"
+  ],
+  "name": "create_due"
+ },
+ {
+  "path": "/api/compliance/dues/{due_id}",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "update_due"
+ },
+ {
+  "path": "/api/compliance/dues/{due_id}",
+  "methods": [
+   "DELETE"
+  ],
+  "name": "delete_due"
+ },
+ {
   "path": "/api/auth/google/status",
   "methods": [
    "GET"

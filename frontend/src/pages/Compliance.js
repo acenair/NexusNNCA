@@ -10,6 +10,7 @@ const SCOPES = [
   { key: 'customers', label: 'Customers / KYC', desc: 'Client company documents, shareholder identities and KYC review records.' },
   { key: 'firm', label: 'Firm Compliance', desc: "The firm's licences, premises, establishment records and insurance cover." },
   { key: 'staff', label: 'Staff Compliance', desc: 'Individual staff visas, identity documents and employment-related records.' },
+  { key: 'dues', label: 'Firm dues', desc: "Recurring organisation expenses with due dates — DEWA, telecom, rent, WPS payroll, insurance premiums, licence renewals." },
 ];
 const STAGES = ['Not requested', 'Requested', 'Received', 'Under review', 'Verified', 'Renewal in progress', 'Not applicable'];
 
@@ -70,16 +71,27 @@ const Compliance = () => {
   const [reason, setReason] = useState('');
   const [saveError, setSaveError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [dues, setDues] = useState([]);
+  const [duesSummary, setDuesSummary] = useState({});
+  const [dueCats, setDueCats] = useState({ categories: [], frequencies: [] });
+  const [dueEditing, setDueEditing] = useState(null);
+  const [dueCreating, setDueCreating] = useState(false);
+  const [dueForm, setDueForm] = useState({});
+  const [dueSaving, setDueSaving] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [r, c] = await Promise.all([
+      const [r, c, d] = await Promise.all([
         axios.get(`${API}/compliance/records`, { withCredentials: true }),
         axios.get(`${API}/compliance/categories`, { withCredentials: true }),
+        axios.get(`${API}/compliance/dues`, { withCredentials: true }),
       ]);
       setRecords(Array.isArray(r.data) ? r.data : []);
       setCategories(c.data?.categories || {});
+      setDues(d.data?.dues || []);
+      setDuesSummary(d.data?.summary || {});
+      setDueCats({ categories: d.data?.categories || [], frequencies: d.data?.frequencies || [] });
     } catch (err) { console.error(err); }
     setLoading(false);
   }, []);
@@ -129,6 +141,36 @@ const Compliance = () => {
 
   const clearFilters = () => { setSearch(''); setTypeFilter(''); setRiskFilter(''); setStageFilter(''); };
 
+  const dueDaysLeft = (d) => d ? Math.ceil((new Date(d) - new Date(todayIso())) / 86400000) : null;
+  const aed = (n) => `AED ${(n || 0).toLocaleString('en-AE', { minimumFractionDigits: 0 })}`;
+  const openDueEdit = (d) => { setDueForm({ ...d }); setDueEditing(true); setDueCreating(false); };
+  const openDueCreate = () => {
+    setDueForm({ title: '', category: dueCats.categories[0] || 'Other', vendor: '', amount: '', frequency: 'Monthly', next_due: todayIso(), auto_rollover: true, payment_method: '', notes: '' });
+    setDueCreating(true); setDueEditing(false);
+  };
+  const saveDue = async () => {
+    setDueSaving(true);
+    try {
+      if (dueCreating) await axios.post(`${API}/compliance/dues`, { ...dueForm, amount: parseFloat(dueForm.amount) || 0 }, { withCredentials: true });
+      else await axios.patch(`${API}/compliance/dues/${dueForm.due_id}`, { ...dueForm, amount: parseFloat(dueForm.amount) || 0 }, { withCredentials: true });
+      setDueCreating(false); setDueEditing(false);
+      await load();
+    } catch (err) { alert(err.response?.data?.detail || 'Save failed'); }
+    setDueSaving(false);
+  };
+  const markPaid = async (d) => {
+    try {
+      const res = await axios.patch(`${API}/compliance/dues/${d.due_id}`, { action: 'mark_paid' }, { withCredentials: true });
+      alert(`Marked paid — next due ${res.data?.next_due || 'unchanged'}`);
+      await load();
+    } catch (err) { alert(err.response?.data?.detail || 'Failed'); }
+  };
+  const removeDue = async (d) => {
+    if (!window.confirm(`Delete "${d.title}" from the dues register?`)) return;
+    try { await axios.delete(`${API}/compliance/dues/${d.due_id}`, { withCredentials: true }); await load(); }
+    catch (err) { alert(err.response?.data?.detail || 'Delete failed'); }
+  };
+
   if (loading) return <div className="page-loading">Loading compliance register…</div>;
 
   const docTypes = categories[scope] || [];
@@ -142,14 +184,14 @@ const Compliance = () => {
           <h1>Compliance tracker</h1>
           <p>Customer KYC, firm documents and staff records, clearly organised.</p>
         </div>
-        {isPartner && <button className="af-btn-primary" onClick={() => openCreate()} data-testid="add-record-btn"><Plus size={14} style={{ marginRight: 4 }} /> Add record</button>}
+        {isPartner && <button className="af-btn-primary" onClick={() => scope === 'dues' ? openDueCreate() : openCreate()} data-testid="add-record-btn"><Plus size={14} style={{ marginRight: 4 }} /> {scope === 'dues' ? 'Add due' : 'Add record'}</button>}
       </div>
 
       <div className="af-tabs" role="tablist">
         {SCOPES.map(s => (
           <button key={s.key} role="tab" aria-selected={scope === s.key}
             onClick={() => { setScope(s.key); clearFilters(); }}>
-            {s.label} <span style={{ fontSize: 9, background: '#eaf2f8', padding: '2px 6px', borderRadius: 5, marginLeft: 6 }}>{records.filter(r => r.scope === s.key && r.stage !== 'Not applicable').length}</span>
+            {s.label} <span style={{ fontSize: 9, background: '#eaf2f8', padding: '2px 6px', borderRadius: 5, marginLeft: 6 }}>{s.key === 'dues' ? (duesSummary.due_now || 0) + (duesSummary.due_7 || 0) : records.filter(r => r.scope === s.key && r.stage !== 'Not applicable').length}</span>
           </button>
         ))}
       </div>
@@ -178,6 +220,50 @@ const Compliance = () => {
               </div>
         )}
       </section>
+      {scope === 'dues' && (
+        <div data-testid="firm-dues-view">
+          <div className="af-kpis" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+            <section className="af-card af-metric"><label>Due now / overdue</label><b>{duesSummary.due_now || 0}</b><small>{duesSummary.overdue_amount > 0 ? `${aed(duesSummary.overdue_amount)} past due` : 'Nothing overdue'}</small></section>
+            <section className="af-card af-metric"><label>Due within 7 days</label><b>{duesSummary.due_7 || 0}</b><small>Payments this week</small></section>
+            <section className="af-card af-metric"><label>Due within 30 days</label><b>{duesSummary.due_30 || 0}</b><small>Plan cash flow</small></section>
+            <section className="af-card af-metric"><label>Monthly committed</label><b>{aed(duesSummary.monthly_outlook || 0)}</b><small>Recurring per month</small></section>
+          </div>
+          <section className="af-card">
+            <div className="af-cardhead"><div><h2>Dues register</h2><div className="af-sub">{dues.length} recurring organisation expenses · next: {duesSummary.next_due ? `${duesSummary.next_due.title} — ${fmt(duesSummary.next_due.date)}` : '—'}</div></div></div>
+            <div className="af-tablewrap">
+              <table className="af-table">
+                <thead><tr><th>EXPENSE / VENDOR</th><th>CATEGORY</th><th>AMOUNT</th><th>FREQUENCY</th><th>NEXT DUE</th><th>LAST PAID</th><th></th></tr></thead>
+                <tbody>
+                  {dues.map(d => {
+                    const n = dueDaysLeft(d.next_due);
+                    const badge = n < 0 ? 'af-badge-red' : n <= 7 ? 'af-badge-amber' : n <= 30 ? 'af-badge-amber' : 'af-badge-green';
+                    const label = n < 0 ? `${-n}d overdue` : n === 0 ? 'Due today' : `in ${n} days`;
+                    return (
+                      <tr key={d.due_id} data-testid={`due-${d.due_id}`}>
+                        <td><b>{d.title}</b><small>{d.vendor || '—'}{d.payment_method ? ` · ${d.payment_method}` : ''}</small></td>
+                        <td>{d.category}</td>
+                        <td><b>{aed(d.amount)}</b></td>
+                        <td>{d.frequency}{d.auto_rollover && d.frequency !== 'One-off' ? <small>auto-rolls</small> : null}</td>
+                        <td><span className={`af-badge ${badge}`}>{fmt(d.next_due)}</span><small>{label}</small></td>
+                        <td>{d.last_paid_on ? fmt(d.last_paid_on) : '—'}</td>
+                        <td>
+                          {isPartner && <button className="af-link" onClick={() => markPaid(d)}>Mark paid</button>}
+                          {isPartner && <button className="af-link" style={{ marginLeft: 8 }} onClick={() => openDueEdit(d)}>Edit</button>}
+                          {isPartner && <button className="af-link" style={{ marginLeft: 8, color: 'var(--red)' }} onClick={() => removeDue(d)}>Delete</button>}
+                          {!isPartner && <span className="af-sub">—</span>}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {dues.length === 0 && <tr><td colSpan="7" className="af-empty">No dues tracked yet — add DEWA, rent, payroll and other recurring payments.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {scope !== 'dues' && (<>
       <div className="af-kpis" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
         <button className={`af-card af-metric`} style={{ border: riskFilter === 'expired' ? '2px solid var(--gold)' : '1px solid var(--line)', cursor: 'pointer', textAlign: 'left' }} onClick={() => setRiskFilter(riskFilter === 'expired' ? '' : 'expired')} data-testid="bucket-expired">
           <span className="af-icon"><AlertTriangle size={18} /></span>
@@ -391,6 +477,47 @@ const Compliance = () => {
               </div>
             )}
             <button className="af-btn-primary" style={{ width: '100%', marginTop: 12 }} onClick={save} disabled={saving || (creating && !form.subject_name)} data-testid="save-record-btn">{saving ? 'Saving…' : creating ? 'Save compliance record' : 'Update record'}</button>
+          </div>
+        </div>
+      )}
+      </>)}
+
+      {(dueCreating || dueEditing) && (
+        <div className="af-modal" onClick={(e) => e.target === e.currentTarget && !dueSaving && (setDueCreating(false), setDueEditing(false))}>
+          <div className="af-dialog" data-testid="firm-due-modal" style={{ width: 560 }}>
+            <button className="af-close" onClick={() => { setDueCreating(false); setDueEditing(false); }}>×</button>
+            <h2>{dueCreating ? 'Add firm due' : 'Due details'}</h2>
+            <div className="af-formrow"><label>Expense title *</label>
+              <input value={dueForm.title || ''} onChange={e => setDueForm({ ...dueForm, title: e.target.value })} placeholder="e.g. DEWA electricity & water" />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="af-formrow"><label>Category</label>
+                <select value={dueForm.category || ''} onChange={e => setDueForm({ ...dueForm, category: e.target.value })}>
+                  {dueCats.categories.map(c => <option key={c}>{c}</option>)}
+                </select>
+              </div>
+              <div className="af-formrow"><label>Vendor / payee</label>
+                <input value={dueForm.vendor || ''} onChange={e => setDueForm({ ...dueForm, vendor: e.target.value })} placeholder="e.g. DEWA, MOHRE" />
+              </div>
+              <div className="af-formrow"><label>Amount (AED)</label>
+                <input type="number" min="0" value={dueForm.amount ?? ''} onChange={e => setDueForm({ ...dueForm, amount: e.target.value })} />
+              </div>
+              <div className="af-formrow"><label>Frequency</label>
+                <select value={dueForm.frequency || 'Monthly'} onChange={e => setDueForm({ ...dueForm, frequency: e.target.value })}>
+                  {dueCats.frequencies.map(f => <option key={f}>{f}</option>)}
+                </select>
+              </div>
+              <div className="af-formrow"><label>Next due date</label>
+                <input type="date" value={dueForm.next_due || ''} onChange={e => setDueForm({ ...dueForm, next_due: e.target.value })} />
+              </div>
+              <div className="af-formrow"><label>Payment method</label>
+                <input value={dueForm.payment_method || ''} onChange={e => setDueForm({ ...dueForm, payment_method: e.target.value })} placeholder="e.g. Direct debit" />
+              </div>
+            </div>
+            <div className="af-formrow"><label>Notes</label>
+              <textarea rows={2} value={dueForm.notes || ''} onChange={e => setDueForm({ ...dueForm, notes: e.target.value })} />
+            </div>
+            <button className="af-btn-primary" style={{ width: '100%', marginTop: 12 }} onClick={saveDue} disabled={dueSaving || !dueForm.title} data-testid="save-due-btn">{dueSaving ? 'Saving…' : dueCreating ? 'Save due' : 'Update due'}</button>
           </div>
         </div>
       )}

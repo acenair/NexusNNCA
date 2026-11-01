@@ -21,6 +21,10 @@ from core import get_current_user
 router = APIRouter(prefix="/api")
 
 
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
 def _today() -> date:
     return datetime.now(timezone.utc).date()
 
@@ -101,7 +105,7 @@ async def _sync_staff():
 
 SCOPE_CATEGORIES = {
     "customers": ["Trade Licence", "Passport", "Emirates ID", "KYC Review", "UBO / Ownership", "Address / Supporting Records"],
-    "firm": ["Firm Trade Licence", "Tenancy / Lease", "Establishment Card", "Professional Indemnity", "Other Insurance", "Firm Registrations"],
+    "firm": ["Firm Trade Licence", "Tenancy / Lease", "Establishment Card", "Professional Indemnity", "Other Insurance", "Firm Registrations", "Operational Records"],
     "staff": ["Residence Visa", "Emirates ID", "Passport", "Medical Insurance", "Employment Records"],
 }
 STAGES_LIST = ["Not requested", "Requested", "Received", "Under review", "Verified", "Renewal in progress", "Not applicable"]
@@ -251,4 +255,118 @@ async def delete_record(record_id: str, authorization: str = Header(None), sessi
     if user.get("role") != "partner":
         raise HTTPException(status_code=403, detail="Partner only")
     await db.compliance_records.delete_one({"record_id": record_id})
+    return {"ok": True}
+
+
+# ---------------- Firm dues & expenses (DEWA, rent, payroll, premiums…) ----------------
+# Recurring organisation expenses with due dates, so partners see every
+# day-to-day operating payment in one register alongside the document register.
+
+DUE_CATEGORIES = ["Utilities", "Rent", "Telecom", "Payroll", "Insurance", "Government fees", "Professional fees", "Other"]
+DUE_FREQUENCIES = ["Monthly", "Quarterly", "Semi-annual", "Annual", "One-off"]
+_FREQ_MONTHS = {"Monthly": 1, "Quarterly": 3, "Semi-annual": 6, "Annual": 12}
+
+
+def _roll_forward(due: date, frequency: str) -> str:
+    months = _FREQ_MONTHS.get(frequency, 0)
+    if not months:
+        return due.isoformat()
+    m = due.month - 1 + months
+    return date(due.year + m // 12, m % 12 + 1, min(due.day, 28)).isoformat()
+
+
+class FirmDueIn(BaseModel):
+    title: str
+    category: str = "Other"
+    vendor: Optional[str] = None
+    amount: float = 0.0
+    frequency: str = "Monthly"
+    next_due: Optional[str] = None
+    auto_rollover: bool = True
+    payment_method: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class FirmDueUpdateIn(BaseModel):
+    title: Optional[str] = None
+    category: Optional[str] = None
+    vendor: Optional[str] = None
+    amount: Optional[float] = None
+    frequency: Optional[str] = None
+    next_due: Optional[str] = None
+    auto_rollover: Optional[bool] = None
+    payment_method: Optional[str] = None
+    notes: Optional[str] = None
+    action: Optional[str] = None  # "mark_paid" rolls the due date forward
+
+
+@router.get("/compliance/dues")
+async def list_dues(authorization: str = Header(None), session_token: str = Cookie(None)):
+    await get_current_user(authorization, session_token)
+    today = _today()
+    dues = await db.firm_dues.find({}, {"_id": 0}).sort("next_due", 1).to_list(500)
+    summary = {"due_now": 0, "due_7": 0, "due_30": 0, "monthly_outlook": 0.0, "next_due": None, "overdue_amount": 0.0}
+    for d in dues:
+        try:
+            nd = date.fromisoformat(d["next_due"]) if d.get("next_due") else None
+        except (ValueError, KeyError):
+            nd = None
+        if nd:
+            n = (nd - today).days
+            if n <= 0:
+                summary["due_now"] += 1
+                summary["overdue_amount"] += d.get("amount", 0.0) if n < 0 else 0.0
+            if n <= 7:
+                summary["due_7"] += 1
+            if n <= 30:
+                summary["due_30"] += 1
+            if not summary["next_due"]:
+                summary["next_due"] = {"title": d["title"], "date": d["next_due"], "amount": d.get("amount", 0.0)}
+        if d.get("frequency") == "Monthly":
+            summary["monthly_outlook"] += d.get("amount", 0.0)
+    return {"dues": dues, "summary": summary, "categories": DUE_CATEGORIES, "frequencies": DUE_FREQUENCIES}
+
+
+@router.post("/compliance/dues")
+async def create_due(due: FirmDueIn, authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await get_current_user(authorization, session_token)
+    if user.get("role") != "partner":
+        raise HTTPException(status_code=403, detail="Partner only")
+    doc = {"due_id": f"due_{uuid.uuid4().hex[:12]}", **due.model_dump(exclude_none=True),
+           "last_paid_on": None, "created_by": user.get("name"), "created_at": _now_iso()}
+    await db.firm_dues.insert_one(doc)
+    return {"ok": True, "due_id": doc["due_id"]}
+
+
+@router.patch("/compliance/dues/{due_id}")
+async def update_due(due_id: str, req: FirmDueUpdateIn, authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await get_current_user(authorization, session_token)
+    if user.get("role") != "partner":
+        raise HTTPException(status_code=403, detail="Partner only")
+    existing = await db.firm_dues.find_one({"due_id": due_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Due not found")
+    updates = {k: v for k, v in req.model_dump(exclude_none=True).items() if k != "action"}
+    if req.action == "mark_paid":
+        today = _today()
+        try:
+            base = date.fromisoformat(existing["next_due"]) if existing.get("next_due") else today
+        except ValueError:
+            base = today
+        # If the due date already passed, roll from it; otherwise from today
+        anchor = base if base < today else today
+        updates["last_paid_on"] = today.isoformat()
+        if existing.get("auto_rollover", True):
+            updates["next_due"] = _roll_forward(anchor, req.frequency or existing.get("frequency", "Monthly"))
+    if updates:
+        await db.firm_dues.update_one({"due_id": due_id}, {"$set": updates})
+    return {"ok": True, "next_due": updates.get("next_due", existing.get("next_due"))}
+
+
+@router.delete("/compliance/dues/{due_id}")
+async def delete_due(due_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
+    user = await get_current_user(authorization, session_token)
+    if user.get("role") != "partner":
+        raise HTTPException(status_code=403, detail="Partner only")
+    await db.firm_dues.delete_one({"due_id": due_id})
     return {"ok": True}

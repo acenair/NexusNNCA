@@ -2,7 +2,7 @@
 from services.templates import CHECKLIST_TEMPLATES
 import audit_workbook
 from core import client
-from datetime import datetime
+from datetime import datetime, timezone, date, timedelta
 from core import db
 from core import hash_password
 from core import init_storage
@@ -661,6 +661,45 @@ async def seed_demo_e2e():
         logger.info("Seeded the firm policy library (4 standard policies)")
 
 
+async def seed_firm_dues():
+    """Demo register of recurring organisation expenses with due dates (DEWA,
+    telecom, rent, WPS payroll, insurance premium, licence renewal) so partners
+    see the day-to-day operating-payment picture in the Compliance tracker."""
+    if await db.firm_dues.count_documents({}) > 0:
+        return
+    t = datetime.now(timezone.utc).date()
+
+    def on_day(day_of_month: int) -> str:
+        # this month's due date; if already passed, next month's
+        import calendar
+        y, m = t.year, t.month
+        d = date(y, m, min(day_of_month, calendar.monthrange(y, m)[1]))
+        if d < t:
+            m += 1
+            y += (m - 1) // 12
+            m = (m - 1) % 12 + 1
+            d = date(y, m, min(day_of_month, calendar.monthrange(y, m)[1]))
+        return d.isoformat()
+
+    samples = [
+        # (title, category, vendor, amount, frequency, next_due, method)
+        ("DEWA electricity & water — office", "Utilities", "DEWA", 1850.0, "Monthly", on_day(3), "Direct debit"),
+        ("WPS payroll file — salaried staff", "Payroll", "MOHRE / bank", 61200.0, "Monthly", on_day(1), "WPS transfer"),
+        ("Etisalat business internet & phones", "Telecom", "Etisalat", 640.0, "Monthly", on_day(9), "Credit card"),
+        ("Professional indemnity premium", "Insurance", "Orient Insurance", 7400.0, "Annual", (t + timedelta(days=20)).isoformat(), "Bank transfer"),
+        ("Trade licence renewal fee", "Government fees", "DED Dubai", 14300.0, "Annual", (t + timedelta(days=48)).isoformat(), "Bank transfer"),
+        ("Office rent — annual instalment", "Rent", "IEDS Real Estate", 85000.0, "Annual", (t + timedelta(days=75)).isoformat(), "Cheque"),
+    ]
+    now = datetime.now(timezone.utc).isoformat()
+    for title, cat, vendor, amount, freq, next_due, method in samples:
+        await db.firm_dues.insert_one({
+            "due_id": f"due_{uuid.uuid4().hex[:12]}", "title": title, "category": cat,
+            "vendor": vendor, "amount": amount, "frequency": freq, "next_due": next_due,
+            "auto_rollover": True, "payment_method": method, "notes": "Sample register entry",
+            "last_paid_on": None, "created_by": "system (sample data)", "created_at": now})
+    logger.info(f"Seeded {len(samples)} sample firm dues (DEWA, payroll, rent, insurance, licence)")
+
+
 async def startup():
     try:
         init_storage()
@@ -677,6 +716,7 @@ async def startup():
     await seed_einvoicing_samples()
     await seed_demo_ledger()
     await seed_demo_e2e()
+    await seed_firm_dues()
     await migrate_force_password_change()
 
 
