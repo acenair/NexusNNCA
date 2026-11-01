@@ -439,9 +439,24 @@ h1, h2, h3, h4, h5, h6 {
 
   /* Headings + action rows wrap instead of pushing width */
   .ov-heading, .af-cardhead { min-width: 0; }
+  .ov-heading { flex-direction: column; align-items: stretch !important; }
   .ov-heading h1 { font-size: 22px !important; }
+  .ov-heading > div:last-child { display: flex; flex-wrap: wrap; gap: 8px; }
+  .ov-heading > div:last-child > a, .ov-heading > div:last-child > button { flex: 1 1 auto; text-align: center; }
   .af-cardhead { flex-wrap: wrap; row-gap: 6px; }
   .nn-progress { min-width: 40px; }
+
+  /* Topbar: drop the label buttons on phones (menu + title + bell + New Task fit) */
+  .topbar-action-btn { display: none !important; }
+  .tbtn-gold .btn-label { display: none; }
+  .tbtn-gold { padding: 7px 9px !important; }
+
+  /* Section tab strips scroll cleanly under the thumb */
+  [data-testid="customer-tabs"] { gap: 16px !important; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  [data-testid="customer-tabs"]::-webkit-scrollbar { display: none; }
+
+  /* Metric widget lines wrap at word boundaries, not mid-token */
+  .af-metric a { overflow-wrap: break-word; }
 }
 
 @media (max-width: 768px) {

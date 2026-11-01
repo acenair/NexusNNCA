@@ -423,7 +423,7 @@ const MainLayout = ({ user }) => {
                 <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#dbe9f6', color: '#0e6db4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, flexShrink: 0 }}>{user.name?.charAt(0)}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="sidebar-user-name" style={{ fontSize: 12, fontWeight: 600, color: '#17354c', whiteSpace: 'normal', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word', lineHeight: 1.3 }}>{user.name}</div>
-                  <div style={{ fontSize: 10, color: '#0e6db4', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.title || user.role}</div>
+                  <div style={{ fontSize: 10, color: '#0e6db4', whiteSpace: 'normal', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word', lineHeight: 1.3 }}>{user.title || user.role}</div>
                 </div>
               </div>
               <button onClick={handleLogout} style={{ width: '100%', padding: '6px 0', borderRadius: 6, background: '#eaf3fb', border: 'none', color: '#698398', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, fontFamily: 'DM Sans, sans-serif' }} data-testid="logout-btn"><LogOut size={13} /> Logout</button>
