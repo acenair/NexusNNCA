@@ -22,6 +22,10 @@ from typing import Optional
 from core import db, get_current_user
 from routes.journal import journal_event
 
+
+def _now():
+    return datetime.now(timezone.utc).isoformat()
+
 router = APIRouter(prefix="/api")
 
 MAX_FILE = 8 * 1024 * 1024
@@ -339,6 +343,8 @@ async def import_confirm(engagement_id: str, body: Optional[dict] = None,
             {"$set": {"columns": cols, "updated_at": datetime.now(timezone.utc).isoformat(), "updated_by": user.get("name")}},
             upsert=True)
     await db.tb_staging.delete_one({"engagement_id": engagement_id})
+    await db.service_engagements.update_one(
+        {"engagement_id": engagement_id}, {"$set": {"last_tb_changed_at": _now()}})
     await journal_event(engagement_id, "tb_imported",
                         (f"Trial balance imported: {doc['file_name']} — {len(rows)} accounts; "
                          f"{memory_n} from firm memory, {auto_n} keyword-matched, "

@@ -14696,6 +14696,423 @@
      }
     }
    }
+  },
+  "/api/audit/{engagement_id}/materiality": {
+   "get": {
+    "summary": "Get Materiality",
+    "operationId": "get_materiality_api_audit__engagement_id__materiality_get",
+    "parameters": [
+     {
+      "name": "engagement_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Engagement Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "title": "Authorization"
+      }
+     },
+     {
+      "name": "session_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "title": "Session Token"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "patch": {
+    "summary": "Set Materiality",
+    "operationId": "set_materiality_api_audit__engagement_id__materiality_patch",
+    "parameters": [
+     {
+      "name": "engagement_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Engagement Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "title": "Authorization"
+      }
+     },
+     {
+      "name": "session_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "title": "Session Token"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "anyOf": [
+         {
+          "type": "object",
+          "additionalProperties": true
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "title": "Body"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/audit/{engagement_id}/je-tests": {
+   "get": {
+    "summary": "Je Tests",
+    "operationId": "je_tests_api_audit__engagement_id__je_tests_get",
+    "parameters": [
+     {
+      "name": "engagement_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Engagement Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "title": "Authorization"
+      }
+     },
+     {
+      "name": "session_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "title": "Session Token"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/audit/{engagement_id}/corporate-tax": {
+   "get": {
+    "summary": "Corporate Tax",
+    "operationId": "corporate_tax_api_audit__engagement_id__corporate_tax_get",
+    "parameters": [
+     {
+      "name": "engagement_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Engagement Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "title": "Authorization"
+      }
+     },
+     {
+      "name": "session_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "title": "Session Token"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "patch": {
+    "summary": "Set Ct Adjustments",
+    "operationId": "set_ct_adjustments_api_audit__engagement_id__corporate_tax_patch",
+    "parameters": [
+     {
+      "name": "engagement_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Engagement Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "title": "Authorization"
+      }
+     },
+     {
+      "name": "session_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "title": "Session Token"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "anyOf": [
+         {
+          "type": "object",
+          "additionalProperties": true
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "title": "Body"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/audit/{engagement_id}/risk-memo": {
+   "get": {
+    "summary": "Risk Memo",
+    "operationId": "risk_memo_api_audit__engagement_id__risk_memo_get",
+    "parameters": [
+     {
+      "name": "engagement_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Engagement Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "title": "Authorization"
+      }
+     },
+     {
+      "name": "session_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "title": "Session Token"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/audit/{engagement_id}/pack-staleness": {
+   "get": {
+    "summary": "Pack Staleness",
+    "operationId": "pack_staleness_api_audit__engagement_id__pack_staleness_get",
+    "parameters": [
+     {
+      "name": "engagement_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Engagement Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "title": "Authorization"
+      }
+     },
+     {
+      "name": "session_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "title": "Session Token"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
   }
  },
  "components": {

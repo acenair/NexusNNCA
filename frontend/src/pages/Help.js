@@ -248,6 +248,8 @@ const GUIDES = [
       'Each note can be AI pre-drafted from the engagement\u2019s own figures and the firm\u2019s saved policy wording (Notes & disclosures → Firm policy library — keep the standard policies current; they flow into every pre-draft). If AI is not configured, a template wording is used instead.',
       'Staff edit any note; the partner clears it when review-complete (cleared notes are locked until reopened). Cleared notes appear in full in the statements PDF; drafts are marked [DRAFT — pending partner review].',
       'Deliverable pack: the Statements tab can download the complete client-ready PDF in one click — cover page with the balance and cash-flow checks, the three statements, notes, the disclosure checklist, the adjustments register and the adjusted trial balance.',
+      'Audit intel: materiality (pick the benchmark — revenue, profit, assets or expenses — with practice-norm percentages, performance and clearly-trivial thresholds), journal-entry testing (round amounts, weekend and period-edge postings, duplicate payment pairs, materiality-scaled large entries), the UAE 9% corporate-tax computation (common add-backs, small-business relief election, filing deadline) and the analytical risk memo (AI when configured, structured template otherwise) — all from the same adjusted books.',
+      'If anything in the books or adjustments changes after a deliverable pack was exported, the Audit intel tab shows a staleness banner — re-export before sending anything to the client.',
       'Notes and disclosures are prepared at the review stage (notes builder comes with the disclosures module).',
     ],
   },

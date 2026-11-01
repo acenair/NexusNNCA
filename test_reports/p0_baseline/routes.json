@@ -1734,5 +1734,54 @@
    "PUT"
   ],
   "name": "put_policy"
+ },
+ {
+  "path": "/api/audit/{engagement_id}/materiality",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_materiality"
+ },
+ {
+  "path": "/api/audit/{engagement_id}/materiality",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "set_materiality"
+ },
+ {
+  "path": "/api/audit/{engagement_id}/je-tests",
+  "methods": [
+   "GET"
+  ],
+  "name": "je_tests"
+ },
+ {
+  "path": "/api/audit/{engagement_id}/corporate-tax",
+  "methods": [
+   "GET"
+  ],
+  "name": "corporate_tax"
+ },
+ {
+  "path": "/api/audit/{engagement_id}/corporate-tax",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "set_ct_adjustments"
+ },
+ {
+  "path": "/api/audit/{engagement_id}/risk-memo",
+  "methods": [
+   "GET"
+  ],
+  "name": "risk_memo"
+ },
+ {
+  "path": "/api/audit/{engagement_id}/pack-staleness",
+  "methods": [
+   "GET"
+  ],
+  "name": "pack_staleness"
  }
 ]

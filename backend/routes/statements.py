@@ -602,6 +602,8 @@ async def deliverable_pack(engagement_id: str, authorization: str = Header(None)
     pdf.cell(0, 6, _amt(totals_fin), align="right", new_x="LMARGIN", new_y="NEXT")
 
     pdf_bytes = bytes(pdf.output())
+    await db.service_engagements.update_one(
+        {"engagement_id": engagement_id}, {"$set": {"last_pack_exported_at": _now()}})
     await journal_event(engagement_id, "pack_exported",
                         f"Deliverable pack exported (cover, statements, cash flow, notes, checklist, AJE register, adjusted TB)",
                         by_name=user.get("name") or "User")

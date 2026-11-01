@@ -11,7 +11,8 @@ import ReceiptInbox from './ReceiptInbox';
 import VatRecon from './VatRecon';
 import Statements from './Statements';
 import NotesDisclosure from './NotesDisclosure';
-import { MessageSquare, Scale, Receipt, FileText } from 'lucide-react';
+import AuditIntel from './AuditIntel';
+import { MessageSquare, Scale, Receipt, FileText, FlaskConical } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const AUDIT_SERVICE_TYPES = ['statutory_audit', 'internal_audit', 'stock_audit', 'fraud_audit'];
@@ -259,6 +260,7 @@ const EngagementDetail = () => {
             {isAudit && tabBtn('ajes', 'tab-ajes', <Scale size={14} />, 'Adjustments')}
             {isAudit && tabBtn('statements', 'tab-statements', <FileText size={14} />, 'Statements')}
             {isAudit && tabBtn('notes', 'tab-notes', <ListChecks size={14} />, 'Notes & disclosures')}
+            {isAudit && tabBtn('intel', 'tab-intel', <FlaskConical size={14} />, 'Audit intel')}
             {tabBtn('journal', 'tab-journal', <BookOpen size={14} />, 'Journal')}
             {tabBtn('queries', 'tab-queries', <MessageSquare size={14} />, 'Client queries')}
           </div>
@@ -354,6 +356,8 @@ const EngagementDetail = () => {
         <Statements engagementId={engagementId} isPartner={isPartner} />
       ) : activeTab === 'notes' && AUDIT_SERVICE_TYPES.includes(eng.service_type) ? (
         <NotesDisclosure engagementId={engagementId} isPartner={isPartner} />
+      ) : activeTab === 'intel' && AUDIT_SERVICE_TYPES.includes(eng.service_type) ? (
+        <AuditIntel engagementId={engagementId} />
       ) : activeTab === 'journal' ? (
         <WorkJournal engagementId={engagementId} />
       ) : activeTab === 'queries' ? (

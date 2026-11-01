@@ -114,6 +114,8 @@ async def create_aje(engagement_id: str, body: Optional[dict] = None,
         "created_at": _now(),
     }
     await db.engagement_ajes.insert_one(aje)
+    await db.service_engagements.update_one(
+        {"engagement_id": engagement_id}, {"$set": {"last_aje_changed_at": _now()}})
     aje.pop("_id", None)
     await journal_event(engagement_id, "aje_proposed",
                         f"{aje['ref']} proposed: {description[:150]} — Dr {debit_account} / Cr {credit_account} AED {amount:,.2f}",
@@ -164,6 +166,8 @@ async def update_aje(aje_id: str, body: Optional[dict] = None,
         raise HTTPException(422, "Nothing to update")
     updates["updated_by"] = user.get("name") or user.get("email")
     await db.engagement_ajes.update_one({"aje_id": aje_id}, {"$set": updates})
+    await db.service_engagements.update_one(
+        {"engagement_id": aje["engagement_id"]}, {"$set": {"last_aje_changed_at": _now()}})
     await journal_event(aje["engagement_id"], "aje_updated",
                         f"{aje['ref']} updated: {', '.join(k for k in updates if k not in ('updated_by',))}",
                         by_name=user.get("name") or "User")
@@ -184,6 +188,8 @@ async def signoff_aje(aje_id: str, authorization: str = Header(None), session_to
     await db.engagement_ajes.update_one(
         {"aje_id": aje_id},
         {"$set": {"status": "Posted", "signed_off_by": user.get("name"), "signed_off_at": _now()}})
+    await db.service_engagements.update_one(
+        {"engagement_id": aje["engagement_id"]}, {"$set": {"last_aje_changed_at": _now()}})
     await journal_event(aje["engagement_id"], "aje_signed",
                         f"{aje['ref']} signed off by partner — Dr {aje['debit_account']} / Cr {aje['credit_account']} AED {aje['amount']:,.2f}",
                         by_name=user.get("name") or "User")
@@ -204,6 +210,8 @@ async def unsignoff_aje(aje_id: str, authorization: str = Header(None), session_
     await db.engagement_ajes.update_one(
         {"aje_id": aje_id},
         {"$set": {"status": "Proposed", "signed_off_by": None, "signed_off_at": None}})
+    await db.service_engagements.update_one(
+        {"engagement_id": aje["engagement_id"]}, {"$set": {"last_aje_changed_at": _now()}})
     await journal_event(aje["engagement_id"], "aje_unsigned",
                         f"{aje['ref']} sign-off reversed — back to Proposed",
                         by_name=user.get("name") or "User")
@@ -222,6 +230,8 @@ async def delete_aje(aje_id: str, authorization: str = Header(None), session_tok
     if aje.get("status") == "Posted":
         raise HTTPException(422, "Posted AJEs are locked — unsign-off first")
     await db.engagement_ajes.delete_one({"aje_id": aje_id})
+    await db.service_engagements.update_one(
+        {"engagement_id": aje["engagement_id"]}, {"$set": {"last_aje_changed_at": _now()}})
     await journal_event(aje["engagement_id"], "aje_deleted",
                         f"{aje['ref']} deleted: {aje['description'][:120]}",
                         by_name=user.get("name") or "User")
