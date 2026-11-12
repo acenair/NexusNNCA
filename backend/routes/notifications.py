@@ -78,8 +78,9 @@ async def get_notifications(authorization: str = Header(None), session_token: st
             })
 
     # Check dismissed notifications
-    # Client emails waiting in the shared inboxes (care@ / tax@ / audit@ / ...) — nudges
-    mailbox_rows = await db.mailbox_emails.find({"seen": {"$ne": True}}, {"_id": 0}).sort("date", -1).to_list(20)
+    # Client emails waiting in the shared inboxes (care@ / tax@ / audit@ / ...) — nudges.
+    # Only client-matched mail rings the bell; other mail stays out of notifications.
+    mailbox_rows = await db.mailbox_emails.find({"seen": {"$ne": True}, "is_client": True}, {"_id": 0}).sort("date", -1).to_list(20)
     for mb in mailbox_rows[:8]:
         title = f"Email to {mb['mailbox'].split('@')[0]}: {mb.get('client_name') or mb.get('from_name', 'unknown sender')}"
         notifications.append({
