@@ -51,7 +51,29 @@ from routes import (
     mailbox,
 )
 
-app = FastAPI()
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app):
+    # ---- Mailbox nudge poller: check the firm's shared inboxes every 10 minutes ----
+    import asyncio
+    from routes.mailbox import poll_mailboxes
+
+    async def _mailbox_loop():
+        while True:
+            try:
+                if os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON"):
+                    await poll_mailboxes()
+            except Exception as e:
+                print(f"MAILBOX_POLL_ERROR {str(e)[:200]}")
+            await asyncio.sleep(600)
+
+    poller = asyncio.create_task(_mailbox_loop())
+    yield
+    poller.cancel()
+
+
+app = FastAPI(lifespan=lifespan)
 
 # Each router retains its original /api paths and decorator order.
 for router in (
@@ -114,18 +136,4 @@ app.add_event_handler("shutdown", shutdown_db_client)
 
 
 # ---- Mailbox nudge poller: check the firm's shared inboxes every 10 minutes ----
-@app.on_event("startup")
-async def start_mailbox_poller():
-    import asyncio
-    from routes.mailbox import poll_mailboxes
 
-    async def _loop():
-        while True:
-            try:
-                if os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON"):
-                    await poll_mailboxes()
-            except Exception as e:
-                print(f"MAILBOX_POLL_ERROR {str(e)[:200]}")
-            await asyncio.sleep(600)
-
-    asyncio.create_task(_loop())
