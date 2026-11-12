@@ -34,7 +34,7 @@ const Login = () => {
     const gerr = qp.get('google_error');
     if (gerr) {
       const msgs = {
-        not_registered: 'This Google account is not registered. Ask a partner to add you, or use your password.',
+        not_registered: 'This Google account cannot sign in. Use your firm Google account (nairnelliyatt.com / nn-ca.com), or your password.',
         domain_not_allowed: 'Only firm Google accounts (nairnelliyatt.com / nn-ca.com) can sign in here.',
         pending_approval: 'Your account is pending partner approval.',
         disabled: 'Google sign-in is not configured yet.',
