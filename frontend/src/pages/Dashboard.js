@@ -292,7 +292,7 @@ const Dashboard = () => {
       {ovTab === 'glance' && (<>
       <section className="af-hero">
         <div>
-          <strong>Good {today.getHours() < 12 ? 'morning' : today.getHours() < 17 ? 'afternoon' : 'evening'}, {user?.name?.split(' ')[0]}</strong>
+          <strong>Good {today.getHours() < 12 ? 'morning' : today.getHours() < 17 ? 'afternoon' : 'evening'}, {user?.name}</strong>
           <p>{briefLines.length ? briefLines.join(' ') : 'Everything is on track. No overdue items, nothing blocking delivery.'}</p>
         </div>
         {briefLines.length > 0 && (
