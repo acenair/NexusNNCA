@@ -27,7 +27,7 @@ from fastapi import APIRouter
 from fastapi import Cookie
 from fastapi.responses import RedirectResponse
 
-from core import db, create_jwt_token
+from core import db, create_jwt_token, log_activity, log_activity
 
 router = APIRouter(prefix="/api")
 
@@ -55,7 +55,11 @@ def _allowed_domains():
 
 @router.get("/auth/google/status")
 async def google_status():
-    return {"enabled": bool(_client_id() and _client_secret())}
+    return {
+        "enabled": bool(_client_id() and _client_secret()),
+        "domains": sorted(_allowed_domains()),
+        "auto_provision": os.environ.get("GOOGLE_AUTO_PROVISION", "1") == "1",
+    }
 
 
 @router.get("/auth/google/start")
@@ -116,10 +120,36 @@ async def google_callback(code: str = "", state: str = "", error: str = ""):
         return RedirectResponse("/login?google_error=domain_not_allowed")
 
     user_doc = await db.users.find_one({"email": email})
+
     if not user_doc:
-        return RedirectResponse("/login?google_error=not_registered")
+        # Auto-provision: any new user from an allowlisted Workspace domain gets an
+        # account on first sign-in. Role: partner for GOOGLE_ADMIN_EMAILS, staff otherwise.
+        if os.environ.get("GOOGLE_AUTO_PROVISION", "1") != "1":
+            return RedirectResponse("/login?google_error=not_registered")
+        admins = {e.strip().lower() for e in os.environ.get("GOOGLE_ADMIN_EMAILS", "").split(",") if e.strip()}
+        new_user = {
+            "user_id": f"usr_{uuid.uuid4().hex[:12]}",
+            "email": email,
+            "name": (info.get("name") or email.split("@")[0].replace(".", " ").title())[:80],
+            "title": None,
+            "role": "partner" if email in admins else "staff",
+            "picture": info.get("picture"),
+            "auth_provider": "google",
+            "password": None,
+            "must_change_password": False,
+            "is_active": True,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "provisioned_at": datetime.now(timezone.utc).isoformat(),
+        }
+        await db.users.insert_one(new_user)
+        await log_activity("Account provisioned", f"Workspace account provisioned: {email} (role {new_user['role']})", new_user["user_id"])
+        user_doc = new_user
     if user_doc.get("status") == "pending_approval":
         return RedirectResponse("/login?google_error=pending_approval")
+    # remember the Google profile for the avatar
+    if user_doc.get("auth_provider") != "google":
+        await db.users.update_one({"user_id": user_doc["user_id"]},
+                                  {"$set": {"auth_provider": "google", "picture": info.get("picture")}})
 
     session_token = create_jwt_token(user_doc["user_id"])
     await db.user_sessions.insert_one({
