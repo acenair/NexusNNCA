@@ -69,7 +69,9 @@ async def lifespan(app):
             await asyncio.sleep(600)
 
     poller = asyncio.create_task(_mailbox_loop())
+    await startup()
     yield
+    await shutdown_db_client()
     poller.cancel()
 
 
@@ -130,10 +132,4 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-app.add_event_handler("startup", startup)
-app.add_event_handler("shutdown", shutdown_db_client)
-
-
-# ---- Mailbox nudge poller: check the firm's shared inboxes every 10 minutes ----
 
