@@ -183,11 +183,19 @@ async def provision_client_folders(authorization: str = Header(None), session_to
     if not service:
         raise HTTPException(status_code=400, detail="Google Drive not connected — connect it first")
 
-    from services.drive import get_or_create_drive_folder
+    from services.drive import get_or_create_drive_folder, SERVICE_FOLDER_LABELS, RECURRING_SERVICES, _fy_year
     clients = await db.clients.find({"status": {"$ne": "Deleted"}}, {"_id": 0, "client_id": 1, "name": 1}).to_list(2000)
     created, existing = 0, 0
+    this_year = datetime.now(timezone.utc).year
     for c in clients:
         folder_id = await get_or_create_drive_folder(service, c["name"])
+        # pre-create a subfolder per engaged service (+ year folder for recurring services)
+        async for e in db.service_engagements.find({"client_id": c["client_id"], "status": {"$ne": "Deleted"}}, {"_id": 0}):
+            label = SERVICE_FOLDER_LABELS.get(e.get("service_type"), (e.get("service_type") or "").replace("_", " ").title())
+            subs = [label]
+            if e.get("service_type") in RECURRING_SERVICES:
+                subs.append(_fy_year(e) or f"FY{this_year}")
+            await get_or_create_drive_folder(service, c["name"], subs)
         already = await db.clients.find_one({"client_id": c["client_id"], "drive_folder_id": {"$exists": True}})
         await db.clients.update_one(
             {"client_id": c["client_id"]},

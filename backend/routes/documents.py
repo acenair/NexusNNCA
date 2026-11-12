@@ -54,10 +54,11 @@ async def upload_file(file: UploadFile = File(...), authorization: str = Header(
     drive_status = {"synced_to_drive": False}
     if client_id:
         try:
-            from services.drive import get_drive_service, get_or_create_drive_folder
+            from services.drive import get_drive_service, get_or_create_drive_folder, resolve_upload_subfolders
             service = await get_drive_service()
             if service:
-                folder_id = await get_or_create_drive_folder(service, file_doc["client_name"])
+                subs = await resolve_upload_subfolders(db, client_id, document_type, datetime.now(timezone.utc).year)
+                folder_id = await get_or_create_drive_folder(service, file_doc["client_name"], subs)
                 from googleapiclient.http import MediaIoBaseUpload
                 import io as _io
                 media = MediaIoBaseUpload(_io.BytesIO(data), mimetype=file.content_type or "application/octet-stream")

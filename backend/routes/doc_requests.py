@@ -190,10 +190,11 @@ async def portal_upload(token: str, file: UploadFile = File(...), item_id: str =
     # Best-effort Google Drive auto-sync (client folder)
     drive_link = None
     try:
-        from services.drive import get_drive_service, get_or_create_drive_folder
+        from services.drive import get_drive_service, get_or_create_drive_folder, resolve_upload_subfolders
         service = await get_drive_service()
         if service:
-            folder_id = await get_or_create_drive_folder(service, doc["client_name"])
+            subs = await resolve_upload_subfolders(db, doc["client_id"], file.filename, datetime.now(timezone.utc).year)
+            folder_id = await get_or_create_drive_folder(service, doc["client_name"], subs)
             from googleapiclient.http import MediaIoBaseUpload
             import io
             media = MediaIoBaseUpload(io.BytesIO(data), mimetype=file.content_type or "application/octet-stream")
