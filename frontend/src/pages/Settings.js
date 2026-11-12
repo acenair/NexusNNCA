@@ -49,11 +49,6 @@ const STORAGE_PROVIDERS = [
     { key: 'access_key_id', label: 'Access Key ID', placeholder: 'AKIA...' },
     { key: 'secret_access_key', label: 'Secret Access Key', placeholder: '********', type: 'password' },
   ]},
-  { key: 'google_drive', label: 'Google Drive', icon: '📁', color: '#4285F4', fields: [
-    { key: 'folder_id', label: 'Folder ID', placeholder: 'Drive folder ID' },
-    { key: 'service_account_email', label: 'Service Account Email', placeholder: 'sa@project.iam.gserviceaccount.com' },
-    { key: 'credentials_json', label: 'Credentials JSON', placeholder: 'Paste service account JSON...', multiline: true },
-  ]},
   { key: 'onedrive', label: 'OneDrive', icon: '☁️', color: '#0078D4', fields: [
     { key: 'tenant_id', label: 'Tenant ID', placeholder: 'Azure AD tenant ID' },
     { key: 'client_id', label: 'Client ID', placeholder: 'Application (client) ID' },
@@ -1065,7 +1060,7 @@ const Settings = () => {
       {tab === 'storage' && (
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <div style={{ fontSize: 11, color: 'var(--muted)' }}>Active: <strong style={{ color: 'var(--text)' }}>{storage.provider === 'default' ? 'Emergent Storage (Default)' : STORAGE_PROVIDERS.find(p => p.key === storage.provider)?.label || storage.provider}</strong></div>
+            <div style={{ fontSize: 11, color: 'var(--muted)' }}>Active: <strong style={{ color: 'var(--text)' }}>{storage.provider === 'default' ? 'Built-in storage' : STORAGE_PROVIDERS.find(p => p.key === storage.provider)?.label || storage.provider}</strong></div>
             <button className="tbtn tbtn-gold" onClick={saveStorage} disabled={saving} data-testid="save-storage"><Save size={13} /> {saving ? 'Saving...' : 'Save Configuration'}</button>
           </div>
 
