@@ -1060,20 +1060,8 @@ const Settings = () => {
       {tab === 'storage' && (
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <div style={{ fontSize: 11, color: 'var(--muted)' }}>Active: <strong style={{ color: 'var(--text)' }}>{storage.provider === 'default' ? 'Built-in storage' : STORAGE_PROVIDERS.find(p => p.key === storage.provider)?.label || storage.provider}</strong></div>
+            <div style={{ fontSize: 11, color: 'var(--muted)' }}>Active: <strong style={{ color: 'var(--text)' }}>{storage.provider === 'default' ? 'Built-in (local)' : STORAGE_PROVIDERS.find(p => p.key === storage.provider)?.label || storage.provider}</strong></div>
             <button className="tbtn tbtn-gold" onClick={saveStorage} disabled={saving} data-testid="save-storage"><Save size={13} /> {saving ? 'Saving...' : 'Save Configuration'}</button>
-          </div>
-
-          {/* Default storage card */}
-          <div className="nn-card" style={{ padding: '16px 20px', marginBottom: 12, border: storage.provider === 'default' ? '2px solid var(--gold)' : '1px solid var(--nn-border)', cursor: 'pointer' }} onClick={() => setActiveProvider('default')} data-testid="storage-default">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 8, background: 'linear-gradient(135deg, var(--navy), var(--navy3))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Cloud size={18} color="var(--gold)" /></div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>Emergent Storage (Default)</div>
-                <div style={{ fontSize: 11, color: 'var(--muted)' }}>Built-in cloud storage — no configuration required</div>
-              </div>
-              {storage.provider === 'default' && <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 10, background: 'var(--green-bg)', color: 'var(--green)' }}>Active</span>}
-            </div>
           </div>
 
           {/* Provider cards */}
