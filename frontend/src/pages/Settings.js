@@ -130,6 +130,15 @@ const Settings = () => {
 
   // Drive
   const [driveStatus, setDriveStatus] = useState(null);
+  const [disconnectStep, setDisconnectStep] = useState(0); // 0 = hidden, 1 = confirm, 2 = type-to-confirm
+  const [disconnectText, setDisconnectText] = useState('');
+  const doDisconnectDrive = async () => {
+    try {
+      await axios.post(`${API}/drive/disconnect`, {}, { withCredentials: true });
+      loadDriveStatus(); showSave('Drive disconnected');
+    } catch (e) { alert('Failed to disconnect'); }
+    setDisconnectStep(0); setDisconnectText('');
+  };
 
   // Ledger integrations
   const [integrations, setIntegrations] = useState([]);
@@ -1505,7 +1514,7 @@ const Settings = () => {
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 12 }}>Connected: {driveStatus.connected_at ? new Date(driveStatus.connected_at).toLocaleDateString() : '—'}</div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={async () => { try { await axios.post(`${API}/drive/disconnect`, {}, { withCredentials: true }); loadDriveStatus(); showSave('Drive disconnected'); } catch (e) { alert('Failed'); } }} className="tbtn tbtn-outline" style={{ fontSize: 11 }} data-testid="drive-disconnect-btn"><X size={12} /> Disconnect</button>
+                  <button onClick={() => { setDisconnectStep(1); setDisconnectText(''); }} className="tbtn tbtn-outline" style={{ fontSize: 11 }} data-testid="drive-disconnect-btn"><X size={12} /> Disconnect</button>
                 </div>
               </div>
             ) : (
@@ -1514,6 +1523,39 @@ const Settings = () => {
                 <button onClick={async () => { try { const res = await axios.get(`${API}/drive/connect`, { withCredentials: true }); if (res.data.authorization_url) window.location.href = res.data.authorization_url; } catch (e) { alert(e.response?.data?.detail || 'Failed to connect'); } }} className="tbtn tbtn-gold" style={{ display: 'flex', alignItems: 'center', gap: 6 }} data-testid="drive-connect-btn"><LinkIcon size={13} /> Connect Google Drive</button>
               </div>
             )}
+
+{disconnectStep > 0 && (
+  <div style={{ position: 'fixed', inset: 0, background: 'rgba(1,20,35,0.5)', zIndex: 90, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => { setDisconnectStep(0); setDisconnectText(''); }} data-testid="drive-disconnect-modal">
+    <div className="nn-card" style={{ width: 440, padding: 22, margin: 16 }} onClick={e => e.stopPropagation()}>
+      {disconnectStep === 1 && (<>
+        <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 8 }}>Disconnect Google Drive?</div>
+        <p style={{ fontSize: 12.5, color: 'var(--muted)', lineHeight: 1.6 }}>
+          Documents already synced stay in Google Drive. New uploads will no longer sync, and the per-client folder mapping stops until you reconnect.
+        </p>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
+          <button className="tbtn tbtn-outline" style={{ fontSize: 12 }} onClick={() => { setDisconnectStep(0); setDisconnectText(''); }}>Cancel</button>
+          <button className="tbtn tbtn-outline" style={{ fontSize: 12, color: 'var(--red, #b14943)', borderColor: 'var(--red, #b14943)' }} data-testid="drive-disconnect-continue"
+            onClick={() => setDisconnectStep(2)}>Continue →</button>
+        </div>
+      </>)}
+      {disconnectStep === 2 && (<>
+        <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 8 }}>Final confirmation</div>
+        <p style={{ fontSize: 12.5, color: 'var(--muted)', lineHeight: 1.6, marginBottom: 10 }}>
+          This disconnects the firm's Google Drive. Type <b style={{ color: 'var(--red, #b14943)' }}>DISCONNECT</b> to confirm.
+        </p>
+        <input value={disconnectText} onChange={e => setDisconnectText(e.target.value)} autoFocus
+          placeholder="Type DISCONNECT" data-testid="drive-disconnect-input"
+          style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--nn-border)', background: 'var(--white)', color: 'var(--text)', fontSize: 13, boxSizing: 'border-box' }} />
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
+          <button className="tbtn tbtn-outline" style={{ fontSize: 12 }} onClick={() => { setDisconnectStep(0); setDisconnectText(''); }}>Cancel</button>
+          <button className="tbtn" style={{ fontSize: 12, background: 'var(--red, #b14943)', borderColor: 'var(--red, #b14943)', color: '#fff', opacity: disconnectText.trim().toUpperCase() === 'DISCONNECT' ? 1 : 0.45 }}
+            disabled={disconnectText.trim().toUpperCase() !== 'DISCONNECT'} data-testid="drive-disconnect-confirm"
+            onClick={doDisconnectDrive}>Disconnect Drive</button>
+        </div>
+      </>)}
+    </div>
+  </div>
+)}
           </div>
         </div>
       )}
