@@ -78,6 +78,20 @@ async def get_notifications(authorization: str = Header(None), session_token: st
             })
 
     # Check dismissed notifications
+    # Client emails waiting in the shared inboxes (care@ / tax@ / audit@ / ...) — nudges
+    mailbox_rows = await db.mailbox_emails.find({"seen": {"$ne": True}}, {"_id": 0}).sort("date", -1).to_list(20)
+    for mb in mailbox_rows[:8]:
+        title = f"Email to {mb['mailbox'].split('@')[0]}: {mb.get('client_name') or mb.get('from_name', 'unknown sender')}"
+        notifications.append({
+            "notification_id": f"notif_mail_{mb.get('email_id')}",
+            "title": title,
+            "message": mb.get("subject", "")[:120],
+            "severity": "urgent" if mb.get("is_client") else "info",
+            "type": "client_email",
+            "ref_id": mb.get("email_id"),
+            "mailbox": mb.get("mailbox"),
+        })
+
     dismissed = await db.dismissed_notifications.find({"user_id": user["user_id"]}, {"_id": 0, "notification_id": 1}).to_list(500)
     dismissed_ids = {d["notification_id"] for d in dismissed}
     notifications = [n for n in notifications if n["notification_id"] not in dismissed_ids]
@@ -85,7 +99,7 @@ async def get_notifications(authorization: str = Header(None), session_token: st
     # Sort: urgent first, then by due_date
     severity_order = {"urgent": 0, "warning": 1, "info": 2}
     notifications.sort(key=lambda x: (severity_order.get(x["severity"], 2), x.get("due_date", "")))
-    return notifications[:20]
+    return notifications[:50]
 
 
 @router.patch("/notifications/{notification_id}/dismiss")

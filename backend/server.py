@@ -48,6 +48,7 @@ from routes import (
     statements,
     notes_disclosure,
     audit_intel,
+    mailbox,
 )
 
 app = FastAPI()
@@ -96,6 +97,7 @@ for router in (
     vat_recon.router,
     notes_disclosure.router,
     audit_intel.router,
+    mailbox.router,
 ):
     app.include_router(router)
 
@@ -109,3 +111,21 @@ app.add_middleware(
 
 app.add_event_handler("startup", startup)
 app.add_event_handler("shutdown", shutdown_db_client)
+
+
+# ---- Mailbox nudge poller: check the firm's shared inboxes every 10 minutes ----
+@app.on_event("startup")
+async def start_mailbox_poller():
+    import asyncio
+    from routes.mailbox import poll_mailboxes
+
+    async def _loop():
+        while True:
+            try:
+                if os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON"):
+                    await poll_mailboxes()
+            except Exception as e:
+                print(f"MAILBOX_POLL_ERROR {str(e)[:200]}")
+            await asyncio.sleep(600)
+
+    asyncio.create_task(_loop())
