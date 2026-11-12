@@ -28,13 +28,13 @@ async def connect_drive(authorization: str = Header(None), session_token: str = 
     storage_doc = await db.settings.find_one({"type": "storage"}, {"_id": 0})
     config = storage_doc.get("config", {}).get("google_drive", {}) if storage_doc else {}
 
-    client_id = config.get("client_id") or os.environ.get("GOOGLE_DRIVE_CLIENT_ID")
-    client_secret = config.get("client_secret") or os.environ.get("GOOGLE_DRIVE_CLIENT_SECRET")
+    client_id = config.get("client_id") or os.environ.get("GOOGLE_DRIVE_CLIENT_ID") or os.environ.get("GOOGLE_CLIENT_ID")
+    client_secret = config.get("client_secret") or os.environ.get("GOOGLE_DRIVE_CLIENT_SECRET") or os.environ.get("GOOGLE_CLIENT_SECRET")
 
     if not client_id or not client_secret:
         raise HTTPException(status_code=400, detail="Google Drive credentials not configured. Go to Settings > Storage to add Client ID and Client Secret.")
 
-    frontend_url = os.environ.get("FRONTEND_URL", "").rstrip("/")
+    frontend_url = os.environ.get("FRONTEND_URL", "https://app.nairnelliyatt.com").rstrip("/")
     redirect_uri = f"{frontend_url}/api/drive/callback"
 
     flow = Flow.from_client_config(
@@ -54,10 +54,10 @@ async def drive_callback(code: str = "", state: str = "", error: str = ""):
 
     storage_doc = await db.settings.find_one({"type": "storage"}, {"_id": 0})
     config = storage_doc.get("config", {}).get("google_drive", {}) if storage_doc else {}
-    client_id = config.get("client_id") or os.environ.get("GOOGLE_DRIVE_CLIENT_ID")
-    client_secret = config.get("client_secret") or os.environ.get("GOOGLE_DRIVE_CLIENT_SECRET")
+    client_id = config.get("client_id") or os.environ.get("GOOGLE_DRIVE_CLIENT_ID") or os.environ.get("GOOGLE_CLIENT_ID")
+    client_secret = config.get("client_secret") or os.environ.get("GOOGLE_DRIVE_CLIENT_SECRET") or os.environ.get("GOOGLE_CLIENT_SECRET")
 
-    frontend_url = os.environ.get("FRONTEND_URL", "").rstrip("/")
+    frontend_url = os.environ.get("FRONTEND_URL", "https://app.nairnelliyatt.com").rstrip("/")
     redirect_uri = f"{frontend_url}/api/drive/callback"
 
     flow = Flow.from_client_config(
