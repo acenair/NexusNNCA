@@ -1,5 +1,5 @@
 """Routes / drive — extracted from server.py without behavior changes."""
-from fastapi import APIRouter
+from fastapi import APIRouter, BackgroundTasks
 from fastapi import Cookie
 from services.drive import DRIVE_SCOPES
 from google_auth_oauthlib.flow import Flow
@@ -174,34 +174,51 @@ async def disconnect_drive(authorization: str = Header(None), session_token: str
     return {"message": "Google Drive disconnected"}
 
 
-@router.post("/drive/provision-folders")
-async def provision_client_folders(authorization: str = Header(None), session_token: str = Cookie(None)):
-    """Ensure a Drive folder exists for every client under the firm root folder.
-    Stores drive_folder_id + drive_folder_link on each client record."""
+@router.post("/api/drive/provision-folders")
+async def provision_client_folders(background_tasks: BackgroundTasks, authorization: str = Header(None), session_token: str = Cookie(None)):
+    """Ensure a Drive folder exists for every client (Client / Service / FY structure).
+    Runs in the background — poll /drive/status for progress."""
     user = await require_partner(authorization, session_token)
-    service = await get_drive_service()
-    if not service:
+    service_ok = await get_drive_service()
+    if not service_ok:
         raise HTTPException(status_code=400, detail="Google Drive not connected — connect it first")
 
+    total = await db.clients.count_documents({"status": {"$ne": "Deleted"}})
+    await db.drive_credentials.update_one(
+        {"type": "provision_progress"},
+        {"$set": {"type": "provision_progress", "running": True, "done": 0, "total": total,
+                  "folders_created": 0, "started_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True)
+    background_tasks.add_task(_provision_job)
+    return {"ok": True, "started": True, "total_clients": total}
+
+
+async def _provision_job():
     from services.drive import get_or_create_drive_folder, SERVICE_FOLDER_LABELS, RECURRING_SERVICES, _fy_year
-    clients = await db.clients.find({"status": {"$ne": "Deleted"}}, {"_id": 0, "client_id": 1, "name": 1}).to_list(2000)
-    created, existing = 0, 0
+    service = await get_drive_service()
+    if not service:
+        await db.drive_credentials.update_one({"type": "provision_progress"}, {"$set": {"running": False, "error": "Drive not connected"}})
+        return
     this_year = datetime.now(timezone.utc).year
-    for c in clients:
-        folder_id = await get_or_create_drive_folder(service, c["name"])
-        # pre-create a subfolder per engaged service (+ year folder for recurring services)
-        async for e in db.service_engagements.find({"client_id": c["client_id"], "status": {"$ne": "Deleted"}}, {"_id": 0}):
-            label = SERVICE_FOLDER_LABELS.get(e.get("service_type"), (e.get("service_type") or "").replace("_", " ").title())
-            subs = [label]
-            if e.get("service_type") in RECURRING_SERVICES:
-                subs.append(_fy_year(e) or f"FY{this_year}")
-            await get_or_create_drive_folder(service, c["name"], subs)
-        already = await db.clients.find_one({"client_id": c["client_id"], "drive_folder_id": {"$exists": True}})
-        await db.clients.update_one(
-            {"client_id": c["client_id"]},
-            {"$set": {"drive_folder_id": folder_id, "drive_folder_link": f"https://drive.google.com/drive/folders/{folder_id}"}})
-        if already:
-            existing += 1
-        else:
-            created += 1
-    return {"ok": True, "clients": len(clients), "folders_created": created, "folders_existing": existing}
+    done = 0
+    created = 0
+    async for c in db.clients.find({"status": {"$ne": "Deleted"}}, {"_id": 0, "client_id": 1, "name": 1}):
+        try:
+            folder_id = await get_or_create_drive_folder(service, c["name"])
+            async for e in db.service_engagements.find({"client_id": c["client_id"], "status": {"$ne": "Deleted"}}, {"_id": 0}):
+                label = SERVICE_FOLDER_LABELS.get(e.get("service_type"), (e.get("service_type") or "").replace("_", " ").title())
+                subs = [label]
+                if e.get("service_type") in RECURRING_SERVICES:
+                    subs.append(_fy_year(e) or f"FY{this_year}")
+                await get_or_create_drive_folder(service, c["name"], subs)
+            already = await db.clients.find_one({"client_id": c["client_id"], "drive_folder_id": {"$exists": True}})
+            await db.clients.update_one(
+                {"client_id": c["client_id"]},
+                {"$set": {"drive_folder_id": folder_id, "drive_folder_link": f"https://drive.google.com/drive/folders/{folder_id}"}})
+            created += 0 if already else 1
+        except Exception as ex:
+            await db.drive_credentials.update_one({"type": "provision_progress"}, {"$set": {"last_error": str(ex)[:200]}})
+        done += 1
+        if done % 5 == 0 or done == 1:
+            await db.drive_credentials.update_one({"type": "provision_progress"}, {"$set": {"done": done, "folders_created": created}})
+    await db.drive_credentials.update_one({"type": "provision_progress"}, {"$set": {"running": False, "done": done, "folders_created": created, "finished_at": datetime.now(timezone.utc).isoformat()}})

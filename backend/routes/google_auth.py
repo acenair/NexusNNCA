@@ -56,6 +56,21 @@ def _admins():
     return {e.strip().lower() for e in raw.split(",") if e.strip()}
 
 
+def _role_for(email: str) -> str:
+    """Role mapping for provisioned users. GOOGLE_ROLE_MAP supports explicit
+    pairs: 'email@domain=partner,other@domain=staff'. Admins are always partner."""
+    email = email.strip().lower()
+    if email in _admins():
+        return "partner"
+    raw = os.environ.get("GOOGLE_ROLE_MAP", "")
+    for pair in raw.split(","):
+        if "=" in pair:
+            e, role = pair.split("=", 1)
+            if e.strip().lower() == email and role.strip().lower() in ("partner", "staff"):
+                return role.strip().lower()
+    return "staff"
+
+
 def _allowed_domains():
     raw = os.environ.get("GOOGLE_ALLOWED_DOMAINS", "nairnelliyatt.com,nn-ca.com")
     return {d.strip().lower() for d in raw.split(",") if d.strip()}
@@ -67,6 +82,7 @@ async def google_status():
         "enabled": bool(_client_id() and _client_secret()),
         "domains": sorted(_allowed_domains()),
         "auto_provision": os.environ.get("GOOGLE_AUTO_PROVISION", "1") == "1",
+        "admin_count": len(_admins()),
     }
 
 
@@ -144,7 +160,7 @@ async def google_callback(code: str = "", state: str = "", error: str = ""):
             "email": email,
             "name": (info.get("name") or email.split("@")[0].replace(".", " ").title())[:80],
             "title": None,
-            "role": "partner" if email in admins else "staff",
+            "role": _role_for(email),
             "picture": info.get("picture"),
             "auth_provider": "google",
             "password": None,
