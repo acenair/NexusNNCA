@@ -42,7 +42,14 @@ async def connect_drive(authorization: str = Header(None), session_token: str = 
         scopes=DRIVE_SCOPES,
         redirect_uri=redirect_uri
     )
+    flow.autogenerate_code_verifier = True
     authorization_url, state = flow.authorization_url(access_type='offline', include_granted_scopes='true', prompt='consent', state=user["user_id"])
+    # PKCE: the token exchange needs the verifier generated for this authorization URL
+    await db.drive_credentials.update_one(
+        {"type": f"pkce_{user['user_id']}"},
+        {"$set": {"type": f"pkce_{user['user_id']}", "code_verifier": flow.code_verifier,
+                  "created_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True)
     return {"authorization_url": authorization_url}
 
 
@@ -65,6 +72,10 @@ async def drive_callback(code: str = "", state: str = "", error: str = ""):
         scopes=None,
         redirect_uri=redirect_uri
     )
+    pk = await db.drive_credentials.find_one({"type": f"pkce_{state}"})
+    if pk and pk.get("code_verifier"):
+        flow.code_verifier = pk["code_verifier"]
+        await db.drive_credentials.delete_one({"type": f"pkce_{state}"})
     flow.fetch_token(code=code)
     credentials = flow.credentials
 
