@@ -48,6 +48,14 @@ def _redirect_uri():
     return os.environ.get("GOOGLE_REDIRECT_URI", "https://app.nairnelliyatt.com/api/auth/google/callback")
 
 
+SUPERADMIN_DEFAULT = "srinivas.anup@gmail.com"
+
+
+def _admins():
+    raw = os.environ.get("GOOGLE_ADMIN_EMAILS", SUPERADMIN_DEFAULT)
+    return {e.strip().lower() for e in raw.split(",") if e.strip()}
+
+
 def _allowed_domains():
     raw = os.environ.get("GOOGLE_ALLOWED_DOMAINS", "nairnelliyatt.com,nn-ca.com")
     return {d.strip().lower() for d in raw.split(",") if d.strip()}
@@ -116,7 +124,9 @@ async def google_callback(code: str = "", state: str = "", error: str = ""):
         return RedirectResponse("/login?google_error=no_email")
 
     domain = email.split("@")[-1]
-    if domain not in _allowed_domains():
+    admins = _admins()
+    # superadmins (GOOGLE_ADMIN_EMAILS) may sign in from any address, incl. personal Gmail
+    if email not in admins and domain not in _allowed_domains():
         return RedirectResponse("/login?google_error=domain_not_allowed")
 
     user_doc = await db.users.find_one({"email": email})
@@ -126,7 +136,6 @@ async def google_callback(code: str = "", state: str = "", error: str = ""):
         # account on first sign-in. Role: partner for GOOGLE_ADMIN_EMAILS, staff otherwise.
         if os.environ.get("GOOGLE_AUTO_PROVISION", "1") != "1":
             return RedirectResponse("/login?google_error=not_registered")
-        admins = {e.strip().lower() for e in os.environ.get("GOOGLE_ADMIN_EMAILS", "").split(",") if e.strip()}
         new_user = {
             "user_id": f"usr_{uuid.uuid4().hex[:12]}",
             "email": email,
