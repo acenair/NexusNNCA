@@ -100,9 +100,11 @@ async def google_callback(code: str = "", state: str = "", error: str = ""):
 
     st = await db.oauth_states.find_one({"state": state})
     if not st:
+        print("GOOGLE_LOGIN_FAILED reason=bad_state")
         return RedirectResponse("/login?google_error=bad_state")
     await db.oauth_states.delete_one({"state": state})
     if st.get("expires_at", "") < datetime.now(timezone.utc).isoformat():
+        print("GOOGLE_LOGIN_FAILED reason=expired_state")
         return RedirectResponse("/login?google_error=expired_state")
 
     token_res = requests.post(GOOGLE_TOKEN_URL, data={
@@ -113,6 +115,7 @@ async def google_callback(code: str = "", state: str = "", error: str = ""):
         "grant_type": "authorization_code",
     }, timeout=15)
     if token_res.status_code != 200:
+        print(f"GOOGLE_TOKEN_EXCHANGE_FAILED status={token_res.status_code} body={token_res.text[:300]}")
         return RedirectResponse("/login?google_error=token_exchange")
     id_token_info = requests.get(
         GOOGLE_USERINFO_URL, headers={"Authorization": f"Bearer {token_res.json()['access_token']}"}, timeout=15)
