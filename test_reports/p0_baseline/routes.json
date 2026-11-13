@@ -462,6 +462,20 @@
   "name": "delete_billable_hours"
  },
  {
+  "path": "/api/calendar/sync-deadlines",
+  "methods": [
+   "POST"
+  ],
+  "name": "sync_deadlines"
+ },
+ {
+  "path": "/api/calendar/sync-status",
+  "methods": [
+   "GET"
+  ],
+  "name": "calendar_sync_status"
+ },
+ {
   "path": "/api/client-portal/documents",
   "methods": [
    "GET"
@@ -1085,11 +1099,25 @@
   "name": "list_mail_emails"
  },
  {
+  "path": "/api/mailbox/emails/{email_id}",
+  "methods": [
+   "GET"
+  ],
+  "name": "email_detail"
+ },
+ {
   "path": "/api/mailbox/emails/{email_id}/dismiss",
   "methods": [
    "POST"
   ],
   "name": "dismiss_mail"
+ },
+ {
+  "path": "/api/mailbox/emails/{email_id}/file",
+  "methods": [
+   "POST"
+  ],
+  "name": "file_email"
  },
  {
   "path": "/api/mailbox/poll",
