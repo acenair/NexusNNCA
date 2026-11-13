@@ -484,7 +484,7 @@ const Dashboard = () => {
               <span>Delivered on time<br /><small>{health.delivery.on_time_detail}</small></span>
             </div>
             <div className="af-mini"><span>Budgeted / actual hours</span><b>{health.delivery.budget_hours} / {health.delivery.actual_hours} hrs</b></div>
-            <div className="af-mini"><span>Hours above budget</span><b className={health.delivery.hours_variance > 0 ? 'af-warn-text' : ''}>{health.delivery.hours_variance >= 0 ? '+' : ''}{health.delivery.hours_variance} hrs · {health.delivery.variance_pct}%</b></div>
+            <div className="af-mini"><span>Hours above budget</span><b className={health.delivery.hours_variance > 0 ? 'af-warn-text' : ''}>{health.delivery.actual_hours > 0 ? `${health.delivery.hours_variance >= 0 ? '+' : ''}${health.delivery.hours_variance} hrs · ${health.delivery.variance_pct}%` : `0 of ${health.delivery.budget_hours} hrs used`}</b></div>
             <div className="af-mini"><span>Active jobs over hours budget</span><b>{health.delivery.jobs_over_budget}</b></div>
             <p className="af-note">On-time rate counts deliverables not past their due date. Hours compare allocated vs actual across active engagements.</p>
             <Link className="af-link" to="/app/tasks">Review exceptions ↗</Link>
