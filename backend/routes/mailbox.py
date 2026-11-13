@@ -469,7 +469,9 @@ async def schedule_meet(payload: dict = Body(default=None),
         ev = cal.events().insert(
             calendarId=cal_obj["id"],
             body={"summary": title, "start": {"dateTime": start.isoformat(timespec="seconds"), "timeZone": "Asia/Dubai"},
-                  "end": {"dateTime": end.isoformat(timespec="seconds"), "timeZone": "Asia/Dubai"}},
+                  "end": {"dateTime": end.isoformat(timespec="seconds"), "timeZone": "Asia/Dubai"},
+                  "conferenceData": {"createRequest": {"requestId": f"nnca-{uuid.uuid4().hex[:20]}",
+                                                       "conferenceSolutionKey": {"type": "hangoutsMeet"}}}},
             conferenceDataVersion=1).execute()
         link = (ev.get("hangoutLink") or (ev.get("conferenceData", {}).get("entryPoints", [{}])[0].get("uri") if ev.get("conferenceData", {}).get("entryPoints") else None)) or ""
         return {"ok": True, "event_id": ev["id"], "meet_link": link, "calendar_link": ev.get("htmlLink")}
