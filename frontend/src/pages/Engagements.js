@@ -142,9 +142,10 @@ const Engagements = () => {  const { user } = useOutletContext();
         <td><span className={`af-badge ${e.status === 'Completed' ? 'af-badge-green' : 'af-badge-blue'}`}>{e.status}</span></td>
         <td data-testid="eng-period">
           {(() => { const q = quarterOf(e); return q
-            ? <span><b style={{ fontSize: 11.5 }}>{q.label}</b><br /><small style={{ color: 'var(--muted)', fontSize: 10 }}>due {q.due}</small></span>
+            ? <b style={{ fontSize: 11.5 }}>{q.label}</b>
             : <span style={{ color: 'var(--muted)' }}>—</span>; })()}
         </td>
+        <td data-testid="eng-due">{e.due_date ? fmt(e.due_date) : <span style={{ color: 'var(--muted)' }}>—</span>}</td>
         <td><Link className="af-link" to={`/app/engagements/${e.engagement_id}`} data-testid={`open-eng-${e.engagement_id}`}>Open ↗</Link></td>
       </tr>
     );
@@ -296,15 +297,15 @@ const Engagements = () => {  const { user } = useOutletContext();
         </div>
         <div className="af-tablewrap af-tablewrap-tall">
           <table className="af-table">
-            <thead><tr><th>CLIENT</th><th>SERVICE</th><th>PHASE</th><th>PROGRESS</th><th>ASSIGNED</th><th>STATUS</th><th>PERIOD (QUARTER)</th><th></th></tr></thead>
+            <thead><tr><th>CLIENT</th><th>SERVICE</th><th>PHASE</th><th>PROGRESS</th><th>ASSIGNED</th><th>STATUS</th><th>PERIOD (QUARTER)</th><th>DUE DATE</th><th></th></tr></thead>
             <tbody>
               {(vatGroups ? vatGroups.flatMap(g => ([
                 <tr key={'q_' + g.key} className="af-qhead">
-                  <td colSpan="8"><b>VAT quarter {g.label}</b><small> · return due {g.due} · {g.rows.length} job(s)</small></td>
+                  <td colSpan="9"><b>VAT quarter {g.label}</b><small> · return due {g.due} · {g.rows.length} job(s)</small></td>
                 </tr>,
                 ...g.rows.map(rowRow),
               ])) : filtered.map(rowRow))}
-              {filtered.length === 0 && <tr><td colSpan="8" className="af-empty">No engagements match. {preset ? 'Try the All filter.' : 'Create one with “New engagement”.'}</td></tr>}
+              {filtered.length === 0 && <tr><td colSpan="9" className="af-empty">No engagements match. {preset ? 'Try the All filter.' : 'Create one with “New engagement”.'}</td></tr>}
             </tbody>
           </table>
         </div>
