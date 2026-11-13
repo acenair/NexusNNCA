@@ -266,6 +266,7 @@ const MainLayout = ({ user }) => {
       title: 'Firm Management',
       items: [
         { path: '/app/compliance', label: 'Compliance tracker', icon: Shield },
+        { path: '/app/quality-management', label: 'Quality management', icon: Shield, partnerOnly: true },
         { path: '/app/einvoicing', label: 'E-invoicing', icon: FileCheck2, partnerOnly: true },
         { path: '/app/reports', label: 'Reports', icon: FileBarChart, partnerOnly: true },
         { path: '/app/settings', label: 'Settings', icon: Settings, partnerOnly: true },

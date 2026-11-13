@@ -346,3 +346,138 @@ async def local_file(client_id: str, payload: dict = Body(default=None),
     return {"client_name": client["name"], "fy": fy, "sections": sections,
             "local_master_file_required": s["thresholds"]["local_master_file_required"],
             "generated_at": _now()}
+
+
+# ---------------- Benchmarking workspace ----------------
+
+@router.post("/tp/{client_id}/benchmarks")
+async def save_benchmark(client_id: str, payload: dict = Body(default=None),
+                         authorization: str = Header(None), session_token: str = Cookie(None)):
+    """Store a benchmarking study: comparables (name + PLI), optional working-capital
+    adjustments (AR/Inventory/AP × short-term rate applied to the adjusted PLI), source."""
+    user = await get_current_user(authorization, session_token)
+    await _client_or_404(client_id)
+    p = payload or {}
+    fy = p.get("fy") or str(date.today().year)
+    comps = p.get("comparables") or []           # [{name, pli, revenue?, receivables?, inventory?, payables?}]
+    rate = float(p.get("short_term_rate_pct") or 0) / 100
+    adj_rows, adj_plis = [], []
+    for c in comps:
+        pli = float(c.get("pli") or 0)
+        adj = pli
+        if rate and c.get("revenue"):
+            wc = (float(c.get("receivables") or 0) + float(c.get("inventory") or 0) - float(c.get("payables") or 0)) * rate
+            adj = round(pli + wc / float(c["revenue"]) * 100, 4)  # percentage-point impact on margin
+        adj_rows.append({"name": c.get("name"), "pli": pli, "adjusted_pli": adj,
+                         "wc_adjustment": round(adj - pli, 4) if adj != pli else None})
+        if c.get("revenue"):
+            adj_plis.append(adj)
+        else:
+            adj_plis.append(pli)
+    vs = sorted(adj_plis)
+    n = len(vs)
+
+    def pctile(k):
+        pos = k * (n - 1)
+        lo = int(pos)
+        frac = pos - lo
+        return vs[lo] if lo + 1 >= n else vs[lo] * (1 - frac) + vs[lo + 1] * frac
+
+    doc = {
+        "bench_id": f"tbm_{uuid.uuid4().hex[:12]}", "client_id": client_id, "fy": fy,
+        "source": p.get("source") or "Manual comparables", "note": p.get("note") or "",
+        "short_term_rate_pct": rate * 100, "rows": adj_rows,
+        "q1": round(pctile(0.25), 4) if n else None, "median": round(pctile(0.5), 4) if n else None,
+        "q3": round(pctile(0.75), 4) if n else None, "n_comparables": n,
+        "created_by": user.get("name"), "created_at": _now(),
+    }
+    await db.tp_benchmarks.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+
+@router.get("/tp/{client_id}/benchmarks")
+async def list_benchmarks(client_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
+    await get_current_user(authorization, session_token)
+    rows = await db.tp_benchmarks.find({"client_id": client_id}, {"_id": 0}).sort("created_at", -1).to_list(50)
+    return {"benchmarks": rows}
+
+
+# ---------------- Google Sheets import (client data read-in) ----------------
+
+@router.post("/tp/{client_id}/import-sheet")
+async def import_sheet(client_id: str, payload: dict = Body(default=None),
+                       authorization: str = Header(None), session_token: str = Cookie(None)):
+    """Read a Google Sheet (must be shared with the firm's connected account) and create
+    transactions. Expected columns: Counterparty | Type | Amount | Method (header row optional)."""
+    user = await get_current_user(authorization, session_token)
+    await _client_or_404(client_id)
+    p = payload or {}
+    raw = str(p.get("sheet_url") or "").strip()
+    fy = p.get("fy") or str(date.today().year)
+    if not raw:
+        raise HTTPException(422, "sheet_url is required")
+    m = __import__("re").search(r"/d/([a-zA-Z0-9-_]+)", raw)
+    if not m:
+        raise HTTPException(422, "That doesn't look like a Google Sheets URL")
+    sheet_id = m.group(1)
+    try:
+        from services.drive import get_drive_service
+        dsvc = await get_drive_service()
+        if not dsvc:
+            raise HTTPException(503, "Drive not connected")
+        import io
+        exported = dsvc.files().export_media(fileId=sheet_id, mimeType="text/csv").execute()
+        import csv as _csv
+        rows = list(_csv.reader(io.StringIO(exported.decode("utf-8", "ignore"))))
+    except HTTPException:
+        raise
+    except Exception as e:
+        msg = str(e)[:150]
+        if "403" in msg or "Permission" in msg:
+            raise HTTPException(403, "Cannot read the sheet — share it with the firm's connected Google account, or reconnect Drive to grant read access")
+        raise HTTPException(502, f"Could not read the sheet: {msg}")
+
+    created, skipped = 0, []
+    cp_cache = {}
+    for row in rows[1:]:  # skip header
+        if not row or not (row[0] or "").strip():
+            continue
+        name = row[0].strip()
+        txn_type = (row[1] if len(row) > 1 else "").strip() or "Other"
+        amount = row[2] if len(row) > 2 else ""
+        method = (row[3] if len(row) > 3 else "").strip() or "Not set"
+        try:
+            amount = float(str(amount).replace(",", "").replace("AED", "").strip() or 0)
+        except ValueError:
+            skipped.append(f"{name}: bad amount")
+            continue
+        cp = cp_cache.get(name)
+        if cp is None:
+            cp = await db.tp_counterparties.find_one({"client_id": client_id, "name": name})
+            if not cp:
+                cp_doc = {"cp_id": f"tcp_{uuid.uuid4().hex[:12]}", "client_id": client_id,
+                          "name": name, "jurisdiction": "UAE", "relationship": "Other",
+                          "ct_rate": 9, "is_connected_person": False, "notes": "Imported from Sheets",
+                          "created_by": user.get("name"), "created_at": _now()}
+                await db.tp_counterparties.insert_one(cp_doc)
+                cp = cp_doc
+            cp_cache[name] = cp
+        await db.tp_transactions.insert_one({
+            "txn_id": f"ttxn_{uuid.uuid4().hex[:12]}", "client_id": client_id,
+            "counterparty_id": cp["cp_id"], "counterparty_name": name,
+            "txn_type": txn_type if txn_type in TXN_TYPES else "Other", "fy": fy,
+            "amount_aed": amount, "method": method if method in METHODS else "Not set",
+            "far_note": "Imported from Google Sheets", "arm_length_note": "",
+            "created_by": user.get("name"), "created_at": _now()})
+        created += 1
+    return {"ok": True, "created": created, "skipped": skipped[:10]}
+
+
+@router.delete("/tp/{client_id}/benchmarks/{bench_id}")
+async def delete_benchmark(client_id: str, bench_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
+    await get_current_user(authorization, session_token)
+    res = await db.tp_benchmarks.delete_one({"bench_id": bench_id, "client_id": client_id})
+    if not res.deleted_count:
+        raise HTTPException(404, "Benchmark not found")
+    return {"ok": True}

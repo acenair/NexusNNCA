@@ -438,3 +438,42 @@ def _domain_map(client_emails):
             dom = e.split("@")[-1]
             out.setdefault(dom, name)
     return out
+
+
+@router.post("/calendar/meet")
+async def schedule_meet(payload: dict = Body(default=None),
+                        authorization: str = Header(None), session_token: str = Cookie(None)):
+    """Create a calendar event with a Google Meet link (onboarding kickoffs, client meetings)."""
+    user = await get_current_user(authorization, session_token)
+    cal = _calendar_service()
+    if not cal:
+        raise HTTPException(503, "Google service account not configured")
+    p = payload or {}
+    title = p.get("title") or "NNCA client meeting"
+    date_str = p.get("date")
+    time_str = p.get("time") or "10:00"
+    duration_min = int(p.get("duration") or 60)
+    if not date_str:
+        raise HTTPException(422, "date (YYYY-MM-DD) is required")
+    try:
+        from datetime import datetime as dt
+        start = dt.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
+        end = start.timestamp() + duration_min * 60
+        from datetime import datetime as d2
+        end_str = d2.fromtimestamp(end).strftime("%Y-%m-%d %H:%M")
+    except ValueError:
+        raise HTTPException(422, "Bad date/time format (YYYY-MM-DD, HH:MM)")
+    try:
+        cal_list = cal.calendarList().list().execute().get("items", [])
+        cal_obj = next((c for c in cal_list if c.get("summary") == "NNCA Compliance"), None)
+        if not cal_obj:
+            cal_obj = cal.calendars().insert(body={"summary": "NNCA Compliance", "timeZone": "Asia/Dubai"}).execute()
+        ev = cal.events().insert(
+            calendarId=cal_obj["id"],
+            body={"summary": title, "start": {"dateTime": start.isoformat() + ":00", "timeZone": "Asia/Dubai"},
+                  "end": {"dateTime": end_str + ":00", "timeZone": "Asia/Dubai"}},
+            conferenceDataVersion=1).execute()
+        link = (ev.get("hangoutLink") or (ev.get("conferenceData", {}).get("entryPoints", [{}])[0].get("uri") if ev.get("conferenceData", {}).get("entryPoints") else None)) or ""
+        return {"ok": True, "event_id": ev["id"], "meet_link": link, "calendar_link": ev.get("htmlLink")}
+    except Exception as e:
+        raise HTTPException(502, f"Could not create the meeting: {str(e)[:180]}")

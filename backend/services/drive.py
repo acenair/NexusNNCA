@@ -4,7 +4,9 @@ from google.auth.transport.requests import Request as GoogleRequest
 from googleapiclient.discovery import build
 from core import db
 
-DRIVE_SCOPES = ['https://www.googleapis.com/auth/drive.file']
+DRIVE_SCOPES = ['https://www.googleapis.com/auth/drive.file',
+                'https://www.googleapis.com/auth/spreadsheets.readonly',
+                'https://www.googleapis.com/auth/drive.readonly']
 
 
 async def get_drive_service():

@@ -554,10 +554,28 @@ const EngagementDetail = () => {
           <option value={95}>95% confidence</option>
           <option value={99}>99% confidence</option>
         </select>
-        <input type="number" step="0.5" title="Tolerable deviation rate %" placeholder="Tolerable rate %" value={wpForm.sampTer} onChange={e => setWpForm({ ...wpForm, sampTer: e.target.value })} style={{ width: 130, padding: '8px 11px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', fontSize: 12 }} /> %
-        <input type="number" placeholder="Population" value={wpForm.sampPop} onChange={e => setWpForm({ ...wpForm, sampPop: e.target.value })} style={{ width: 110, padding: '8px 11px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', fontSize: 12 }} />
-        <input type="number" placeholder="Deviations found" value={wpForm.sampDev} onChange={e => setWpForm({ ...wpForm, sampDev: e.target.value })} style={{ width: 140, padding: '8px 11px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', fontSize: 12 }} />
-        <button className="af-btn-primary" onClick={calcSampling} data-testid="wp-samp-calc">Calculate</button>
+        {wpForm.sampMethod !== 'mus' && <input type="number" step="0.5" title="Tolerable deviation rate %" placeholder="Tolerable rate %" value={wpForm.sampTer} onChange={e => setWpForm({ ...wpForm, sampTer: e.target.value })} style={{ width: 130, padding: '8px 11px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', fontSize: 12 }} /> %}
+        <input type="number" placeholder={wpForm.sampMethod === 'mus' ? 'Population (AED book value)' : 'Population'} value={wpForm.sampPop} onChange={e => setWpForm({ ...wpForm, sampPop: e.target.value })} style={{ width: 190, padding: '8px 11px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', fontSize: 12 }} />
+        {wpForm.sampMethod === 'mus' ? (
+          <input type="number" placeholder="Tolerable misstatement (AED)" value={wpForm.sampTm || ''} onChange={e => setWpForm({ ...wpForm, sampTm: e.target.value })} style={{ width: 210, padding: '8px 11px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', fontSize: 12 }} />
+        ) : (
+          <input type="number" placeholder="Deviations found" value={wpForm.sampDev} onChange={e => setWpForm({ ...wpForm, sampDev: e.target.value })} style={{ width: 140, padding: '8px 11px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', fontSize: 12 }} />
+        )}
+        <select value={wpForm.sampMethod || 'attr'} onChange={e => setWpForm({ ...wpForm, sampMethod: e.target.value })} data-testid="wp-samp-method" style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', fontSize: 12 }}>
+          <option value="attr">Attribute sampling</option>
+          <option value="mus">Monetary-unit sampling</option>
+        </select>
+        <button className="af-btn-primary" onClick={async () => {
+          try {
+            if (wpForm.sampMethod === 'mus') {
+              const res = await axios.get(`${API}/engagements/${engagementId}/mus-calc`, { params: { confidence: wpForm.sampConf, population_value: wpForm.sampPop, tolerable_misstatement: wpForm.sampTm }, withCredentials: true });
+              setWpForm(prev => ({ ...prev, sampResult: res.data }));
+            } else {
+              const res = await axios.get(`${API}/engagements/${engagementId}/sampling-calc`, { params: { confidence: wpForm.sampConf, tolerable_rate: wpForm.sampTer, population: wpForm.sampPop || 0, deviations: wpForm.sampDev || 0 }, withCredentials: true });
+              setWpForm(prev => ({ ...prev, sampResult: res.data }));
+            }
+          } catch (e) { alert(e.response?.data?.detail || 'Check the inputs'); }
+        }} data-testid="wp-samp-calc">Calculate</button>
       </div>
       {wpForm.sampResult && (
         <div style={{ padding: 10, borderRadius: 8, background: 'var(--off)', border: '1px solid var(--nn-border)', fontSize: 12.5, color: 'var(--text)' }} data-testid="wp-samp-result">
@@ -619,6 +637,22 @@ const EngagementDetail = () => {
           ))}
         </div>
       )}
+    </div>
+
+    <div className="nn-card" style={{ padding: '16px 20px', marginBottom: 14 }} data-testid="wp-meet-card">
+      <div style={{ fontSize: 11, fontWeight: 650, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--gold)', marginBottom: 4 }}>Client meeting — Google Meet</div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        <input type="date" value={wpForm.meetDate || new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10)} onChange={e => setWpForm({ ...wpForm, meetDate: e.target.value })} data-testid="wp-meet-date" style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', fontSize: 12 }} />
+        <button className="tbtn tbtn-blue" style={{ fontSize: 11 }} data-testid="wp-meet-create"
+          onClick={async () => {
+            try {
+              const res = await axios.post(`${API}/calendar/meet`, { title: `${eng.client_name} — ${eng.service_name || 'engagement'} meeting`, date: wpForm.meetDate || new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10), time: '10:00', duration: 60 }, { withCredentials: true });
+              setWpForm(prev => ({ ...prev, meetLink: res.data.meet_link, meetCal: res.data.calendar_link }));
+            } catch (e) { alert(e.response?.data?.detail || 'Could not create the meeting'); }
+          }}>Create Meet link</button>
+        {wpForm.meetLink && <a href={wpForm.meetLink} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: 'var(--blue)' }} data-testid="wp-meet-link">{wpForm.meetLink}</a>}
+        {wpForm.meetLink && wpForm.meetCal && <a href={wpForm.meetCal} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: 'var(--muted)' }}>view in Calendar</a>}
+      </div>
     </div>
 
     {eng.completed_at && (

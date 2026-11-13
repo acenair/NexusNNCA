@@ -21,6 +21,10 @@ export default function TransferPricing() {
   const [tab, setTab] = useState('register');
   const [profile, setProfile] = useState({ annual_revenue_aed: '', mne_group: false, mne_group_revenue_aed: '' });
   const [localFile, setLocalFile] = useState(null);
+  const [benchmarks, setBenchmarks] = useState([]);
+  const [benchForm, setBenchForm] = useState({ source: 'Manual comparables', comps: 'Name, PLI, Revenue, Receivables, Inventory, Payables\n', rate: 6 });
+  const [sheetUrl, setSheetUrl] = useState('');
+  const [sheetMsg, setSheetMsg] = useState('');
   const [cpForm, setCpForm] = useState({ name: '', jurisdiction: 'UAE', relationship: 'Parent / Subsidiary', ct_rate: 9, is_connected_person: false });
   const [txnForm, setTxnForm] = useState({ counterparty_id: '', txn_type: 'Services', amount_aed: '', method: 'Not set', far_note: '' });
   const [test, setTest] = useState({ comparables: '', actual: '' });
@@ -40,6 +44,7 @@ export default function TransferPricing() {
     axios.get(`${API}/tp/${clientId}/transactions`, { withCredentials: true }).then(r => setTxns(Array.isArray(r.data?.transactions) ? r.data.transactions : [])).catch(() => {});
     axios.get(`${API}/tp/${clientId}/summary`, { withCredentials: true }).then(r => setSummary(r.data)).catch(() => {});
     loadProfile();
+    axios.get(`${API}/tp/${clientId}/benchmarks`, { withCredentials: true }).then(r => setBenchmarks(Array.isArray(r.data?.benchmarks) ? r.data.benchmarks : [])).catch(() => {});
     setForm(null);
     setLocalFile(null);
   }, [clientId, fy]);
@@ -128,7 +133,7 @@ export default function TransferPricing() {
       </div>
 
       <div style={{ display: 'flex', gap: 6, margin: '16px 0', borderBottom: '1px solid var(--nn-border)' }} data-testid="tp-tabs">
-        {[['profile', 'Client tax profile'], ['register', 'Related party register'], ['monitor', 'Threshold monitor'], ['disclosure', 'Disclosure form'], ['test', "Arm's length test"], ['localfile', 'Local File']].map(([k, label]) => (
+        {[['profile', 'Client tax profile'], ['register', 'Related party register'], ['monitor', 'Threshold monitor'], ['disclosure', 'Disclosure form'], ['test', "Arm's length test"], ['bench', 'Benchmarking'], ['localfile', 'Local File']].map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)} data-testid={`tp-tab-${k}`}
             style={{ padding: '10px 14px', border: 'none', background: 'none', cursor: 'pointer', fontSize: 12.5, fontWeight: tab === k ? 700 : 400, color: tab === k ? 'var(--blue)' : 'var(--muted)', borderBottom: tab === k ? '2px solid var(--blue)' : '2px solid transparent' }}>{label}</button>
         ))}
@@ -382,6 +387,62 @@ export default function TransferPricing() {
               ))}
             </div>
           )}
+        </div>
+      )}
+      {tab === 'bench' && (
+        <div className="nn-card" style={{ padding: 18 }} data-testid="tp-bench-card">
+          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6, color: 'var(--text)' }}>Benchmarking workspace</div>
+          <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 12 }}>Store a comparables study (from any source — internal, outsourced, database export) and apply working-capital adjustments: adjustment = (Receivables + Inventory − Payables) × short-term rate ÷ Revenue. Saved studies feed the arm's length test.</p>
+          <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 4, fontWeight: 600 }}>Comparables — one per line: Name, PLI %, Revenue, Receivables, Inventory, Payables</div>
+          <textarea rows={5} value={benchForm.comps} onChange={e => setBenchForm({ ...benchForm, comps: e.target.value })} data-testid="tp-bench-comps"
+            placeholder="CompCo A, 3.2, 50000000, 4000000, 2000000, 3000000"
+            style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid var(--nn-border)', background: 'var(--off)', color: 'var(--text)', fontFamily: 'monospace', fontSize: 12, marginBottom: 8 }} />
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 10 }}>
+            <input type="number" step="0.25" title="Short-term borrowing rate %" value={benchForm.rate} onChange={e => setBenchForm({ ...benchForm, rate: e.target.value })} data-testid="tp-bench-rate" style={{ width: 90, padding: '8px 10px', borderRadius: 8, border: '1px solid var(--nn-border)', background: 'var(--off)', color: 'var(--text)', fontSize: 12 }} /> %
+            <input placeholder="Study source (e.g. Outsourced study — XYZ)" value={benchForm.source} onChange={e => setBenchForm({ ...benchForm, source: e.target.value })} style={{ flex: 1, minWidth: 200, padding: '8px 10px', borderRadius: 8, border: '1px solid var(--nn-border)', background: 'var(--off)', color: 'var(--text)', fontSize: 12 }} />
+            <button className="tbtn tbtn-blue" style={{ fontSize: 11 }} data-testid="tp-bench-save"
+              onClick={async () => {
+                const lines = benchForm.comps.split('\n').slice(1).map(l => l.trim()).filter(Boolean);
+                const comps = lines.map(l => { const [name, pli, revenue, rec, inv, pay] = l.split(',').map(s => s?.trim()); return { name, pli: parseFloat(pli), revenue: parseFloat(revenue) || 0, receivables: parseFloat(rec) || 0, inventory: parseFloat(inv) || 0, payables: parseFloat(pay) || 0 }; }).filter(c => c.name && !isNaN(c.pli));
+                if (comps.length < 3) { alert('Enter at least 3 comparables (header row on line 1 is skipped)'); return; }
+                try {
+                  const res = await axios.post(`${API}/tp/${clientId}/benchmarks`, { ...benchForm, comparables: comps, fy }, { withCredentials: true });
+                  setBenchmarks(prev => [res.data, ...prev]);
+                } catch (e2) { alert('Could not save the study'); }
+              }}>Save study</button>
+          </div>
+          {benchmarks.map(b => (
+            <div key={b.bench_id} style={{ padding: '10px 14px', borderRadius: 8, background: 'var(--off)', border: '1px solid var(--nn-border)', marginBottom: 8 }} data-testid={`tp-bench-${b.bench_id}`}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                <b style={{ fontSize: 12.5, color: 'var(--text)' }}>{b.source} · FY {b.fy} · {b.n_comparables} comparables</b>
+                <button style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer' }} onClick={async () => { await axios.delete(`${API}/tp/${clientId}/benchmarks/${b.bench_id}`, { withCredentials: true }); setBenchmarks(prev => prev.filter(x => x.bench_id !== b.bench_id)); }}>✕</button>
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--text)', marginTop: 4 }}>
+                IQR (working-capital adjusted): <b>{b.q1}% – {b.q3}%</b> (median {b.median}%){b.short_term_rate_pct ? ` · WC adj @ ${b.short_term_rate_pct}%` : ''}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === 'register' && (
+        <div className="nn-card" style={{ padding: '12px 18px', marginBottom: 14 }} data-testid="tp-sheets-import">
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>Import from Google Sheets</div>
+          <p style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 8 }}>The sheet must be shared with the firm's connected Google account. Columns: Counterparty, Type, Amount, Method.</p>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <input placeholder="Paste the Google Sheets URL" value={sheetUrl} onChange={e => setSheetUrl(e.target.value)} data-testid="tp-sheet-url"
+              style={{ flex: 2, minWidth: 260, padding: '8px 11px', borderRadius: 8, border: '1px solid var(--nn-border)', background: 'var(--off)', color: 'var(--text)', fontSize: 12 }} />
+            <button className="tbtn tbtn-blue" style={{ fontSize: 11 }} data-testid="tp-sheet-import"
+              onClick={async () => {
+                try {
+                  const res = await axios.post(`${API}/tp/${clientId}/import-sheet`, { sheet_url: sheetUrl, fy }, { withCredentials: true });
+                  setSheetMsg(`${res.data.created} transaction(s) imported` + (res.data.skipped?.length ? `, ${res.data.skipped.length} skipped` : ''));
+                  const [t, s2] = await Promise.all([axios.get(`${API}/tp/${clientId}/transactions`, { withCredentials: true }), axios.get(`${API}/tp/${clientId}/summary`, { withCredentials: true })]);
+                  setTxns(Array.isArray(t.data?.transactions) ? t.data.transactions : []); setSummary(s2.data);
+                } catch (e2) { setSheetMsg(e2.response?.data?.detail || 'Import failed'); }
+              }}>Import</button>
+            {sheetMsg && <span style={{ fontSize: 11.5, color: 'var(--muted)', alignSelf: 'center' }} data-testid="tp-sheet-msg">{sheetMsg}</span>}
+          </div>
         </div>
       )}
     </div>

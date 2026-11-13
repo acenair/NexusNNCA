@@ -280,3 +280,26 @@ async def group_components(engagement_id: str, authorization: str = Header(None)
     rows = await db.audit_workpapers.find({"engagement_id": engagement_id, "kind": "group", "is_deleted": {"$ne": True}},
                                           {"_id": 0}).sort("created_at", 1).to_list(200)
     return {"components": rows}
+
+
+@router.get("/engagements/{engagement_id}/mus-calc")
+async def mus_calc(engagement_id: str, confidence: int = 95, population_value: float = 0.0,
+                   tolerable_misstatement: float = 0.0, expected_misstatement: float = 0.0,
+                   authorization: str = Header(None), session_token: str = Cookie(None)):
+    """Monetary-unit sampling (ISA 530): sample size for a recorded population and
+    tolerable misstatement. interval = population x RF / n."""
+    await _authed(authorization, session_token)
+    if confidence not in SAMPLING_FACTORS:
+        raise HTTPException(422, "confidence must be 90, 95 or 99")
+    rf = SAMPLING_FACTORS[confidence][0]
+    if population_value <= 0 or tolerable_misstatement <= 0:
+        raise HTTPException(422, "population_value and tolerable_misstatement (AED) are required")
+    # expansion for expected misstatement (Commonly: n = Pop x RF / (TM - EM x expansion)); keep simple RF/EM factor
+    expansion = max(1.0, 1.0 + (expected_misstatement / tolerable_misstatement) if tolerable_misstatement else 1.0)
+    n = int((population_value * rf) / (tolerable_misstatement / expansion) + 0.999)
+    interval = round(population_value / n, 2)
+    return {"method": "Monetary-unit sampling", "confidence_pct": confidence,
+            "reliability_factor": rf, "population_value": population_value,
+            "tolerable_misstatement": tolerable_misstatement, "expected_misstatement": expected_misstatement,
+            "sample_size": n, "sampling_interval": interval,
+            "note": "Select every item whose cumulative book value crosses a sampling-interval boundary; misstatements are projected at interval level."}
