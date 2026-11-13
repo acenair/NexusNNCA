@@ -368,6 +368,9 @@ h1, h2, h3, h4, h5, h6 {
 .af-stage-total { border-top: 1px solid var(--line); padding-top: 8px; font-weight: 650; }
 
 .af-tablewrap { overflow: auto; }
+/* Tall list variant: scrolls in both directions, sticky header (Engagements) */
+.af-tablewrap-tall { max-height: 62vh; overflow: auto; }
+.af-tablewrap-tall thead th { position: sticky; top: 0; z-index: 2; background: #f6fbfe; box-shadow: 0 1px 0 var(--line); }
 .af-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .af-table th { text-align: left; color: var(--muted); font-size: 10px; font-weight: 500; padding: 9px 8px; background: #f6fbfe; }
 .af-table td { padding: 12px 8px; border-bottom: 1px solid var(--line); }

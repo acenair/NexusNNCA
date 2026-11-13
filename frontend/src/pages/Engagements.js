@@ -217,7 +217,7 @@ const Engagements = () => {  const { user } = useOutletContext();
             </select>
           </div>
         </div>
-        <div className="af-tablewrap">
+        <div className="af-tablewrap af-tablewrap-tall">
           <table className="af-table">
             <thead><tr><th>CLIENT</th><th>SERVICE</th><th>PHASE</th><th>PROGRESS</th><th>ASSIGNED</th><th>STATUS</th><th>CREATED</th><th></th></tr></thead>
             <tbody>
