@@ -237,6 +237,36 @@ const Engagements = () => {  const { user } = useOutletContext();
 
   if (loading) return <div className="ov-wrap"><div className="ov-heading"><div><div className="ov-eyebrow">DELIVERY</div><h1>Engagements</h1></div></div><Skeleton kpi={4} rows={8} cols={5} /></div>;
 
+  // column sorting (click a header; click again flips direction)
+  const [sortCol, setSortCol] = useState(null);
+  const [sortDir, setSortDir] = useState(1);
+  const SORTERS = {
+    '#': null,
+    client: e => (e.client_name || '').toLowerCase(),
+    service: e => SERVICE_LABELS[e.service_type] || e.service_type || '',
+    phase: e => e.phase || '',
+    progress: e => progressOf(e),
+    assigned: e => e.assigned_to_name || '',
+    status: e => e.status || '',
+    due: e => e.due_date || '9999-99-99',
+    period: e => e.period_to || '',
+  };
+  const sortRows = (rows) => {
+    if (!sortCol || !SORTERS[sortCol]) return rows;
+    const f = SORTERS[sortCol];
+    return [...rows].sort((a, b) => {
+      const x = f(a), y = f(b);
+      return (typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y))) * sortDir;
+    });
+  };
+  const th = (key, label) => (
+    <th role="button" style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => {
+      if (sortCol === key) setSortDir(d => -d); else { setSortCol(key); setSortDir(1); }
+    }} title={`Sort by ${label}`}>
+      {label}{sortCol === key ? (sortDir === 1 ? ' ▲' : ' ▼') : ''}
+    </th>
+  );
+
   // visible rows with continuous serial numbers (group headers interleaved in the VAT view)
   const displayRows = (() => {
     const out = [];
@@ -244,10 +274,10 @@ const Engagements = () => {  const { user } = useOutletContext();
       let n = 0;
       vatGroups.forEach(g => {
         out.push({ qhead: g });
-        g.rows.forEach(e => { n += 1; out.push({ e, n }); });
+        sortRows(g.rows).forEach(e => { n += 1; out.push({ e, n }); });
       });
     } else {
-      filtered.forEach((e, i) => out.push({ e, n: i + 1 }));
+      sortRows(filtered).forEach((e, i) => out.push({ e, n: i + 1 }));
     }
     return out;
   })();
@@ -340,7 +370,7 @@ const Engagements = () => {  const { user } = useOutletContext();
         </div>
         <div className="af-tablewrap af-tablewrap-tall">
           <table className="af-table">
-            <thead><tr><th>#</th><th>CLIENT</th><th>SERVICE</th><th>PHASE</th><th>PROGRESS</th><th>ASSIGNED</th><th>STATUS</th><th>PERIOD (QUARTER)</th><th>DUE DATE</th><th></th></tr></thead>
+            <thead><tr>{th('#', '#')}{th('client', 'Client')}{th('service', 'Service')}{th('phase', 'Phase')}{th('progress', 'Progress')}{th('assigned', 'Assigned')}{th('status', 'Status')}{th('period', 'Period (Quarter)')}{th('due', 'Due date')}<th /></tr></thead>
             <tbody>
               {displayRows.map(it => it.qhead
                 ? <tr key={'q_' + it.qhead.key} className="af-qhead"><td colSpan="10"><b>VAT quarter {it.qhead.label}</b><small> · return due {it.qhead.due} · {it.qhead.rows.length} job(s)</small></td></tr>
