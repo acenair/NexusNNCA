@@ -169,8 +169,9 @@ const Engagements = () => {  const { user } = useOutletContext();
         <section className="af-card af-metric"><label>Completed</label><b>{completed}</b><small>Closed out</small></section>
       </div>
 
-      {/* Service chips */}
-      {user?.role === 'partner' && renewals.length > 0 && (
+      {/* Renewals banner hidden (partner feedback: confusing on this page). The renew
+          flow lives on: POST /insights/renew stays wired; re-show by removing this guard. */}
+      {false && user?.role === 'partner' && renewals.length > 0 && (
         <section className="af-card" style={{ marginBottom: 14, borderLeft: '4px solid #fd5426' }} data-testid="renewals-banner">
           <div className="af-cardhead"><div><h2>Annual renewals due</h2><div className="af-sub">These engagements are due for renewal — cloning creates a fresh checklist for the new period</div></div></div>
           {renewals.map(c => (
