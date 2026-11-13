@@ -184,9 +184,10 @@ const Engagements = () => {  const { user } = useOutletContext();
     return gs;
   })();
 
-  const active = filtered.filter(e => e.status === 'Active').length;
-  const inReview = filtered.filter(e => e.phase === 'Review & Reporting').length;
-  const completed = filtered.filter(e => e.status === 'Completed').length;
+  // Stats strip is FIRM-WIDE — it must not change with the service chip / filters below
+  const active = engs.filter(e => e.status === 'Active').length;
+  const inReview = engs.filter(e => e.phase === 'Review & Reporting').length;
+  const completed = engs.filter(e => e.status === 'Completed').length;
 
   const progressOf = (e) => {
     const cl = e.checklist || [];
@@ -224,7 +225,7 @@ const Engagements = () => {  const { user } = useOutletContext();
 
       {/* Stats strip */}
       <div className="af-kpis" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
-        <section className="af-card af-metric"><label>Engagements</label><b>{filtered.length}</b><small>{preset ? SERVICE_LABELS[preset] : 'All services'}</small></section>
+        <section className="af-card af-metric"><label>Engagements</label><b>{engs.length}</b><small>All services</small></section>
         <section className="af-card af-metric"><label>Active</label><b>{active}</b><small>In delivery now</small></section>
         <section className="af-card af-metric"><label>Awaiting review</label><b>{inReview}</b><small>Review &amp; Reporting phase</small></section>
         <section className="af-card af-metric"><label>Completed</label><b>{completed}</b><small>Closed out</small></section>
