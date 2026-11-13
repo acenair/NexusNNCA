@@ -88,7 +88,7 @@ const EngagementDetail = () => {
   };
   // Audit standards workpapers (risk register / materiality / confirmations / rep letter)
   const [wps, setWps] = useState({ risk: [], materiality: [], confirmation: [], rep_letter: [] });
-  const [wpForm, setWpForm] = useState({ risk: '', assertion: '', response: '', conf_account: '', conf_type: 'Bank', bench: 'profit_before_tax', bench_value: '', pct: 5, pm: 50, triv: 5, matResult: null, sampConf: 95, sampTer: 5, sampPop: '', sampDev: '', sampResult: null, tcwgDate: '', tcwgMatter: '', tcwgSeverity: 'Deficiency', tcwgResponse: '', letter: null, repOpinion: 'unmodified', repBasis: '', repKam: '', repDate: new Date().toISOString().slice(0, 10), report: null, grpComponent: '', grpAuditor: '', grpScope: 'Full scope', grpMat: '', grpNote: '' });
+  const [wpForm, setWpForm] = useState({ risk: '', assertion: '', response: '', conf_account: '', conf_type: 'Bank', bench: 'profit_before_tax', bench_value: '', pct: 5, pm: 50, triv: 5, matResult: null, sampConf: 95, sampTer: 5, sampPop: '', sampDev: '', sampResult: null, tcwgDate: '', tcwgMatter: '', tcwgSeverity: 'Deficiency', tcwgResponse: '', letter: null, repOpinion: 'unmodified', repBasis: '', repKam: '', repDate: new Date().toISOString().slice(0, 10), report: null, grpComponent: '', grpAuditor: '', grpScope: 'Full scope', grpMat: '', grpNote: '', tcwgSendToClient: false });
 
   const loadWorkpapers = async () => {
     try {
@@ -596,7 +596,10 @@ const EngagementDetail = () => {
           {['Observation', 'Deficiency', 'Significant deficiency'].map(x => <option key={x}>{x}</option>)}
         </select>
         <input placeholder="Management response" value={wpForm.tcwgResponse} onChange={e => setWpForm({ ...wpForm, tcwgResponse: e.target.value })} style={{ flex: 2, minWidth: 200, padding: '8px 11px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', fontSize: 12 }} />
-        <button className="af-btn-primary" onClick={() => { if (!wpForm.tcwgMatter) return; addWp('tcwg', { matter: wpForm.tcwgMatter, severity: wpForm.tcwgSeverity, response: wpForm.tcwgResponse, date: new Date().toISOString().slice(0, 10), resolved: false }, () => setWpForm({ ...wpForm, tcwgMatter: '', tcwgResponse: '' })); }} data-testid="wp-tcwg-add">Log</button>
+        <button className="af-btn-primary" onClick={async () => { if (!wpForm.tcwgMatter) return; await addWp('tcwg', { matter: wpForm.tcwgMatter, severity: wpForm.tcwgSeverity, response: wpForm.tcwgResponse, date: new Date().toISOString().slice(0, 10), resolved: false, sent_to_client: wpForm.tcwgSendToClient }, null); if (wpForm.tcwgSendToClient) { try { await axios.post(`${API}/service/engagements/${engagementId}/queries`, { question: `[ISA 265 ${wpForm.tcwgSeverity}] ${wpForm.tcwgMatter} — please provide management's response and corrective action.` }, { withCredentials: true }); } catch (e2) { alert('Saved to the file, but could not send to the client portal'); } } setWpForm(prev => ({ ...prev, tcwgMatter: '', tcwgResponse: '', tcwgSendToClient: false })); }} data-testid="wp-tcwg-add">Log{wpForm.tcwgSendToClient ? ' + send to client' : ''}</button>
+        <label style={{ fontSize: 11, color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: 4 }} data-testid="wp-tcwg-send-label">
+          <input type="checkbox" checked={wpForm.tcwgSendToClient} onChange={e => setWpForm({ ...wpForm, tcwgSendToClient: e.target.checked })} /> Send to client portal
+        </label>
       </div>
     </div>
 
