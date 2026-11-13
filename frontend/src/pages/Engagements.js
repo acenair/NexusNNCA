@@ -114,6 +114,18 @@ const Engagements = () => {  const { user } = useOutletContext();
   };
   const STAGE_LABELS = { awaiting: 'Awaiting documents', progress: 'In progress', review: 'Manager review', draft: 'Draft sent', confirmed: 'Management confirmed' };
   const stageLabel = STAGE_LABELS[stagePreset];
+  const qSel = params.get('quarter') || '';
+  const MONS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  // quarter key/label/due from an engagement (FTA due = 28th of the month after the quarter ends)
+  const quarterOf = (e) => {
+    const pf = (e.period_from || '').slice(0, 10), pt = (e.period_to || '').slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(pf) || !/^\d{4}-\d{2}-\d{2}$/.test(pt)) return null;
+    const y = pt.slice(0, 4), m1 = parseInt(pf.slice(5, 7), 10), m2 = parseInt(pt.slice(5, 7), 10);
+    const dueY = m2 === 12 ? parseInt(y, 10) + 1 : y;
+    const dueM = m2 === 12 ? 'Jan' : MONS[m2];
+    return { key: pf + '_' + pt, label: `${MONS[m1 - 1]} – ${MONS[m2 - 1]} ${y}`, due: `28 ${dueM} ${dueY}` };
+  };
+  const qSelKey = qSel || '';  // '' = all quarters
 
   const rowRow = (e) => {
     const pct = progressOf(e);
@@ -146,25 +158,25 @@ const Engagements = () => {  const { user } = useOutletContext();
   // always the 28th of the month AFTER the quarter ends. Group the VAT view by quarter.
   const vatGroups = (() => {
     if (preset !== 'vat_filing') return null;
-    const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const map = new Map();
     filtered.forEach(e => {
-      const pf = (e.period_from || '').slice(0, 10), pt = (e.period_to || '').slice(0, 10);
-      let g;
-      if (/^\d{4}-\d{2}-\d{2}$/.test(pf) && /^\d{4}-\d{2}-\d{2}$/.test(pt)) {
-        const y = pt.slice(0, 4), m1 = parseInt(pf.slice(5, 7), 10), m2 = parseInt(pt.slice(5, 7), 10);
-        const dueY = m2 === 12 ? parseInt(y, 10) + 1 : y;
-        const dueM = m2 === 12 ? 'Jan' : MON[m2];
-        g = { key: pf + '_' + pt, label: `${MON[m1 - 1]} – ${MON[m2 - 1]} ${y}`, due: `28 ${dueM} ${dueY}` };
-      } else {
-        g = { key: '_none', label: 'No period set', due: 'set the period' };
-      }
-      if (!map.has(g.key)) { g.rows = []; map.set(g.key, g); }
-      map.get(g.key).rows.push(e);
+      const q = quarterOf(e) || { key: '_none', label: 'No period set', due: 'set the period' };
+      if (qSelKey && q.key !== qSelKey) return;   // quarter tab filter
+      if (!map.has(q.key)) { const g = { ...q, rows: [] }; map.set(q.key, g); }
+      map.get(q.key).rows.push(e);
     });
     const gs = [...map.values()];
     gs.sort((a, b) => ((a.key === '_none') - (b.key === '_none')) || (b.key || '').localeCompare(a.key || ''));
     gs.forEach(g => g.rows.sort((a, b) => (a.client_name || '').localeCompare(b.client_name || '')));
+    return gs;
+  })();
+  // quarter tabs: built from ALL vat engagements so every quarter is reachable
+  const qTabs = (() => {
+    if (preset !== 'vat_filing') return null;
+    const map = new Map();
+    filtered.forEach(e => { const q = quarterOf(e); const k = q ? q.key : '_none'; const o = map.get(k) || { ...q, key: k, label: q ? q.label : 'No period set', due: q ? q.due : '', rows: [] }; o.rows.push(e); map.set(k, o); });
+    const gs = [...map.values()];
+    gs.sort((a, b) => ((a.key === '_none') - (b.key === '_none')) || (b.key || '').localeCompare(a.key || ''));
     return gs;
   })();
 
@@ -238,6 +250,21 @@ const Engagements = () => {  const { user } = useOutletContext();
           </button>
         ))}
       </div>
+
+      {preset === 'vat_filing' && qTabs && qTabs.length > 0 && (
+        <div className="af-chips" role="tablist" style={{ flexWrap: 'wrap', marginBottom: 10 }} data-testid="quarter-tabs">
+          <button role="tab" aria-selected={!qSel}
+            onClick={() => { const p2 = new URLSearchParams(params); p2.delete('quarter'); setParams(p2, { replace: true }); }}>
+            All quarters
+          </button>
+          {qTabs.map(q => (
+            <button key={q.key} role="tab" aria-selected={qSel === q.key}
+              onClick={() => { const p2 = new URLSearchParams(params); p2.set('quarter', q.key); setParams(p2, { replace: true }); }}>
+              {q.label} ({q.rows.length})
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Filters + table */}
       <section className="af-card">
