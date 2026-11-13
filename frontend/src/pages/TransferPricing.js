@@ -26,15 +26,16 @@ export default function TransferPricing() {
 
   useEffect(() => {
     axios.get(`${API}/clients`, { withCredentials: true }).then(r => {
-      setClients(r.data || []);
-      if (r.data?.length) setClientId(c => c || r.data[0].client_id);
+      const list = Array.isArray(r.data) ? r.data : (Array.isArray(r.data?.clients) ? r.data.clients : []);
+      setClients(list);
+      if (list.length) setClientId(c => c || list[0].client_id);
     }).catch(() => {});
   }, []);
 
   useEffect(() => {
     if (!clientId) return;
-    axios.get(`${API}/tp/${clientId}/counterparties`, { withCredentials: true }).then(r => setCps(r.data.counterparties || [])).catch(() => {});
-    axios.get(`${API}/tp/${clientId}/transactions`, { withCredentials: true }).then(r => setTxns(r.data.transactions || [])).catch(() => {});
+    axios.get(`${API}/tp/${clientId}/counterparties`, { withCredentials: true }).then(r => setCps(Array.isArray(r.data?.counterparties) ? r.data.counterparties : [])).catch(() => {});
+    axios.get(`${API}/tp/${clientId}/transactions`, { withCredentials: true }).then(r => setTxns(Array.isArray(r.data?.transactions) ? r.data.transactions : [])).catch(() => {});
     axios.get(`${API}/tp/${clientId}/summary`, { withCredentials: true }).then(r => setSummary(r.data)).catch(() => {});
     setForm(null);
   }, [clientId, fy]);
