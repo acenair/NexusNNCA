@@ -294,15 +294,17 @@ async def sync_deadlines(authorization: str = Header(None), session_token: str =
 
     async def _upsert(kind, ref_id, title, due_iso, color):
         nonlocal pushed, updated
-        ev_id = _re.sub(r"[^a-zA-Z0-9-]", "-", f"nnca-{kind}-{ref_id}")[:80]
-        body = {"id": ev_id, "summary": title, "start": {"date": due_iso}, "end": {"date": due_iso},
+        nnca_key = f"{kind}:{ref_id}"
+        body = {"summary": title, "start": {"date": due_iso}, "end": {"date": due_iso},
                 "colorId": color, "transparency": "transparent",
-                "extendedProperties": {"private": {"nnca_kind": kind, "nnca_ref": ref_id}}}
-        try:
-            cal.events().get(calendarId=cal_id, eventId=ev_id).execute()
-            cal.events().update(calendarId=cal_id, eventId=ev_id, body=body).execute()
+                "extendedProperties": {"private": {"nnca_key": nnca_key, "nnca_kind": kind, "nnca_ref": ref_id}}}
+        # Custom event ids are rejected on some calendars — match on our private property instead.
+        existing = cal.events().list(calendarId=cal_id, privateExtendedProperty=f"nnca_key:{nnca_key}",
+                                     maxResults=1).execute().get("items", [])
+        if existing:
+            cal.events().update(calendarId=cal_id, eventId=existing[0]["id"], body=body).execute()
             updated += 1
-        except Exception:
+        else:
             cal.events().insert(calendarId=cal_id, body=body).execute()
             pushed += 1
 
