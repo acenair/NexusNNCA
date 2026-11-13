@@ -57,6 +57,7 @@ const Engagements = () => {  const { user } = useOutletContext();
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [phaseFilter, setPhaseFilter] = useState('');
+  const [staffFilter, setStaffFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -171,6 +172,7 @@ const Engagements = () => {  const { user } = useOutletContext();
     (!preset || e.service_type === preset) &&
     (!stagePreset || (STAGE_MAP[stagePreset] || []).includes(e.phase)) &&
     (!phaseFilter || e.phase === phaseFilter) &&
+    (!staffFilter || (e.assigned_to_name || 'Unassigned') === staffFilter) &&
     (!statusFilter || e.status.toLowerCase() === statusFilter.toLowerCase()) &&
     (!search || (e.client_name || '').toLowerCase().includes(search.toLowerCase()))
   );
@@ -300,6 +302,10 @@ const Engagements = () => {  const { user } = useOutletContext();
             <div className="af-searchbox"><Search size={13} />
               <input placeholder="Search client…" value={search} onChange={e => setSearch(e.target.value)} aria-label="Search engagements by client" />
             </div>
+            <select value={staffFilter} onChange={e => setStaffFilter(e.target.value)} aria-label="Filter by assigned staff" data-testid="staff-filter">
+              <option value="">All staff</option>
+              {[...new Set(engs.map(e => e.assigned_to_name).filter(Boolean))].sort().map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
             <select value={phaseFilter} onChange={e => setPhaseFilter(e.target.value)} aria-label="Filter by phase">
               <option value="">All phases</option>
               {phases.map(p => <option key={p} value={p}>{p}</option>)}
