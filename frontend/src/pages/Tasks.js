@@ -163,11 +163,11 @@ const Tasks = () => {
       </div>
 
       <div className="af-kpis" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }} data-testid="task-kpis">
-        <section className="af-card af-metric"><label>Active jobs</label><b>{kpis.activeJobs}</b><small>In progress, client pending &amp; review</small></section>
-        <section className="af-card af-metric"><label>Upcoming deadlines</label><b>{kpis.upcoming}</b><small>Due today through 14 days</small></section>
-        <section className="af-card af-metric"><label>Delayed jobs</label><b>{kpis.delayed}</b><small>Past target date · not completed</small></section>
-        <section className="af-card af-metric"><label>Awaiting client</label><b>{kpis.awaiting}</b><small>Documents or confirmation pending</small></section>
-        <section className="af-card af-metric"><label>Ready for review</label><b>{kpis.review}</b><small>Manager / partner action needed</small></section>
+        <section className="af-card af-metric"><label>Active jobs</label><b>{kpis.activeJobs}</b><small>Open work</small></section>
+        <section className="af-card af-metric"><label>Upcoming deadlines</label><b>{kpis.upcoming}</b><small>Due in 14 days</small></section>
+        <section className="af-card af-metric"><label>Delayed jobs</label><b>{kpis.delayed}</b><small>Past target date</small></section>
+        <section className="af-card af-metric"><label>Awaiting client</label><b>{kpis.awaiting}</b><small>Client documents pending</small></section>
+        <section className="af-card af-metric"><label>Ready for review</label><b>{kpis.review}</b><small>Manager / partner review</small></section>
       </div>
 
       <p className="af-sub" style={{ margin: '0 0 12px' }} data-testid="context-note">Counts cover the full team. Deadline and delay counts can overlap active jobs. Staff workload counts scheduled jobs; completed jobs are excluded.</p>
