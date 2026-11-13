@@ -49,6 +49,7 @@ const Engagements = () => {  const { user } = useOutletContext();
   const location = useLocation();
   const [params, setParams] = useSearchParams();
   const preset = params.get('service') || ROUTE_PRESETS[location.pathname] || '';
+  const stagePreset = params.get('stage') || '';
 
   const [engs, setEngs] = useState([]);
   const [clients, setClients] = useState([]);
@@ -104,9 +105,19 @@ const Engagements = () => {  const { user } = useOutletContext();
     .sort((a, b) => (serviceCounts[b[0]] || 0) - (serviceCounts[a[0]] || 0));
 
   const phases = [...new Set(engs.map(e => e.phase).filter(Boolean))];
+  const STAGE_MAP = {
+    awaiting: ['Client Due Diligence', 'Scoping', 'Setup', 'Application', ''],
+    progress: ['Planning', 'Fieldwork', 'Preparation', 'Documentation', 'Collection', 'Processing', 'Analysis', 'Assessment', 'Compilation', 'Computation', 'Transaction Monitoring'],
+    review: ['Review & Reporting'],
+    draft: ['Filing'],
+    confirmed: ['Completion'],
+  };
+  const STAGE_LABELS = { awaiting: 'Awaiting documents', progress: 'In progress', review: 'Manager review', draft: 'Draft sent', confirmed: 'Management confirmed' };
+  const stageLabel = STAGE_LABELS[stagePreset];
 
   const filtered = engs.filter(e =>
     (!preset || e.service_type === preset) &&
+    (!stagePreset || (STAGE_MAP[stagePreset] || []).includes(e.phase)) &&
     (!phaseFilter || e.phase === phaseFilter) &&
     (!statusFilter || e.status.toLowerCase() === statusFilter.toLowerCase()) &&
     (!search || (e.client_name || '').toLowerCase().includes(search.toLowerCase()))
@@ -184,7 +195,11 @@ const Engagements = () => {  const { user } = useOutletContext();
       {/* Filters + table */}
       <section className="af-card">
         <div className="af-cardhead">
-          <div><h2>{preset ? SERVICE_LABELS[preset] : 'All engagements'}</h2><div className="af-sub">{filtered.length} shown</div></div>
+          <div><h2>{preset ? SERVICE_LABELS[preset] : 'All engagements'}</h2>
+            <div className="af-sub">{filtered.length} shown{stageLabel ? ` · filtered to stage: ${stageLabel}` : ''}
+              {stageLabel && <button className="tbtn" style={{ marginLeft: 8, fontSize: 10.5 }} data-testid="clear-stage-filter"
+                onClick={() => { params.delete('stage'); setParams(params, { replace: true }); }}>Clear stage filter ✕</button>}
+            </div></div>
           <div style={{ display: 'flex', gap: 8 }}>
             <div className="af-searchbox"><Search size={13} />
               <input placeholder="Search client…" value={search} onChange={e => setSearch(e.target.value)} aria-label="Search engagements by client" />

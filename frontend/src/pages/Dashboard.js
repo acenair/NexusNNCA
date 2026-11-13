@@ -12,12 +12,13 @@ const API = `${BACKEND_URL}/api`;
 
 // Map engagement phases to the 5-stage Auditflow pipeline
 const PIPELINE_STAGES = [
-  { key: 'awaiting', label: 'Awaiting documents', phases: ['Client Due Diligence'] },
-  { key: 'progress', label: 'In progress', phases: ['Planning', 'Fieldwork', 'Computation', 'Transaction Monitoring'] },
+  { key: 'awaiting', label: 'Awaiting documents', phases: ['Client Due Diligence', 'Scoping', 'Setup', 'Application', ''] },
+  { key: 'progress', label: 'In progress', phases: ['Planning', 'Fieldwork', 'Preparation', 'Documentation', 'Collection', 'Processing', 'Analysis', 'Assessment', 'Compilation', 'Computation', 'Transaction Monitoring'] },
   { key: 'review', label: 'Manager review', phases: ['Review & Reporting'] },
   { key: 'draft', label: 'Draft sent', phases: ['Filing'] },
   { key: 'confirmed', label: 'Management confirmed', phases: ['Completion'] },
 ];
+export const STAGE_PHASES = Object.fromEntries(PIPELINE_STAGES.map(s => [s.key, s.phases]));
 const STAGE_COLORS = { awaiting: '#d8e9f7', progress: '#2e93d9', review: '#0b5e9b', draft: '#7fb9e0', confirmed: '#77cfc4' };
 
 const SERVICE_LABELS = {
@@ -116,19 +117,9 @@ const Dashboard = () => {
   const overdueTasks = openTasks.filter(t => t.due_date && t.due_date < today.toISOString().slice(0, 10));
   const reviewQueue = active.filter(e => e.phase === 'Review & Reporting');
 
-  // ---- Kanban pipeline (drag an engagement to a new stage) ----
-  const [dragOver, setDragOver] = useState(null);
-  const [dragging, setDragging] = useState(null);
-  const isPartnerUser = user?.role === 'partner';
-  const stageEngs = (s) => active.filter(e => s.phases.includes(e.phase));
-  const moveEngagement = async (engagement_id, stage) => {
-    const st = PIPELINE_STAGES.find(x => x.key === stage);
-    const phase = st?.phases?.[0];
-    if (!phase) return;
-    setEngagements(prev => prev.map(e => e.engagement_id === engagement_id ? { ...e, phase } : e));
-    try { await axios.patch(`${process.env.REACT_APP_BACKEND_URL}/api/service/engagements/${engagement_id}`, { phase }, { withCredentials: true }); }
-    catch (e) { console.error('Stage move failed', e); loadData(); }
-  };
+  // ---- Engagement pipeline (summary design) ----
+  const readyForPrint = pipeline[4]?.count || 0;   // Management confirmed / Completion
+  const issuedCount = engagements.filter(e => (e.status || '').toLowerCase() === 'completed').length;
 
   const chartMonths = [];
   for (let k = 5; k >= 0; k--) {
@@ -354,31 +345,35 @@ const Dashboard = () => {
         </section>
         <section className="af-card">
           <div className="af-cardhead">
-            <div><h2>Engagement pipeline</h2><div className="af-sub">All active engagements · Now</div></div>
+            <div><h2>Engagement pipeline</h2><div className="af-sub">All active engagements · Current snapshot</div></div>
+            <Link className="af-link" to="/app/engagements">Explore ↗</Link>
           </div>
-          <div className="af-kanban" data-testid="engagement-kanban">
-            {pipeline.map(s => (
-              <div key={s.key}
-                className={`af-kancol${dragOver === s.key ? ' dragover' : ''}`}
-                onDragOver={e => { if (!isPartnerUser) return; e.preventDefault(); setDragOver(s.key); }}
-                onDragLeave={() => setDragOver(prev => prev === s.key ? null : prev)}
-                onDrop={e => { e.preventDefault(); setDragOver(null); if (dragging && isPartnerUser) moveEngagement(dragging, s.key); setDragging(null); }}>
-                <div className="af-kanhead"><span>{s.label.replace(/^Stage \d+: /, '')}</span><b>{s.count}</b></div>
-                {stageEngs(s).slice(0, 8).map(e => (
-                  <div key={e.engagement_id} className={`af-kancard${dragging === e.engagement_id ? ' dragging' : ''}`}
-                    style={{ borderLeftColor: STAGE_COLORS[s.key] }}
-                    draggable={isPartnerUser}
-                    onDragStart={ev => { setDragging(e.engagement_id); ev.dataTransfer.effectAllowed = 'move'; }}
-                    onDragEnd={() => setDragging(null)}>
-                    <b>{e.client_name}</b>
-                    <small>{SERVICE_LABELS[e.service_type] || e.service_type}</small>
-                  </div>
-                ))}
-                {stageEngs(s).length === 0 && <div className="af-kanempty">Drop here{isPartnerUser ? '' : ' (partners only)'}</div>}
-              </div>
+          <div className="af-pipebar" data-testid="engagement-pipeline" title="Engagements by stage">
+            {pipeline.filter(s => s.count > 0).map(s => (
+              <span key={s.key} title={`${s.label}: ${s.count}`} style={{ flexGrow: s.count, background: STAGE_COLORS[s.key] }} />
             ))}
+            {totalActive === 0 && <span style={{ flexGrow: 1, background: 'var(--line)' }} />}
           </div>
-          <div className="af-sub" style={{ marginTop: 8 }}>{isPartnerUser ? 'Drag a card between stages to update the engagement phase · ' : ''}{totalActive} active engagement(s)</div>
+          <div className="af-pipecounts" data-testid="pipeline-counts">
+            <div>
+              {[pipeline[0], pipeline[2], pipeline[4]].map(s => (
+                <Link key={s.key} className="af-piperow" to={`/app/engagements?stage=${s.key}`}>
+                  <span>{s.label}</span><b>{s.count}</b>
+                </Link>
+              ))}
+            </div>
+            <div>
+              {[pipeline[1], pipeline[3]].map(s => (
+                <Link key={s.key} className="af-piperow" to={`/app/engagements?stage=${s.key}`}>
+                  <span>{s.label}</span><b>{s.count}</b>
+                </Link>
+              ))}
+              <Link className="af-piperow" to="/app/engagements"><span>Total active</span><b>{totalActive}</b></Link>
+            </div>
+          </div>
+          <div className="af-sub" style={{ marginTop: 10 }} data-testid="pipeline-foot">
+            {readyForPrint} ready for final print · {issuedCount} final report{issuedCount === 1 ? '' : 's'} issued
+          </div>
         </section>
       </div>
 
