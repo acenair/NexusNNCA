@@ -458,9 +458,7 @@ async def schedule_meet(payload: dict = Body(default=None),
     try:
         from datetime import datetime as dt
         start = dt.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
-        end = start.timestamp() + duration_min * 60
-        from datetime import datetime as d2
-        end_str = d2.fromtimestamp(end).strftime("%Y-%m-%d %H:%M")
+        end = dt.fromtimestamp(start.timestamp() + duration_min * 60)
     except ValueError:
         raise HTTPException(422, "Bad date/time format (YYYY-MM-DD, HH:MM)")
     try:
@@ -470,8 +468,8 @@ async def schedule_meet(payload: dict = Body(default=None),
             cal_obj = cal.calendars().insert(body={"summary": "NNCA Compliance", "timeZone": "Asia/Dubai"}).execute()
         ev = cal.events().insert(
             calendarId=cal_obj["id"],
-            body={"summary": title, "start": {"dateTime": start.isoformat() + ":00", "timeZone": "Asia/Dubai"},
-                  "end": {"dateTime": end_str + ":00", "timeZone": "Asia/Dubai"}},
+            body={"summary": title, "start": {"dateTime": start.isoformat(timespec="seconds"), "timeZone": "Asia/Dubai"},
+                  "end": {"dateTime": end.isoformat(timespec="seconds"), "timeZone": "Asia/Dubai"}},
             conferenceDataVersion=1).execute()
         link = (ev.get("hangoutLink") or (ev.get("conferenceData", {}).get("entryPoints", [{}])[0].get("uri") if ev.get("conferenceData", {}).get("entryPoints") else None)) or ""
         return {"ok": True, "event_id": ev["id"], "meet_link": link, "calendar_link": ev.get("htmlLink")}
