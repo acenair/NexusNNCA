@@ -8,7 +8,7 @@ Backs the "Audit workbook" tab in Engagement Detail:
 Everything stores in one collection keyed by engagement_id.
 """
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 from fastapi import APIRouter
 from fastapi import Body
 from fastapi import Cookie
@@ -30,6 +30,8 @@ ISA_REFS = {
     "going_concern": "ISA 570",
     "tcwg": "ISA 260 / 265",
     "sampling": "ISA 530",
+    "group": "ISA 600 (Revised)",
+    "report": "ISA 700",
 }
 
 # Poisson reliability factors (zero expected deviations) + UDL factors by deviations found
@@ -60,7 +62,7 @@ async def list_workpapers(engagement_id: str, authorization: str = Header(None),
         raise HTTPException(404, "Engagement not found")
     rows = await db.audit_workpapers.find({"engagement_id": engagement_id, "is_deleted": {"$ne": True}},
                                           {"_id": 0}).sort("created_at", 1).to_list(300)
-    out = {"risk": [], "materiality": [], "confirmation": [], "rep_letter": [], "sampling": [], "tcwg": []}
+    out = {"risk": [], "materiality": [], "confirmation": [], "rep_letter": [], "sampling": [], "tcwg": [], "group": [], "report": []}
     for row in rows:
         if row.get("kind") in out:
             out[row["kind"]].append(row)
@@ -73,7 +75,7 @@ async def add_workpaper(engagement_id: str, payload: WorkpaperIn,
     user = await _authed(authorization, session_token)
     if not await _eng_exists(engagement_id):
         raise HTTPException(404, "Engagement not found")
-    if payload.kind not in ("risk", "materiality", "confirmation", "rep_letter", "sampling", "tcwg"):
+    if payload.kind not in ("risk", "materiality", "confirmation", "rep_letter", "sampling", "tcwg", "group", "report"):
         raise HTTPException(422, "kind must be risk | materiality | confirmation | rep_letter")
     wp_id = f"wp_{uuid.uuid4().hex[:12]}"
     doc = {
@@ -216,3 +218,65 @@ async def engagement_letter(engagement_id: str, payload: dict = Body(default=Non
     ]
     return {"client_name": client.get("name"), "letter_ref": f"EL-{engagement_id[-8:]}",
             "sections": sections, "generated_at": datetime.now(timezone.utc).isoformat()}
+
+
+# ---------------- ISA 700 independent auditor's report builder ----------------
+
+OPINIONS = {
+    "unmodified": "In our opinion, the accompanying financial statements present fairly, in all material respects, the financial position of the Company as at {fye}, and its financial performance and its cash flows for the period then ended, in accordance with International Financial Reporting Standards (IFRS) as issued by the International Accounting Standards Board and applicable UAE Federal law.",
+    "qualified": "Except for the possible effects of the matters described in the Basis for Qualified Opinion section, in our opinion the accompanying financial statements present fairly, in all material respects, the financial position of the Company as at {fye}, and its financial performance and its cash flows for the period then ended, in accordance with IFRS as issued by the IASB and applicable UAE Federal law.",
+    "adverse": "In our opinion, because of the significance of the matters described in the Basis for Adverse Opinion section, the accompanying financial statements do not present fairly the financial position of the Company as at {fye}, nor its financial performance and its cash flows for the period then ended, in accordance with IFRS as issued by the IASB.",
+    "disclaimer": "Because of the significance of the matters described in the Basis for Disclaimer of Opinion section, we have not been able to obtain sufficient appropriate audit evidence to provide a basis for an audit opinion on the accompanying financial statements. Accordingly, we do not express an opinion on the financial statements.",
+}
+
+
+@router.post("/engagements/{engagement_id}/audit-report")
+async def audit_report(engagement_id: str, payload: dict = Body(default=None),
+                       authorization: str = Header(None), session_token: str = Cookie(None)):
+    """Assemble an ISA 700 independent auditor's report with the MOE-required licence numbers."""
+    user = await _authed(authorization, session_token)
+    eng = await db.service_engagements.find_one({"engagement_id": engagement_id}, {"_id": 0})
+    if not eng:
+        raise HTTPException(404, "Engagement not found")
+    client = await db.clients.find_one({"client_id": eng.get("client_id")}, {"_id": 0}) or {}
+    firm = await db.settings.find_one({"type": "firm_identity"}, {"_id": 0}) or {}
+    firm_name = firm.get("firm_name") or "Nair & Nelliyatt Chartered Accountants"
+    firm_lic = firm.get("moe_license_no") or firm.get("license_no") or "[firm licence no.]"
+    auditor_name = (payload or {}).get("signatory") or user.get("name")
+    auditor_lic = firm.get("moe_auditor_license_no") or "[auditor licence no.]"
+    opinion_type = (payload or {}).get("opinion") or "unmodified"
+    if opinion_type not in OPINIONS:
+        raise HTTPException(422, f"opinion must be one of {list(OPINIONS)}")
+    fye = str(client.get("financial_year_end") or "12-31")
+    fye_label = f"31 December {date.today().year - 1}" if fye == "12-31" else fye
+    basis = (payload or {}).get("basis") or ""
+    kams = (payload or {}).get("key_audit_matters") or []
+    report_date = (payload or {}).get("report_date") or date.today().isoformat()
+
+    sections = [
+        {"title": "Opinion", "body": OPINIONS[opinion_type].format(fye=fye_label), "items": []},
+        {"title": "Basis for Opinion" + {"qualified": " for Qualified Opinion", "adverse": " for Adverse Opinion", "disclaimer": " for Disclaimer of Opinion"}.get(opinion_type, ""), "body": basis or "We conducted our audit in accordance with International Standards on Auditing (ISAs) as adopted in the UAE. Our responsibilities under those standards are further described in the Auditor's Responsibilities for the Audit of the Financial Statements section of our report. We are independent of the Company in accordance with the ethical requirements relevant to our audit in the UAE, and we have fulfilled our other ethical responsibilities in accordance with those requirements. We believe that the audit evidence we have obtained is sufficient and appropriate to provide a basis for our opinion.", "items": []},
+        {"title": "Key Audit Matters", "body": "" if kams else "No key audit matters arose from our audit that required communication in the auditor's report.",
+         "items": [str(k) for k in kams]},
+        {"title": "Other Information", "body": "Management is responsible for the other information. Our opinion does not cover the other information, and we do not express any form of assurance conclusion thereon. In connection with our audit, our responsibility is to read the other information and consider whether it is materially inconsistent with the financial statements or our knowledge obtained in the audit.", "items": []},
+        {"title": "Responsibilities of Management and Those Charged with Governance", "body": "Management is responsible for the preparation and fair presentation of the financial statements in accordance with IFRS and applicable UAE law, and for such internal control as management determines is necessary to enable the preparation of financial statements that are free from material misstatement, whether due to fraud or error.", "items": []},
+        {"title": "Auditor's Responsibilities for the Audit of the Financial Statements", "body": "Our objectives are to obtain reasonable assurance about whether the financial statements as a whole are free from material misstatement, whether due to fraud or error, and to issue an auditor's report that includes our opinion. Reasonable assurance is a high level of assurance but does not guarantee that an audit conducted in accordance with ISAs will always detect a material misstatement when it exists.", "items": []},
+        {"title": "Signature", "body": f"For and on behalf of {firm_name} — {auditor_name}, Auditor's Licence No. {auditor_lic}. Firm Licence No. {firm_lic}. Report dated {report_date}.", "items": []},
+    ]
+    doc = {"engagement_id": engagement_id, "client_name": client.get("name"), "opinion": opinion_type,
+           "sections": sections, "report_date": report_date, "firm_name": firm_name,
+           "generated_by": user.get("name"), "generated_at": datetime.now(timezone.utc).isoformat()}
+    # persist as the engagement's report workpaper (latest wins)
+    await db.audit_workpapers.update_many({"engagement_id": engagement_id, "kind": "report"}, {"$set": {"is_deleted": True}})
+    await db.audit_workpapers.insert_one({"workpaper_id": f"wp_{uuid.uuid4().hex[:12]}", "engagement_id": engagement_id,
+                                          "kind": "report", "data": doc, "isa_ref": ISA_REFS["report"],
+                                          "created_by": user.get("name"), "created_at": doc["generated_at"], "is_deleted": False})
+    return doc
+
+
+@router.get("/engagements/{engagement_id}/group-audit-components")
+async def group_components(engagement_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
+    await _authed(authorization, session_token)
+    rows = await db.audit_workpapers.find({"engagement_id": engagement_id, "kind": "group", "is_deleted": {"$ne": True}},
+                                          {"_id": 0}).sort("created_at", 1).to_list(200)
+    return {"components": rows}

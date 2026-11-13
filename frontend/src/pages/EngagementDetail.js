@@ -88,12 +88,12 @@ const EngagementDetail = () => {
   };
   // Audit standards workpapers (risk register / materiality / confirmations / rep letter)
   const [wps, setWps] = useState({ risk: [], materiality: [], confirmation: [], rep_letter: [] });
-  const [wpForm, setWpForm] = useState({ risk: '', assertion: '', response: '', conf_account: '', conf_type: 'Bank', bench: 'profit_before_tax', bench_value: '', pct: 5, pm: 50, triv: 5, matResult: null, sampConf: 95, sampTer: 5, sampPop: '', sampDev: '', sampResult: null, tcwgDate: '', tcwgMatter: '', tcwgSeverity: 'Deficiency', tcwgResponse: '', letter: null });
+  const [wpForm, setWpForm] = useState({ risk: '', assertion: '', response: '', conf_account: '', conf_type: 'Bank', bench: 'profit_before_tax', bench_value: '', pct: 5, pm: 50, triv: 5, matResult: null, sampConf: 95, sampTer: 5, sampPop: '', sampDev: '', sampResult: null, tcwgDate: '', tcwgMatter: '', tcwgSeverity: 'Deficiency', tcwgResponse: '', letter: null, repOpinion: 'unmodified', repBasis: '', repKam: '', repDate: new Date().toISOString().slice(0, 10), report: null, grpComponent: '', grpAuditor: '', grpScope: 'Full scope', grpMat: '', grpNote: '' });
 
   const loadWorkpapers = async () => {
     try {
       const res = await axios.get(`${API}/engagements/${engagementId}/workpapers`, { withCredentials: true });
-      setWps({ risk: res.data.risk || [], materiality: res.data.materiality || [], confirmation: res.data.confirmation || [], rep_letter: res.data.rep_letter || [], sampling: res.data.sampling || [], tcwg: res.data.tcwg || [] });
+      setWps({ risk: res.data.risk || [], materiality: res.data.materiality || [], confirmation: res.data.confirmation || [], rep_letter: res.data.rep_letter || [], sampling: res.data.sampling || [], tcwg: res.data.tcwg || [], group: res.data.group || [], report: res.data.report || [] });
     } catch (e) { console.error(e); }
   };
   useEffect(() => { loadNotes(); loadAssumptions(); loadWorkpapers(); }, [engagementId]);
@@ -116,6 +116,16 @@ const EngagementDetail = () => {
       const res = await axios.get(`${API}/engagements/${engagementId}/sampling-calc`, { params: { confidence: wpForm.sampConf, tolerable_rate: wpForm.sampTer, population: wpForm.sampPop || 0, deviations: wpForm.sampDev || 0 }, withCredentials: true });
       setWpForm(prev => ({ ...prev, sampResult: res.data }));
     } catch (e) { alert(e.response?.data?.detail || 'Check the inputs'); }
+  };
+  const generateReport = async () => {
+    try {
+      const res = await axios.post(`${API}/engagements/${engagementId}/audit-report`, {
+        opinion: wpForm.repOpinion, basis: wpForm.repBasis, report_date: wpForm.repDate,
+        key_audit_matters: wpForm.repKam ? wpForm.repKam.split('\n').map(x => x.trim()).filter(Boolean) : [],
+      }, { withCredentials: true });
+      setWpForm(prev => ({ ...prev, report: res.data }));
+      await loadWorkpapers();
+    } catch (e) { alert(e.response?.data?.detail || 'Could not generate the report'); }
   };
   const generateLetter = async () => {
     try {
@@ -481,6 +491,59 @@ const EngagementDetail = () => {
         </select>
         <button className="af-btn-primary" onClick={() => addWp('rep_letter', { status: wpForm.repStatus || 'Prepared', date: new Date().toISOString().slice(0, 10) }, null)} data-testid="wp-rep-add">Log status</button>
       </div>
+    </div>
+
+    <div className="nn-card" style={{ padding: '16px 20px', marginBottom: 14 }} data-testid="wp-group-card">
+      <div style={{ fontSize: 11, fontWeight: 650, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--gold)', marginBottom: 4 }}>Group audit components — ISA 600 (Revised)</div>
+      {wps.group.length > 0 && (
+        <div style={{ marginBottom: 12 }}>
+          {wps.group.map(w => (
+            <div key={w.workpaper_id} style={{ padding: '9px 12px', borderRadius: 8, background: w.data.consolidation_status === 'Reviewed & consolidated' ? '#f0f7f2' : 'var(--off)', border: '1px solid var(--nn-border)', marginBottom: 6 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                <b style={{ fontSize: 12.5, color: 'var(--text)' }}>{w.data.component}</b>
+                <span style={{ fontSize: 10.5, color: 'var(--muted)' }}>{w.data.scope_work} · materiality {w.data.materiality_allocation || '—'}</span>
+                <button style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer' }} onClick={() => delWp(w.workpaper_id)}>✕</button>
+              </div>
+              <div style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 3 }}>Component auditor: {w.data.component_auditor || '—'} · {w.data.consolidation_status || 'Not consolidated'}{w.data.note ? ` · ${w.data.note}` : ''}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <input placeholder="Component (entity/branch)" value={wpForm.grpComponent} onChange={e => setWpForm({ ...wpForm, grpComponent: e.target.value })} data-testid="wp-grp-component" style={{ flex: 2, minWidth: 180, padding: '8px 11px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', fontSize: 12 }} />
+        <input placeholder="Component auditor" value={wpForm.grpAuditor} onChange={e => setWpForm({ ...wpForm, grpAuditor: e.target.value })} style={{ flex: 1, minWidth: 150, padding: '8px 11px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', fontSize: 12 }} />
+        <select value={wpForm.grpScope} onChange={e => setWpForm({ ...wpForm, grpScope: e.target.value })} style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', fontSize: 12 }}>
+          {['Full scope', 'Specified risks', 'Specified items', 'Analytical review'].map(x => <option key={x}>{x}</option>)}
+        </select>
+        <input type="number" placeholder="Mat. allocation" value={wpForm.grpMat} onChange={e => setWpForm({ ...wpForm, grpMat: e.target.value })} style={{ width: 120, padding: '8px 11px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', fontSize: 12 }} />
+        <button className="af-btn-primary" onClick={() => { if (!wpForm.grpComponent) return; addWp('group', { component: wpForm.grpComponent, component_auditor: wpForm.grpAuditor, scope_work: wpForm.grpScope, materiality_allocation: wpForm.grpMat, consolidation_status: 'Instructions sent', note: wpForm.grpNote }, () => setWpForm({ ...wpForm, grpComponent: '', grpAuditor: '', grpMat: '', grpNote: '' })); }} data-testid="wp-grp-add">Add component</button>
+      </div>
+    </div>
+
+    <div className="nn-card" style={{ padding: '16px 20px', marginBottom: 14 }} data-testid="wp-report-card">
+      <div style={{ fontSize: 11, fontWeight: 650, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--gold)', marginBottom: 4 }}>Auditor's report — ISA 700 (with MOE licence numbers)</div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 8 }}>
+        <select value={wpForm.repOpinion} onChange={e => setWpForm({ ...wpForm, repOpinion: e.target.value })} data-testid="wp-rep-opinion" style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', fontSize: 12 }}>
+          {['unmodified', 'qualified', 'adverse', 'disclaimer'].map(x => <option key={x} value={x}>{x.charAt(0).toUpperCase() + x.slice(1)} opinion</option>)}
+        </select>
+        <input type="date" value={wpForm.repDate} onChange={e => setWpForm({ ...wpForm, repDate: e.target.value })} style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', fontSize: 12 }} />
+        <button className="af-btn-primary" onClick={generateReport} data-testid="wp-rep-generate">Generate report</button>
+      </div>
+      {wpForm.repOpinion !== 'unmodified' && (
+        <textarea rows={2} placeholder="Basis for the modified opinion (the matters that drive the modification)" value={wpForm.repBasis} onChange={e => setWpForm({ ...wpForm, repBasis: e.target.value })} data-testid="wp-rep-basis" style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', fontSize: 12, marginBottom: 8 }} />
+      )}
+      {wpForm.report && (
+        <div style={{ border: '1px solid var(--nn-border)', borderRadius: 8, padding: 14 }} data-testid="wp-report-doc">
+          <div style={{ fontSize: 10.5, color: 'var(--muted)', marginBottom: 10 }}>Report dated {wpForm.report.report_date} — print on firm letterhead. Retain 10 years (MOE Art. 16).</div>
+          {wpForm.report.sections.map(s2 => (
+            <div key={s2.title} style={{ marginBottom: 10 }}>
+              <b style={{ fontSize: 12.5, color: 'var(--text)' }}>{s2.title}</b>
+              <div style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.55, marginTop: 2 }}>{s2.body}</div>
+              {s2.items.length > 0 && <ul style={{ fontSize: 12, color: 'var(--text)', margin: '4px 0 0 18px' }}>{s2.items.map((it, i) => <li key={i}>{it}</li>)}</ul>}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
 
     <div className="nn-card" style={{ padding: '16px 20px', marginBottom: 14 }} data-testid="wp-sampling-card">
