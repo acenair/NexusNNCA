@@ -805,6 +805,34 @@
   "name": "update_readiness"
  },
  {
+  "path": "/api/engagements/{engagement_id}/materiality-calc",
+  "methods": [
+   "GET"
+  ],
+  "name": "materiality_calc"
+ },
+ {
+  "path": "/api/engagements/{engagement_id}/workpapers",
+  "methods": [
+   "GET"
+  ],
+  "name": "list_workpapers"
+ },
+ {
+  "path": "/api/engagements/{engagement_id}/workpapers",
+  "methods": [
+   "POST"
+  ],
+  "name": "add_workpaper"
+ },
+ {
+  "path": "/api/engagements/{engagement_id}/workpapers/{workpaper_id}",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "update_workpaper"
+ },
+ {
   "path": "/api/events",
   "methods": [
    "GET"
@@ -1797,6 +1825,83 @@
    "PATCH"
   ],
   "name": "set_mapping"
+ },
+ {
+  "path": "/api/tp/{client_id}/arm-length-test",
+  "methods": [
+   "POST"
+  ],
+  "name": "arm_length_test"
+ },
+ {
+  "path": "/api/tp/{client_id}/counterparties",
+  "methods": [
+   "GET"
+  ],
+  "name": "list_counterparties"
+ },
+ {
+  "path": "/api/tp/{client_id}/counterparties",
+  "methods": [
+   "POST"
+  ],
+  "name": "add_counterparty"
+ },
+ {
+  "path": "/api/tp/{client_id}/counterparties/{cp_id}",
+  "methods": [
+   "DELETE"
+  ],
+  "name": "delete_counterparty"
+ },
+ {
+  "path": "/api/tp/{client_id}/counterparties/{cp_id}",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "update_counterparty"
+ },
+ {
+  "path": "/api/tp/{client_id}/disclosure-form",
+  "methods": [
+   "POST"
+  ],
+  "name": "disclosure_form"
+ },
+ {
+  "path": "/api/tp/{client_id}/summary",
+  "methods": [
+   "GET"
+  ],
+  "name": "tp_summary"
+ },
+ {
+  "path": "/api/tp/{client_id}/transactions",
+  "methods": [
+   "GET"
+  ],
+  "name": "list_transactions"
+ },
+ {
+  "path": "/api/tp/{client_id}/transactions",
+  "methods": [
+   "POST"
+  ],
+  "name": "add_transaction"
+ },
+ {
+  "path": "/api/tp/{client_id}/transactions/{txn_id}",
+  "methods": [
+   "DELETE"
+  ],
+  "name": "delete_transaction"
+ },
+ {
+  "path": "/api/tp/{client_id}/transactions/{txn_id}",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "update_transaction"
  },
  {
   "path": "/api/vat/filings",
