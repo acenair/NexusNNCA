@@ -280,12 +280,14 @@ const Tasks = () => {
 
             <section className="af-card" data-testid="review-queue">
               <div className="af-cardhead"><div><h2 style={{ fontSize: 14 }}>Review queue</h2><span className="af-badge af-badge-grey">Manager action</span></div></div>
+              <div style={{ maxHeight: 360, overflowY: 'auto' }}>
               {tasks.filter(j => disp(j.status) === 'In review').map(j => (
                 <div key={j.task_id} style={{ padding: '9px 0', borderBottom: '1px solid var(--line, #e4eff6)', fontSize: 12.5 }}>
                   <b>{j.client_name || j.title}</b>
                   <p style={{ fontSize: 11.5, color: 'var(--muted)', margin: '2px 0' }}>{svcLabel(j.service_module)} · {j.assigned_to_name || '—'}</p>
                 </div>
               ))}
+              </div>
               {tasks.filter(j => disp(j.status) === 'In review').length === 0 && <p style={{ fontSize: 12, color: 'var(--muted)' }}>Review queue is clear.</p>}
             </section>
           </div>
@@ -294,6 +296,7 @@ const Tasks = () => {
         <div>
           <section className="af-card" style={{ marginBottom: 16 }} data-testid="upcoming-deadlines">
             <div className="af-cardhead"><div><h2 style={{ fontSize: 14 }}>Upcoming deadlines</h2><span className="af-badge af-badge-grey">Next 7 days</span></div></div>
+            <div style={{ maxHeight: 420, overflowY: 'auto' }}>
             {tasks.filter(j => open(j) && j.due_date >= today && j.due_date <= new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10)).sort((a, b) => a.due_date.localeCompare(b.due_date)).map(j => (
               <div key={j.task_id} style={{ display: 'flex', gap: 10, padding: '9px 0', borderBottom: '1px solid var(--line, #e4eff6)' }}>
                 <div style={{ background: '#e7f1fa', borderRadius: 8, textAlign: 'center', padding: '4px 8px', minWidth: 34 }}>
@@ -306,18 +309,21 @@ const Tasks = () => {
                 </div>
               </div>
             ))}
+            </div>
             {tasks.filter(j => open(j) && j.due_date >= today && j.due_date <= new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10)).length === 0 && <p style={{ fontSize: 12, color: 'var(--muted)' }}>Nothing due in the next 7 days.</p>}
             <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 10 }}>Internal job targets only — statutory filing dates live in the Deadline tracker.</p>
           </section>
 
           <section className="af-card" style={{ marginBottom: 16 }} data-testid="delayed-jobs-card">
             <div className="af-cardhead"><div><h2 style={{ fontSize: 14 }}>Delayed jobs</h2><span className="af-badge af-badge-red">Action required</span></div></div>
+            <div style={{ maxHeight: 420, overflowY: 'auto' }}>
             {tasks.filter(isLate).map(j => (
               <div key={j.task_id} style={{ padding: '9px 0', borderBottom: '1px solid var(--line, #e4eff6)', fontSize: 12.5 }}>
                 <b>{j.client_name || j.title}</b>
                 <p style={{ fontSize: 11.5, color: 'var(--muted)', margin: '2px 0' }}>{svcLabel(j.service_module)} · {daysLate(j)} days late · {j.assigned_to_name || '—'}</p>
               </div>
             ))}
+            </div>
             {tasks.filter(isLate).length === 0 && <p style={{ fontSize: 12, color: 'var(--muted)' }}>No delayed jobs.</p>}
           </section>
 
