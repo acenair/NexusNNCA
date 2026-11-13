@@ -805,11 +805,25 @@
   "name": "update_readiness"
  },
  {
+  "path": "/api/engagements/{engagement_id}/audit-report",
+  "methods": [
+   "POST"
+  ],
+  "name": "audit_report"
+ },
+ {
   "path": "/api/engagements/{engagement_id}/engagement-letter",
   "methods": [
    "POST"
   ],
   "name": "engagement_letter"
+ },
+ {
+  "path": "/api/engagements/{engagement_id}/group-audit-components",
+  "methods": [
+   "GET"
+  ],
+  "name": "group_components"
  },
  {
   "path": "/api/engagements/{engagement_id}/materiality-calc",
