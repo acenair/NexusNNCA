@@ -295,7 +295,7 @@ async def sync_deadlines(authorization: str = Header(None), session_token: str =
     async def _upsert(kind, ref_id, title, due_iso, color):
         nonlocal pushed, updated
         ev_id = f"nnca-{kind}-{ref_id}"[:80].replace(" ", "")
-        body = {"summary": title, "start": {"date": due_iso}, "end": {"date": due_iso},
+        body = {"id": ev_id, "summary": title, "start": {"date": due_iso}, "end": {"date": due_iso},
                 "colorId": color, "transparency": "transparent",
                 "extendedProperties": {"private": {"nnca_kind": kind, "nnca_ref": ref_id}}}
         try:
