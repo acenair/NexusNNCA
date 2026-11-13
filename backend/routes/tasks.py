@@ -109,6 +109,22 @@ async def update_task(task_id: str, status: Optional[str] = None, payload: Optio
                 update_data["completed_at"] = datetime.now(timezone.utc).isoformat()
                 update_data["progress"] = 100
     await db.tasks.update_one({"task_id": task_id}, {"$set": update_data})
+
+    # Keep the parent engagement in step with its job:
+    # when the job is completed, tick its whole checklist and move to the final phase.
+    if update_data.get("status") == "Completed":
+        task_doc = await db.tasks.find_one({"task_id": task_id}, {"_id": 0, "engagement_id": 1})
+        eng_id = (task_doc or {}).get("engagement_id")
+        if eng_id:
+            eng = await db.service_engagements.find_one({"engagement_id": eng_id}, {"_id": 0})
+            if eng and eng.get("checklist"):
+                cl = eng["checklist"]
+                for g in cl:
+                    for it in g.get("items", []):
+                        it["done"] = True
+                await db.service_engagements.update_one(
+                    {"engagement_id": eng_id},
+                    {"$set": {"checklist": cl, "phase": cl[-1]["group"]}})
     return {"message": "Task updated"}
 
 
