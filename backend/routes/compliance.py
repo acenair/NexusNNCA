@@ -72,6 +72,23 @@ async def _sync_customers():
                 {"record_id": existing["record_id"]},
                 {"$set": {"due_date": c["license_expiry"], "subject_name": c["name"],
                           "stage": "Renewal in progress" if expired else "Verified"}})
+    # UBO / ownership declaration — annual review (Cabinet Decision 109/2023 discipline)
+    year = str(_today().year)
+    for c in await db.clients.find({"status": {"$ne": "Deleted"}}, {"_id": 0, "client_id": 1, "name": 1}).to_list(1000):
+        existing = await db.compliance_records.find_one(
+            {"scope": "customers", "subject_id": c["client_id"], "doc_type": "UBO / Ownership", "source": "auto_review"})
+        if existing:
+            continue
+        await db.compliance_records.insert_one({
+            "record_id": f"cmp_{uuid.uuid4().hex[:12]}", "scope": "customers",
+            "subject_id": c["client_id"], "subject_name": c["name"],
+            "doc_type": "UBO / Ownership", "holder": "Ownership structure",
+            "masked_ref": "", "owner": "Partner", "date_basis": "review",
+            "due_date": f"{year}-12-31", "stage": "Not requested",
+            "authority": "Licensing authority", "notes": "Annual UBO declaration refresh (CD 109/2023)",
+            "source": "auto_review", "history": [],
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
 
 
 async def _sync_staff():
@@ -105,7 +122,7 @@ async def _sync_staff():
 
 SCOPE_CATEGORIES = {
     "customers": ["Trade Licence", "Passport", "Emirates ID", "KYC Review", "UBO / Ownership", "Address / Supporting Records"],
-    "firm": ["Firm Trade Licence", "Tenancy / Lease", "Establishment Card", "Professional Indemnity", "Other Insurance", "Firm Registrations", "Operational Records"],
+    "firm": ["Firm Trade Licence", "Tenancy / Lease", "Establishment Card", "Professional Indemnity", "Other Insurance", "Firm Registrations", "CPD / Training", "MOE Compliance Review", "Operational Records"],
     "staff": ["Residence Visa", "Emirates ID", "Passport", "Medical Insurance", "Employment Records"],
 }
 STAGES_LIST = ["Not requested", "Requested", "Received", "Under review", "Verified", "Renewal in progress", "Not applicable"]

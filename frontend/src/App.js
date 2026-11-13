@@ -38,6 +38,7 @@ import AIAssistant from '@/pages/AIAssistant';
 import ClientMaster from '@/pages/ClientMaster';
 import Engagements from '@/pages/Engagements';
 import BillingWorkspace from '@/pages/BillingWorkspace';
+import TransferPricing from '@/pages/TransferPricing';
 import AttendanceLeave from '@/pages/AttendanceLeave';
 import WorkPerformance from '@/pages/WorkPerformance';
 import Reports from '@/pages/Reports';
@@ -164,6 +165,7 @@ function AppRouter() {
         <Route path="clients/:clientId/onboarding" element={<OnboardingTracker />} />
         <Route path="clients/:clientId/onboarding/:onboardingId" element={<OnboardingTracker />} />
         <Route path="invoices" element={<BillingWorkspace />} />
+        <Route path="transfer-pricing" element={<TransferPricing />} />
         <Route path="ageing-report" element={<BillingWorkspace />} />
         <Route path="proposals" element={<Proposals />} />
       </Route>

@@ -234,6 +234,7 @@ const MainLayout = ({ user }) => {
         { path: '/app/deadlines', label: 'Deadline Tracker', icon: Clock },
         { path: '/app/calendar', label: 'Service calendar', icon: Calendar },
         { path: '/app/invoices', label: 'Invoices & collections', icon: Receipt, partnerOnly: true },
+        { path: '/app/transfer-pricing', label: 'Transfer pricing', icon: FileText, partnerOnly: true },
       ]
     },
     {

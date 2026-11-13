@@ -9,10 +9,10 @@ Checklist groups drive engagement phases (phase = first unfinished group).
 
 CHECKLIST_TEMPLATES = {
     "statutory_audit": [
-        {"group": "Planning", "items": ["Engagement letter signed", "Risk assessment", "Audit plan", "Materiality memo", "Team briefing", "PBC list sent to client"]},
-        {"group": "Fieldwork", "items": ["Revenue testing", "Expense sampling", "Bank confirmations", "Inventory count", "Related party review", "Trial balance review"]},
-        {"group": "Review & Reporting", "items": ["Draft report", "Management letter", "Partner review", "Client sign-off", "Filing"]},
-        {"group": "Completion", "items": ["Deliver documents to client", "Archive engagement file", "Invoice final payment"]},
+        {"group": "Planning", "items": ["Engagement letter signed", "Client acceptance & independence check", "Risk assessment", "Fraud risk brainstorming documented", "Audit plan", "Materiality memo", "Team briefing", "PBC list sent to client"]},
+        {"group": "Fieldwork", "items": ["Revenue testing", "Expense sampling", "Bank confirmations", "External confirmation tracker updated", "Inventory count", "Related party review", "Going concern assessment", "Trial balance review"]},
+        {"group": "Review & Reporting", "items": ["Draft report", "Management representation letter obtained", "Communications with those charged with governance", "Management letter", "Partner review", "Engagement quality review", "Client sign-off", "Filing"]},
+        {"group": "Completion", "items": ["Deliver documents to client", "MOE report filing (if required)", "Archive engagement file (7-year retention)", "Invoice final payment"]},
     ],
     "internal_audit": [
         {"group": "Scoping", "items": ["Scope definition", "Audit scope / module confirmed", "Risk universe update", "Audit program", "Allocated days planned"]},
