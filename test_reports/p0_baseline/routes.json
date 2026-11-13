@@ -1869,6 +1869,13 @@
   "name": "disclosure_form"
  },
  {
+  "path": "/api/tp/{client_id}/local-file",
+  "methods": [
+   "POST"
+  ],
+  "name": "local_file"
+ },
+ {
   "path": "/api/tp/{client_id}/summary",
   "methods": [
    "GET"
