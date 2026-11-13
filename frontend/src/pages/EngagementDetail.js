@@ -88,12 +88,12 @@ const EngagementDetail = () => {
   };
   // Audit standards workpapers (risk register / materiality / confirmations / rep letter)
   const [wps, setWps] = useState({ risk: [], materiality: [], confirmation: [], rep_letter: [] });
-  const [wpForm, setWpForm] = useState({ risk: '', assertion: '', response: '', conf_account: '', conf_type: 'Bank', bench: 'profit_before_tax', bench_value: '', pct: 5, pm: 50, triv: 5, matResult: null });
+  const [wpForm, setWpForm] = useState({ risk: '', assertion: '', response: '', conf_account: '', conf_type: 'Bank', bench: 'profit_before_tax', bench_value: '', pct: 5, pm: 50, triv: 5, matResult: null, sampConf: 95, sampTer: 5, sampPop: '', sampDev: '', sampResult: null, tcwgDate: '', tcwgMatter: '', tcwgSeverity: 'Deficiency', tcwgResponse: '', letter: null });
 
   const loadWorkpapers = async () => {
     try {
       const res = await axios.get(`${API}/engagements/${engagementId}/workpapers`, { withCredentials: true });
-      setWps({ risk: res.data.risk || [], materiality: res.data.materiality || [], confirmation: res.data.confirmation || [], rep_letter: res.data.rep_letter || [] });
+      setWps({ risk: res.data.risk || [], materiality: res.data.materiality || [], confirmation: res.data.confirmation || [], rep_letter: res.data.rep_letter || [], sampling: res.data.sampling || [], tcwg: res.data.tcwg || [] });
     } catch (e) { console.error(e); }
   };
   useEffect(() => { loadNotes(); loadAssumptions(); loadWorkpapers(); }, [engagementId]);
@@ -110,6 +110,18 @@ const EngagementDetail = () => {
       await axios.patch(`${API}/engagements/${engagementId}/workpapers/${id}`, { is_deleted: true }, { withCredentials: true });
       await loadWorkpapers();
     } catch (e) { alert('Could not delete'); }
+  };
+  const calcSampling = async () => {
+    try {
+      const res = await axios.get(`${API}/engagements/${engagementId}/sampling-calc`, { params: { confidence: wpForm.sampConf, tolerable_rate: wpForm.sampTer, population: wpForm.sampPop || 0, deviations: wpForm.sampDev || 0 }, withCredentials: true });
+      setWpForm(prev => ({ ...prev, sampResult: res.data }));
+    } catch (e) { alert(e.response?.data?.detail || 'Check the inputs'); }
+  };
+  const generateLetter = async () => {
+    try {
+      const res = await axios.post(`${API}/engagements/${engagementId}/engagement-letter`, {}, { withCredentials: true });
+      setWpForm(prev => ({ ...prev, letter: res.data }));
+    } catch (e) { alert('Could not generate the letter'); }
   };
   const calcMateriality = async () => {
     try {
@@ -471,9 +483,81 @@ const EngagementDetail = () => {
       </div>
     </div>
 
+    <div className="nn-card" style={{ padding: '16px 20px', marginBottom: 14 }} data-testid="wp-sampling-card">
+      <div style={{ fontSize: 11, fontWeight: 650, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--gold)', marginBottom: 4 }}>Attribute sampling — ISA 530</div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 8 }}>
+        <select value={wpForm.sampConf} onChange={e => setWpForm({ ...wpForm, sampConf: Number(e.target.value) })} data-testid="wp-samp-conf" style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', fontSize: 12 }}>
+          <option value={90}>90% confidence</option>
+          <option value={95}>95% confidence</option>
+          <option value={99}>99% confidence</option>
+        </select>
+        <input type="number" step="0.5" title="Tolerable deviation rate %" placeholder="Tolerable rate %" value={wpForm.sampTer} onChange={e => setWpForm({ ...wpForm, sampTer: e.target.value })} style={{ width: 130, padding: '8px 11px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', fontSize: 12 }} /> %
+        <input type="number" placeholder="Population" value={wpForm.sampPop} onChange={e => setWpForm({ ...wpForm, sampPop: e.target.value })} style={{ width: 110, padding: '8px 11px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', fontSize: 12 }} />
+        <input type="number" placeholder="Deviations found" value={wpForm.sampDev} onChange={e => setWpForm({ ...wpForm, sampDev: e.target.value })} style={{ width: 140, padding: '8px 11px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', fontSize: 12 }} />
+        <button className="af-btn-primary" onClick={calcSampling} data-testid="wp-samp-calc">Calculate</button>
+      </div>
+      {wpForm.sampResult && (
+        <div style={{ padding: 10, borderRadius: 8, background: 'var(--off)', border: '1px solid var(--nn-border)', fontSize: 12.5, color: 'var(--text)' }} data-testid="wp-samp-result">
+          Sample size: <b>{wpForm.sampResult.sample_size}</b> ({wpForm.sampResult.method})
+          {wpForm.sampResult.evaluation && (
+            <div style={{ marginTop: 6, color: wpForm.sampResult.evaluation.within_tolerance ? 'var(--green)' : 'var(--gold)' }}>
+              {wpForm.sampResult.evaluation.deviations} deviation(s) → UDL {wpForm.sampResult.evaluation.upper_deviation_limit_pct}% — {wpForm.sampResult.evaluation.conclusion}
+            </div>
+          )}
+          <div style={{ marginTop: 6 }}>
+            <button className="tbtn tbtn-outline" style={{ fontSize: 11 }} onClick={() => addWp('sampling', { ...wpForm.sampResult }, () => setWpForm(prev => ({ ...prev, sampResult: null })))} data-testid="wp-samp-save">Save to file</button>
+          </div>
+        </div>
+      )}
+    </div>
+
+    <div className="nn-card" style={{ padding: '16px 20px', marginBottom: 14 }} data-testid="wp-tcwg-card">
+      <div style={{ fontSize: 11, fontWeight: 650, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--gold)', marginBottom: 4 }}>TCWG communications &amp; deficiencies — ISA 260 / 265</div>
+      {wps.tcwg.length > 0 && (
+        <div style={{ marginBottom: 12 }}>
+          {wps.tcwg.map(w => (
+            <div key={w.workpaper_id} style={{ padding: '9px 12px', borderRadius: 8, background: w.data.resolved ? '#f0f7f2' : '#fdf6ec', border: '1px solid var(--nn-border)', marginBottom: 6 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                <b style={{ fontSize: 12.5, color: 'var(--text)' }}>{w.data.matter}</b>
+                <span style={{ fontSize: 10.5, color: 'var(--muted)' }}>{w.data.date} · {w.data.severity}{w.data.resolved ? ' · resolved' : ''}</span>
+                <button style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer' }} onClick={() => delWp(w.workpaper_id)}>✕</button>
+              </div>
+              {w.data.response && <div style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 3 }}>Management response: {w.data.response}</div>}
+            </div>
+          ))}
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <input placeholder="Deficiency / matter communicated" value={wpForm.tcwgMatter} onChange={e => setWpForm({ ...wpForm, tcwgMatter: e.target.value })} data-testid="wp-tcwg-matter" style={{ flex: 2, minWidth: 220, padding: '8px 11px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', fontSize: 12 }} />
+        <select value={wpForm.tcwgSeverity} onChange={e => setWpForm({ ...wpForm, tcwgSeverity: e.target.value })} style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', fontSize: 12 }}>
+          {['Observation', 'Deficiency', 'Significant deficiency'].map(x => <option key={x}>{x}</option>)}
+        </select>
+        <input placeholder="Management response" value={wpForm.tcwgResponse} onChange={e => setWpForm({ ...wpForm, tcwgResponse: e.target.value })} style={{ flex: 2, minWidth: 200, padding: '8px 11px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', fontSize: 12 }} />
+        <button className="af-btn-primary" onClick={() => { if (!wpForm.tcwgMatter) return; addWp('tcwg', { matter: wpForm.tcwgMatter, severity: wpForm.tcwgSeverity, response: wpForm.tcwgResponse, date: new Date().toISOString().slice(0, 10), resolved: false }, () => setWpForm({ ...wpForm, tcwgMatter: '', tcwgResponse: '' })); }} data-testid="wp-tcwg-add">Log</button>
+      </div>
+    </div>
+
+    <div className="nn-card" style={{ padding: '16px 20px', marginBottom: 14 }} data-testid="wp-letter-card">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
+        <div style={{ fontSize: 11, fontWeight: 650, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--gold)' }}>Engagement letter — ISA 210</div>
+        <button className="tbtn tbtn-blue" style={{ fontSize: 11 }} onClick={generateLetter} data-testid="wp-letter-generate">Generate letter</button>
+      </div>
+      {wpForm.letter && (
+        <div style={{ border: '1px solid var(--nn-border)', borderRadius: 8, padding: 14 }} data-testid="wp-letter-doc">
+          <div style={{ fontSize: 10.5, color: 'var(--muted)', marginBottom: 10 }}>Ref {wpForm.letter.letter_ref} · generated {new Date(wpForm.letter.generated_at).toLocaleDateString()} — print on firm letterhead</div>
+          {wpForm.letter.sections.map(s2 => (
+            <div key={s2.title} style={{ marginBottom: 10 }}>
+              <b style={{ fontSize: 12.5, color: 'var(--text)' }}>{s2.title}</b>
+              <div style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.55, marginTop: 2 }}>{s2.body}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+
     {eng.completed_at && (
       <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 10 }} data-testid="archive-due-note">
-        7-year retention (CT Law): archive due {new Date(new Date(eng.completed_at).setFullYear(new Date(eng.completed_at).getFullYear() + 7)).toISOString().slice(0, 10)}
+        10-year retention (MOE Art. 16 — documents from report issuance): archive due {new Date(new Date(eng.completed_at).setFullYear(new Date(eng.completed_at).getFullYear() + 10)).toISOString().slice(0, 10)} · CT tax records 7 years
       </div>
     )}
   </div>
