@@ -462,6 +462,13 @@
   "name": "delete_billable_hours"
  },
  {
+  "path": "/api/calendar/meet",
+  "methods": [
+   "POST"
+  ],
+  "name": "schedule_meet"
+ },
+ {
   "path": "/api/calendar/sync-deadlines",
   "methods": [
    "POST"
@@ -831,6 +838,13 @@
    "GET"
   ],
   "name": "materiality_calc"
+ },
+ {
+  "path": "/api/engagements/{engagement_id}/mus-calc",
+  "methods": [
+   "GET"
+  ],
+  "name": "mus_calc"
  },
  {
   "path": "/api/engagements/{engagement_id}/sampling-calc",
@@ -1358,6 +1372,34 @@
   "name": "get_vapid_public_key"
  },
  {
+  "path": "/api/qm/dashboard",
+  "methods": [
+   "GET"
+  ],
+  "name": "qm_dashboard"
+ },
+ {
+  "path": "/api/qm/records",
+  "methods": [
+   "GET"
+  ],
+  "name": "list_qm"
+ },
+ {
+  "path": "/api/qm/records",
+  "methods": [
+   "POST"
+  ],
+  "name": "add_qm"
+ },
+ {
+  "path": "/api/qm/records/{qm_id}",
+  "methods": [
+   "DELETE"
+  ],
+  "name": "delete_qm"
+ },
+ {
   "path": "/api/queries/{query_id}/close",
   "methods": [
    "POST"
@@ -1862,6 +1904,27 @@
   "name": "arm_length_test"
  },
  {
+  "path": "/api/tp/{client_id}/benchmarks",
+  "methods": [
+   "GET"
+  ],
+  "name": "list_benchmarks"
+ },
+ {
+  "path": "/api/tp/{client_id}/benchmarks",
+  "methods": [
+   "POST"
+  ],
+  "name": "save_benchmark"
+ },
+ {
+  "path": "/api/tp/{client_id}/benchmarks/{bench_id}",
+  "methods": [
+   "DELETE"
+  ],
+  "name": "delete_benchmark"
+ },
+ {
   "path": "/api/tp/{client_id}/counterparties",
   "methods": [
    "GET"
@@ -1895,6 +1958,13 @@
    "POST"
   ],
   "name": "disclosure_form"
+ },
+ {
+  "path": "/api/tp/{client_id}/import-sheet",
+  "methods": [
+   "POST"
+  ],
+  "name": "import_sheet"
  },
  {
   "path": "/api/tp/{client_id}/local-file",
