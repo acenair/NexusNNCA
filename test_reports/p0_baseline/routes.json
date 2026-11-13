@@ -637,6 +637,13 @@
   "name": "get_recent_activities"
  },
  {
+  "path": "/api/dashboard/health",
+  "methods": [
+   "GET"
+  ],
+  "name": "dashboard_health"
+ },
+ {
   "path": "/api/dashboard/stats",
   "methods": [
    "GET"
