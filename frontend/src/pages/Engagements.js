@@ -182,11 +182,12 @@ const Engagements = () => {  const { user } = useOutletContext();
           ))}
         </section>
       )}
-      <div className="af-chips" role="tablist">
+      {/* Service chips: only services with live work; the strip wraps (no horizontal scroll).
+          Zero-count services are omitted — the New-engagement modal still offers the full catalogue. */}
+      <div className="af-chips" role="tablist" style={{ flexWrap: 'wrap', overflowX: 'visible' }}>
         <button role="tab" aria-selected={!preset} onClick={clearPreset}>All ({engs.length})</button>
-        {chips.map(([k, label]) => (
+        {chips.filter(([k]) => serviceCounts[k] > 0).map(([k, label]) => (
           <button key={k} role="tab" aria-selected={preset === k}
-            style={serviceCounts[k] ? undefined : { opacity: 0.55 }}
             onClick={() => setParams({ service: k }, { replace: true })}>
             {label} ({serviceCounts[k] || 0})
           </button>
