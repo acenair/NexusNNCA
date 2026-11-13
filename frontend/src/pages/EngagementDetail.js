@@ -554,7 +554,7 @@ const EngagementDetail = () => {
           <option value={95}>95% confidence</option>
           <option value={99}>99% confidence</option>
         </select>
-        {wpForm.sampMethod !== 'mus' && <input type="number" step="0.5" title="Tolerable deviation rate %" placeholder="Tolerable rate %" value={wpForm.sampTer} onChange={e => setWpForm({ ...wpForm, sampTer: e.target.value })} style={{ width: 130, padding: '8px 11px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', fontSize: 12 }} /> %}
+        {wpForm.sampMethod !== 'mus' && <input type="number" step="0.5" title="Tolerable deviation rate %" placeholder="Tolerable rate %" value={wpForm.sampTer} onChange={e => setWpForm({ ...wpForm, sampTer: e.target.value })} style={{ width: 130, padding: '8px 11px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', fontSize: 12 }} />}%
         <input type="number" placeholder={wpForm.sampMethod === 'mus' ? 'Population (AED book value)' : 'Population'} value={wpForm.sampPop} onChange={e => setWpForm({ ...wpForm, sampPop: e.target.value })} style={{ width: 190, padding: '8px 11px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', fontSize: 12 }} />
         {wpForm.sampMethod === 'mus' ? (
           <input type="number" placeholder="Tolerable misstatement (AED)" value={wpForm.sampTm || ''} onChange={e => setWpForm({ ...wpForm, sampTm: e.target.value })} style={{ width: 210, padding: '8px 11px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--white)', color: 'var(--text)', fontSize: 12 }} />
