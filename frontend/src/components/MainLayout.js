@@ -521,7 +521,7 @@ const MainLayout = ({ user }) => {
                           <div style={{ fontSize: 11, color: 'var(--muted)' }}>{n.message}</div>
                           {n.due_date && <div style={{ fontSize: 10, color: n.severity === 'urgent' ? 'var(--red, #ef4444)' : 'var(--muted)', fontWeight: 600, marginTop: 3 }}>Due: {n.due_date}</div>}
                           {n.type === 'client_email' && (
-                            <button onClick={() => { setFilingEmail(n); setFilingClientId(''); }} style={{ marginTop: 5, padding: '3px 8px', borderRadius: 6, border: '1px solid var(--gold)', background: 'rgba(14,109,180,0.06)', color: 'var(--gold4)', fontSize: 10, fontWeight: 600, cursor: 'pointer' }} data-testid={`file-email-${n.ref_id}`}>File to client</button>
+                            <button onClick={() => { setFilingEmail(n); setFilingClientId(''); loadLists(); }} style={{ marginTop: 5, padding: '3px 8px', borderRadius: 6, border: '1px solid var(--gold)', background: 'rgba(14,109,180,0.06)', color: 'var(--gold4)', fontSize: 10, fontWeight: 600, cursor: 'pointer' }} data-testid={`file-email-${n.ref_id}`}>File to client</button>
                           )}
                         </div>
                         <button onClick={() => dismissNotification(n.notification_id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--light)', padding: 2 }} data-testid={`dismiss-${n.notification_id}`}><X size={12} /></button>
