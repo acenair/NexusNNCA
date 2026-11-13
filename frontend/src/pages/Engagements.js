@@ -128,21 +128,6 @@ const Engagements = () => {  const { user } = useOutletContext();
   };
   const qSelKey = qSel || '';  // '' = all quarters
 
-  // visible rows with continuous serial numbers (group headers interleaved in the VAT view)
-  const displayRows = (() => {
-    const out = [];
-    if (vatGroups) {
-      let n = 0;
-      vatGroups.forEach(g => {
-        out.push({ qhead: g });
-        g.rows.forEach(e => { n += 1; out.push({ e, n }); });
-      });
-    } else {
-      filtered.forEach((e, i) => out.push({ e, n: i + 1 }));
-    }
-    return out;
-  })();
-
   const rowRow = (e, n) => {
     const pct = progressOf(e);
     return (
@@ -230,6 +215,21 @@ const Engagements = () => {  const { user } = useOutletContext();
   const clearPreset = () => { const p = new URLSearchParams(params); p.delete('service'); setParams(p, { replace: true }); };
 
   if (loading) return <div className="ov-wrap"><div className="ov-heading"><div><div className="ov-eyebrow">DELIVERY</div><h1>Engagements</h1></div></div><Skeleton kpi={4} rows={8} cols={5} /></div>;
+
+  // visible rows with continuous serial numbers (group headers interleaved in the VAT view)
+  const displayRows = (() => {
+    const out = [];
+    if (vatGroups) {
+      let n = 0;
+      vatGroups.forEach(g => {
+        out.push({ qhead: g });
+        g.rows.forEach(e => { n += 1; out.push({ e, n }); });
+      });
+    } else {
+      filtered.forEach((e, i) => out.push({ e, n: i + 1 }));
+    }
+    return out;
+  })();
 
   return (
     <div className="ov-wrap" data-testid="engagements-view">
