@@ -620,3 +620,7 @@ h1, h2, h3, h4, h5, h6 {
 .spin { animation: cportal-spin 0.9s linear infinite; }
 @keyframes cportal-spin { to { transform: rotate(360deg); } }
 @media (max-width: 640px) { .cportal-card { padding: 18px; } .cportal-item { flex-direction: column; align-items: flex-start; } }
+
+/* VAT quarter group headers in the engagements table */
+.af-qhead td { background: #eaf3fb; padding: 7px 8px; font-size: 12.5px; color: var(--text); border-top: 1px solid var(--line); }
+.af-qhead td small { color: #7891a4; font-weight: 400; }

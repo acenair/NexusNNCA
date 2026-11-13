@@ -115,6 +115,25 @@ const Engagements = () => {  const { user } = useOutletContext();
   const STAGE_LABELS = { awaiting: 'Awaiting documents', progress: 'In progress', review: 'Manager review', draft: 'Draft sent', confirmed: 'Management confirmed' };
   const stageLabel = STAGE_LABELS[stagePreset];
 
+  const rowRow = (e) => {
+    const pct = progressOf(e);
+    return (
+      <tr key={e.engagement_id}>
+        <td><span className="af-avatar-cell"><Avatar name={e.client_name} size={26} /><b className="nm">{e.client_name || "—"}</b></span></td>
+        <td><span className="af-badge af-badge-blue">{SERVICE_LABELS[e.service_type] || e.service_type}</span></td>
+        <td>{e.phase || '—'}</td>
+        <td style={{ minWidth: 110 }}>
+          <div className="af-track"><i style={{ width: pct + '%' }} /></div>
+          <small style={{ color: 'var(--muted)', fontSize: 10 }}>{pct}%</small>
+        </td>
+        <td>{e.assigned_to_name || '—'}</td>
+        <td><span className={`af-badge ${e.status === 'Completed' ? 'af-badge-green' : 'af-badge-blue'}`}>{e.status}</span></td>
+        <td>{fmt(e.created_at)}</td>
+        <td><Link className="af-link" to={`/app/engagements/${e.engagement_id}`} data-testid={`open-eng-${e.engagement_id}`}>Open ↗</Link></td>
+      </tr>
+    );
+  };
+
   const filtered = engs.filter(e =>
     (!preset || e.service_type === preset) &&
     (!stagePreset || (STAGE_MAP[stagePreset] || []).includes(e.phase)) &&
@@ -122,6 +141,32 @@ const Engagements = () => {  const { user } = useOutletContext();
     (!statusFilter || e.status.toLowerCase() === statusFilter.toLowerCase()) &&
     (!search || (e.client_name || '').toLowerCase().includes(search.toLowerCase()))
   );
+
+  // VAT quarters: the firm files quarterly (e.g. Aug–Oct) and the FTA due date is
+  // always the 28th of the month AFTER the quarter ends. Group the VAT view by quarter.
+  const vatGroups = (() => {
+    if (preset !== 'vat_filing') return null;
+    const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const map = new Map();
+    filtered.forEach(e => {
+      const pf = (e.period_from || '').slice(0, 10), pt = (e.period_to || '').slice(0, 10);
+      let g;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(pf) && /^\d{4}-\d{2}-\d{2}$/.test(pt)) {
+        const y = pt.slice(0, 4), m1 = parseInt(pf.slice(5, 7), 10), m2 = parseInt(pt.slice(5, 7), 10);
+        const dueY = m2 === 12 ? parseInt(y, 10) + 1 : y;
+        const dueM = m2 === 12 ? 'Jan' : MON[m2];
+        g = { key: pf + '_' + pt, label: `${MON[m1 - 1]} – ${MON[m2 - 1]} ${y}`, due: `28 ${dueM} ${dueY}` };
+      } else {
+        g = { key: '_none', label: 'No period set', due: 'set the period' };
+      }
+      if (!map.has(g.key)) { g.rows = []; map.set(g.key, g); }
+      map.get(g.key).rows.push(e);
+    });
+    const gs = [...map.values()];
+    gs.sort((a, b) => ((a.key === '_none') - (b.key === '_none')) || (b.key || '').localeCompare(a.key || ''));
+    gs.forEach(g => g.rows.sort((a, b) => (a.client_name || '').localeCompare(b.client_name || '')));
+    return gs;
+  })();
 
   const active = filtered.filter(e => e.status === 'Active').length;
   const inReview = filtered.filter(e => e.phase === 'Review & Reporting').length;
@@ -221,24 +266,12 @@ const Engagements = () => {  const { user } = useOutletContext();
           <table className="af-table">
             <thead><tr><th>CLIENT</th><th>SERVICE</th><th>PHASE</th><th>PROGRESS</th><th>ASSIGNED</th><th>STATUS</th><th>CREATED</th><th></th></tr></thead>
             <tbody>
-              {filtered.map(e => {
-                const pct = progressOf(e);
-                return (
-                  <tr key={e.engagement_id}>
-                    <td><span className="af-avatar-cell"><Avatar name={e.client_name} size={26} /><b className="nm">{e.client_name || "—"}</b></span></td>
-                    <td><span className="af-badge af-badge-blue">{SERVICE_LABELS[e.service_type] || e.service_type}</span></td>
-                    <td>{e.phase || '—'}</td>
-                    <td style={{ minWidth: 110 }}>
-                      <div className="af-track"><i style={{ width: pct + '%' }} /></div>
-                      <small style={{ color: 'var(--muted)', fontSize: 10 }}>{pct}%</small>
-                    </td>
-                    <td>{e.assigned_to_name || '—'}</td>
-                    <td><span className={`af-badge ${e.status === 'Completed' ? 'af-badge-green' : 'af-badge-blue'}`}>{e.status}</span></td>
-                    <td>{fmt(e.created_at)}</td>
-                    <td><Link className="af-link" to={`/app/engagements/${e.engagement_id}`} data-testid={`open-eng-${e.engagement_id}`}>Open ↗</Link></td>
-                  </tr>
-                );
-              })}
+              {(vatGroups ? vatGroups.flatMap(g => ([
+                <tr key={'q_' + g.key} className="af-qhead">
+                  <td colSpan="8"><b>VAT quarter {g.label}</b><small> · return due {g.due} · {g.rows.length} job(s)</small></td>
+                </tr>,
+                ...g.rows.map(rowRow),
+              ])) : filtered.map(rowRow))}
               {filtered.length === 0 && <tr><td colSpan="8" className="af-empty">No engagements match. {preset ? 'Try the All filter.' : 'Create one with “New engagement”.'}</td></tr>}
             </tbody>
           </table>
