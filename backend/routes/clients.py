@@ -117,6 +117,10 @@ class UpdateClientRequest(BaseModel):
     previous_auditor: Optional[str] = None
     fee_amount: Optional[float] = None
     workdone_by: Optional[str] = None
+    # tax/TP profile (drives Pillar Two, audit-threshold and TP file-requirement flags)
+    annual_revenue_aed: Optional[float] = None
+    mne_group: Optional[bool] = None
+    mne_group_revenue_aed: Optional[float] = None
 
 
 @router.patch("/clients/{client_id}")

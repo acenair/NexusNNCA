@@ -183,6 +183,31 @@ async def regulatory_deadlines_core(within_days: int = 90):
             continue
         add("Trade licence", c.get("client_id"), c.get("name"), "Trade licence renewal", due)
 
+    # Pillar Two / DMTT: MNE groups >= EUR 750M (~AED 3B) — GloBE Information Return
+    # 15 months after FY end (assumes Dec 31 FYE unless the client record says otherwise).
+    async for c in db.clients.find({"mne_group": True, "mne_group_revenue_aed": {"$gte": 3_000_000_000}},
+                                   {"_id": 0, "client_id": 1, "name": 1, "financial_year_end": 1}):
+        fye = str(c.get("financial_year_end") or "")
+        try:
+            mm, dd = int(fye.split("-")[0]), int(fye.split("-")[1])  # stored as "MM-DD"
+            fy_end = date(today.year - 1, mm, dd) if (mm, dd) <= (today.month, today.day) else date(today.year - 2, mm, dd)
+        except (ValueError, TypeError, IndexError):
+            fy_end = date(today.year - 1, 12, 31)
+        girl_due = date(fy_end.year + 2, fy_end.month, fy_end.day) + timedelta(days=3)  # ~15 months after FYE
+        add("Pillar Two / DMTT", c.get("client_id"), c.get("name"),
+            "Pillar Two — GloBE Information Return", girl_due,
+            "MNE group ≥ EUR 750M — DMTT registration + GIR due 15 months after FY end")
+
+    # Statutory audit threshold: revenue > AED 3.15M and no live audit engagement → flag it
+    for c in await db.clients.find({"annual_revenue_aed": {"$gt": 3_150_000}},
+                                   {"_id": 0, "client_id": 1, "name": 1}).to_list(1000):
+        has_audit = await db.service_engagements.find_one(
+            {"client_id": c["client_id"], "service_type": "statutory_audit", "status": {"$nin": ["Deleted", "Completed"]}})
+        if not has_audit:
+            add("Statutory audit", c["client_id"], c["name"],
+                "Statutory audit required — revenue crossed AED 3.15M", today + timedelta(days=30),
+                "FTA requires audited financials at this revenue — propose an audit engagement")
+
     out.sort(key=lambda d: d["due"])
     return {"deadlines": out[:60], "today": today.isoformat()}
 

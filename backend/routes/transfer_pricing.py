@@ -42,7 +42,11 @@ def _now():
 
 
 async def _client_or_404(client_id):
-    c = await db.clients.find_one({"client_id": client_id}, {"_id": 0, "client_id": 1, "name": 1})
+    c = await db.clients.find_one({"client_id": client_id}, {"_id": 0, "client_id": 1, "name": 1,
+                                                             "entity_type": 1, "jurisdiction": 1, "emirate": 1,
+                                                             "free_zone": 1, "industry": 1,
+                                                             "annual_revenue_aed": 1, "mne_group": 1,
+                                                             "mne_group_revenue_aed": 1})
     if not c:
         raise HTTPException(404, "Unknown client")
     return c
@@ -283,4 +287,62 @@ async def disclosure_form(client_id: str, payload: dict = Body(default=None),
             "connected_person_total": s["totals"]["connected_person_total"],
             "disclosure_form_required": s["thresholds"]["disclosure_form_required"],
             "rows": form_rows,
+            "generated_at": _now()}
+
+
+
+
+# ---------------- Local File generator (OECD Ch. V aligned structure) ----------------
+
+@router.post("/tp/{client_id}/local-file")
+async def local_file(client_id: str, payload: dict = Body(default=None),
+                     authorization: str = Header(None), session_token: str = Cookie(None)):
+    """Assemble Local File content (OECD Ch. V structure) from the register, FAR notes,
+    tax profile and threshold position. Rendered as a printable document."""
+    user = await get_current_user(authorization, session_token)
+    client = await _client_or_404(client_id)
+    fy = (payload or {}).get("fy") or str(date.today().year)
+    s = await tp_summary(client_id, fy, authorization, session_token)
+    txns = await db.tp_transactions.find({"client_id": client_id, "fy": fy}, {"_id": 0}).to_list(1000)
+
+    by_method = {}
+    for t in txns:
+        by_method.setdefault(t.get("method") or "Not set", []).append(t)
+
+    org = (f"{client['name']} - {client.get('entity_type') or 'Entity'} in {client.get('jurisdiction') or 'UAE'}"
+           + (f" ({client.get('free_zone')})" if client.get("free_zone") else "")
+           + f". Industry: {client.get('industry') or '-'}.")
+    if client.get("mne_group"):
+        org += f" Part of an MNE group with consolidated revenue of AED {float(client.get('mne_group_revenue_aed') or 0):,.0f}."
+    else:
+        org += " Standalone entity (not part of an MNE group)."
+
+    far_txt = " | ".join(f"{t['counterparty_name']}: {t.get('far_note') or 'not documented'}" for t in txns) if txns else "No controlled transactions recorded for this period."
+    method_txt = "; ".join(f"{m2}: {len(ts)} txn(s)" for m2, ts in by_method.items()) or "No methods selected yet."
+    th = s["thresholds"]
+    threshold_txt = (f"Related-party total: AED {s['totals']['rpt_total']:,.0f}. Connected persons: AED {s['totals']['connected_person_total']:,.0f}. "
+                     f"Disclosure form required: {'Yes' if th['disclosure_form_required'] else 'No'}. "
+                     f"Master + Local File required: {'Yes - ' + th['files_reason'] if th['local_master_file_required'] else 'No - below both thresholds'}. "
+                     f"Counterparties at a different CT rate (Local File mandatory, MD 97 Art. 2(2)): {len(th['freezone_rate_flags'])}.")
+
+    sections = [
+        {"title": "1. Organisational structure", "body": org, "rows": []},
+        {"title": "2. Controlled transactions (FY " + fy + ")", "body": "", "rows": [
+            {"counterparty": t.get("counterparty_name"), "type": t.get("txn_type"),
+             "amount_aed": t.get("amount_aed"), "method": t.get("method"), "far": t.get("far_note") or "-"}
+            for t in txns]},
+        {"title": "3. Functional analysis (FAR)", "body": far_txt, "rows": []},
+        {"title": "4. Method selection", "body": method_txt, "rows": []},
+        {"title": "5. Comparability / benchmarking", "body": (
+            "Attach the benchmarking study (internal comparables, outsourced study or database export) "
+            "and record the interquartile range test result here (Arm's length test tab)."), "rows": []},
+        {"title": "6. Threshold position (MD 97/2023)", "body": threshold_txt, "rows": [
+            {"counterparty": f["counterparty"], "type": f["reason"], "amount_aed": None, "method": "", "far": ""}
+            for f in th["freezone_rate_flags"]]},
+        {"title": "7. Declaration", "body": (
+            f"Prepared contemporaneously for FY {fy}. To be produced to the FTA within 30 days of a written request "
+            f"(CT Law Art. 55). Prepared by {user.get('name')} on {date.today().isoformat()}."), "rows": []},
+    ]
+    return {"client_name": client["name"], "fy": fy, "sections": sections,
+            "local_master_file_required": s["thresholds"]["local_master_file_required"],
             "generated_at": _now()}

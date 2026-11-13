@@ -18,7 +18,9 @@ export default function TransferPricing() {
   const [txns, setTxns] = useState([]);
   const [summary, setSummary] = useState(null);
   const [form, setForm] = useState(null);
-  const [tab, setTab] = useState('register'); // register | monitor | disclosure | test
+  const [tab, setTab] = useState('register');
+  const [profile, setProfile] = useState({ annual_revenue_aed: '', mne_group: false, mne_group_revenue_aed: '' });
+  const [localFile, setLocalFile] = useState(null);
   const [cpForm, setCpForm] = useState({ name: '', jurisdiction: 'UAE', relationship: 'Parent / Subsidiary', ct_rate: 9, is_connected_person: false });
   const [txnForm, setTxnForm] = useState({ counterparty_id: '', txn_type: 'Services', amount_aed: '', method: 'Not set', far_note: '' });
   const [test, setTest] = useState({ comparables: '', actual: '' });
@@ -37,8 +39,33 @@ export default function TransferPricing() {
     axios.get(`${API}/tp/${clientId}/counterparties`, { withCredentials: true }).then(r => setCps(Array.isArray(r.data?.counterparties) ? r.data.counterparties : [])).catch(() => {});
     axios.get(`${API}/tp/${clientId}/transactions`, { withCredentials: true }).then(r => setTxns(Array.isArray(r.data?.transactions) ? r.data.transactions : [])).catch(() => {});
     axios.get(`${API}/tp/${clientId}/summary`, { withCredentials: true }).then(r => setSummary(r.data)).catch(() => {});
+    loadProfile();
     setForm(null);
+    setLocalFile(null);
   }, [clientId, fy]);
+
+  const loadProfile = async () => {
+    if (!clientId) return;
+    const res = await axios.get(`${API}/clients`, { withCredentials: true });
+    const c = (Array.isArray(res.data) ? res.data : []).find(x => x.client_id === clientId) || {};
+    setProfile({ annual_revenue_aed: c.annual_revenue_aed || '', mne_group: !!c.mne_group, mne_group_revenue_aed: c.mne_group_revenue_aed || '' });
+  };
+
+  const saveProfile = async () => {
+    try {
+      await axios.patch(`${API}/clients/${clientId}`, {
+        annual_revenue_aed: profile.annual_revenue_aed === '' ? undefined : Number(profile.annual_revenue_aed),
+        mne_group: profile.mne_group,
+        mne_group_revenue_aed: profile.mne_group_revenue_aed === '' ? undefined : Number(profile.mne_group_revenue_aed),
+      }, { withCredentials: true });
+      await refreshSummary();
+    } catch (e) { alert(e.response?.data?.detail || 'Only the Managing Partner can edit the client profile'); }
+  };
+
+  const generateLocalFile = async () => {
+    const res = await axios.post(`${API}/tp/${clientId}/local-file`, { fy }, { withCredentials: true });
+    setLocalFile(res.data);
+  };
 
   const addCp = async () => {
     if (!cpForm.name) return;
@@ -101,7 +128,7 @@ export default function TransferPricing() {
       </div>
 
       <div style={{ display: 'flex', gap: 6, margin: '16px 0', borderBottom: '1px solid var(--nn-border)' }} data-testid="tp-tabs">
-        {[['register', 'Related party register'], ['monitor', 'Threshold monitor'], ['disclosure', 'Disclosure form'], ['test', "Arm's length test"]].map(([k, label]) => (
+        {[['profile', 'Client tax profile'], ['register', 'Related party register'], ['monitor', 'Threshold monitor'], ['disclosure', 'Disclosure form'], ['test', "Arm's length test"], ['localfile', 'Local File']].map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)} data-testid={`tp-tab-${k}`}
             style={{ padding: '10px 14px', border: 'none', background: 'none', cursor: 'pointer', fontSize: 12.5, fontWeight: tab === k ? 700 : 400, color: tab === k ? 'var(--blue)' : 'var(--muted)', borderBottom: tab === k ? '2px solid var(--blue)' : '2px solid transparent' }}>{label}</button>
         ))}
@@ -292,6 +319,67 @@ export default function TransferPricing() {
                 IQR: {testResult.q1} – {testResult.q3} (median {testResult.median}) · Actual: {testResult.actual}
               </div>
               {testResult.exposure && <div style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 4 }}>{testResult.exposure}</div>}
+            </div>
+          )}
+        </div>
+      )}
+      {tab === 'profile' && (
+        <div className="nn-card" style={{ padding: 18, maxWidth: 640 }} data-testid="tp-profile-card">
+          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6, color: 'var(--text)' }}>Client tax profile</div>
+          <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 12 }}>Drives the Pillar Two / DMTT deadline, the statutory-audit threshold flag (revenue &gt; AED 3.15M) and the TP Local/Master File requirement.</p>
+          <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 4, fontWeight: 600 }}>Annual revenue (AED)</div>
+          <input type="number" value={profile.annual_revenue_aed} onChange={e => setProfile({ ...profile, annual_revenue_aed: e.target.value })} data-testid="tp-profile-revenue"
+            style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--nn-border)', background: 'var(--off)', color: 'var(--text)', marginBottom: 10 }} />
+          <label style={{ fontSize: 12, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+            <input type="checkbox" checked={profile.mne_group} onChange={e => setProfile({ ...profile, mne_group: e.target.checked })} data-testid="tp-profile-mne" /> Part of an MNE group
+          </label>
+          <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 4, fontWeight: 600 }}>MNE group consolidated revenue (AED)</div>
+          <input type="number" value={profile.mne_group_revenue_aed} onChange={e => setProfile({ ...profile, mne_group_revenue_aed: e.target.value })} data-testid="tp-profile-mne-rev"
+            disabled={!profile.mne_group}
+            style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--nn-border)', background: 'var(--off)', color: 'var(--text)', marginBottom: 12 }} />
+          <button className="tbtn tbtn-blue" style={{ fontSize: 11 }} onClick={saveProfile} data-testid="tp-profile-save">Save profile</button>
+        </div>
+      )}
+
+      {tab === 'localfile' && (
+        <div className="nn-card" style={{ padding: 18 }} data-testid="tp-localfile-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 10 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>Local File — OECD Ch. V structure</div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="tbtn tbtn-blue" style={{ fontSize: 11 }} onClick={generateLocalFile} data-testid="tp-localfile-generate"><FileText size={12} /> Assemble for FY {fy}</button>
+              {localFile && <button className="tbtn tbtn-gold" style={{ fontSize: 11 }} onClick={() => window.print()} data-testid="tp-localfile-print">Print / Save PDF</button>}
+            </div>
+          </div>
+          {!localFile && <div style={{ fontSize: 12, color: 'var(--muted)' }}>Click Assemble to build the Local File from the register, FAR notes and threshold position.</div>}
+          {localFile && (
+            <div data-testid="tp-localfile-doc">
+              <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 12 }}>
+                {localFile.client_name} · FY {localFile.fy} · {localFile.local_master_file_required ? 'Local File REQUIRED (MD 97/2023)' : 'Below MD 97 thresholds — maintain contemporaneously anyway'}
+              </div>
+              {localFile.sections.map(s2 => (
+                <div key={s2.title} style={{ marginBottom: 16, pageBreakInside: 'avoid' }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>{s2.title}</div>
+                  {s2.body && <div style={{ fontSize: 12.5, color: 'var(--text)', lineHeight: 1.6 }}>{s2.body}</div>}
+                  {s2.rows.length > 0 && (
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5, marginTop: 6 }}>
+                      <thead><tr style={{ color: 'var(--muted)', textAlign: 'left' }}>
+                        <th style={{ padding: '5px 8px' }}>Counterparty</th><th style={{ padding: '5px 8px' }}>Type / note</th>
+                        <th style={{ padding: '5px 8px' }}>Amount</th><th style={{ padding: '5px 8px' }}>Method</th>
+                      </tr></thead>
+                      <tbody>
+                        {s2.rows.map((r, i) => (
+                          <tr key={i} style={{ borderTop: '1px solid var(--nn-border)' }}>
+                            <td style={{ padding: '5px 8px', color: 'var(--text)' }}>{r.counterparty}</td>
+                            <td style={{ padding: '5px 8px' }}>{r.type}{r.far && r.far !== '-' ? ` — ${r.far}` : ''}</td>
+                            <td style={{ padding: '5px 8px' }}>{r.amount_aed != null ? fmtAED(r.amount_aed) : '—'}</td>
+                            <td style={{ padding: '5px 8px' }}>{r.method || '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>
