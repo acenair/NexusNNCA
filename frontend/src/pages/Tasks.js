@@ -67,7 +67,7 @@ const Tasks = () => {
   const open = (j) => disp(j.status) !== 'Completed';
   const isLate = (j) => open(j) && j.due_date < today;
   const isUpcoming = (j) => open(j) && j.due_date >= today && j.due_date <= end14;
-  const active = (j) => open(j) && disp(j.status) !== 'Scheduled';
+  const active = (j) => open(j);  // Active = every open job (Scheduled included)
   const daysLate = (j) => Math.round((new Date(today) - new Date(j.due_date)) / 86400000);
 
   const kpis = {
