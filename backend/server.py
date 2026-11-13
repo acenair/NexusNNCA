@@ -52,6 +52,7 @@ from routes import (
     audit_workpapers,
     transfer_pricing,
     qm,
+    dashboard_health,
 )
 
 from contextlib import asynccontextmanager
@@ -139,6 +140,7 @@ for router in (
     audit_workpapers.router,
     transfer_pricing.router,
     qm.router,
+    dashboard_health.router,
 ):
     app.include_router(router)
 

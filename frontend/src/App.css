@@ -532,6 +532,29 @@ h1, h2, h3, h4, h5, h6 {
 .af-metric .af-spark { position: absolute; top: 16px; right: 16px; opacity: 0.95; }
 
 /* Kanban pipeline on the dashboard */
+/* Practice health (dashboard bottom half) */
+.af-healthsec { margin-top: 20px; }
+.af-sectionlabel { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 12px; }
+.af-sectionlabel h2 { font-size: 19px; color: var(--text); margin: 2px 0 0; }
+.af-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: 1.4px; color: var(--muted); }
+.af-healthgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media (max-width: 1100px) { .af-healthgrid { grid-template-columns: 1fr; } }
+.af-healthscore { display: flex; align-items: center; gap: 14px; background: var(--tint, #eaf3fb); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
+.af-healthscore strong { font-size: 30px; color: var(--blue); letter-spacing: -0.5px; }
+.af-healthscore span { font-size: 13px; color: var(--text); line-height: 1.35; }
+.af-healthscore small { color: var(--muted); font-size: 11.5px; }
+.af-warn-text { color: #d97706 !important; }
+.af-controlrow { display: flex; align-items: center; gap: 10px; padding: 9px 2px; text-decoration: none; }
+.af-controlrow strong { display: block; font-size: 13px; color: var(--text); }
+.af-controlrow small { color: var(--muted); font-size: 11.5px; }
+.af-ctrlicon { flex: 0 0 22px; height: 22px; border-radius: 50%; background: #fdece2; color: #fd5426; font-weight: 800; font-size: 12px; display: flex; align-items: center; justify-content: center; }
+.af-quickstrip { display: flex; align-items: center; justify-content: space-between; gap: 16px; background: var(--tint, #eaf3fb); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; margin-top: 16px; flex-wrap: wrap; }
+.af-quickstrip strong { display: block; font-size: 13.5px; color: var(--text); }
+.af-quickstrip span { font-size: 11.5px; color: var(--muted); }
+.af-quickbtns { display: flex; gap: 10px; flex-wrap: wrap; }
+.af-quickbtns a { background: var(--white); border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; font-size: 12.5px; font-weight: 600; color: var(--blue); text-decoration: none; }
+.af-quickbtns a:hover { border-color: var(--blue); }
+
 /* Engagement pipeline (summary design) */
 .af-pipebar { display: flex; height: 26px; border-radius: 999px; overflow: hidden; background: var(--line); margin: 6px 0 18px; }
 .af-pipebar span { display: block; height: 100%; min-width: 14px; }

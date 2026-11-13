@@ -50,9 +50,13 @@ const Dashboard = () => {
   const [regDeadlines, setRegDeadlines] = useState([]);
   const [renewals, setRenewals] = useState([]);
   const [kycRecs, setKycRecs] = useState([]);
+  const [health, setHealth] = useState(null);
   const isPartner = user?.role === 'partner';
 
   useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    axios.get(`${API}/dashboard/health`, { withCredentials: true }).then(r => setHealth(r.data)).catch(() => {});
+  }, []);
 
   const loadData = async () => {
     try {
@@ -465,6 +469,68 @@ const Dashboard = () => {
           {activities.length === 0 && <p className="af-note">No activity recorded yet.</p>}
         </section>
       </div>
+
+      {health && (
+      <section className="af-healthsec" data-testid="practice-health">
+        <div className="af-sectionlabel">
+          <div><div className="af-eyebrow">PRACTICE HEALTH</div><h2>Performance, cash flow &amp; quality</h2></div>
+          <span className="af-sub">A focused management snapshot</span>
+        </div>
+        <div className="af-healthgrid">
+          <section className="af-card">
+            <div className="af-cardhead"><div><h2>Delivery &amp; budget performance</h2><div className="af-sub">Active work · Allocated vs actual hours</div></div></div>
+            <div className="af-healthscore">
+              <strong data-testid="on-time-pct">{health.delivery.on_time_pct}%</strong>
+              <span>Delivered on time<br /><small>{health.delivery.on_time_detail}</small></span>
+            </div>
+            <div className="af-mini"><span>Budgeted / actual hours</span><b>{health.delivery.budget_hours} / {health.delivery.actual_hours} hrs</b></div>
+            <div className="af-mini"><span>Hours above budget</span><b className={health.delivery.hours_variance > 0 ? 'af-warn-text' : ''}>{health.delivery.hours_variance >= 0 ? '+' : ''}{health.delivery.hours_variance} hrs · {health.delivery.variance_pct}%</b></div>
+            <div className="af-mini"><span>Active jobs over hours budget</span><b>{health.delivery.jobs_over_budget}</b></div>
+            <p className="af-note">On-time rate counts deliverables not past their due date. Hours compare allocated vs actual across active engagements.</p>
+            <Link className="af-link" to="/app/tasks">Review exceptions ↗</Link>
+          </section>
+          <section className="af-card">
+            <div className="af-cardhead"><div><h2>Billing readiness</h2><div className="af-sub">Current snapshot · Prevent missed billing</div></div></div>
+            <div className="af-healthscore">
+              <strong>AED {Math.round(health.billing.uninvoiced_value / 100) / 10}k</strong>
+              <span>Completed work<br /><small>{health.billing.uninvoiced_count} job(s) not yet invoiced</small></span>
+            </div>
+            <div className="af-mini"><span>Draft invoices not issued</span><b>{health.billing.draft_count} · {aed(health.billing.draft_value)}</b></div>
+            <div className="af-mini"><span>Payments pending · overdue</span><b>{health.billing.overdue_count} · {aed(health.billing.overdue_value)}</b></div>
+            <div className="af-mini"><span>Final print ready</span><b>{health.billing.final_print_ready} reports</b></div>
+            <p className="af-note">Uninvoiced work: engagements at management-confirmation stage with no invoice on file for the client. Drafts are excluded from issued totals.</p>
+            <Link className="af-link" to="/app/invoices">Open financial overview ↗</Link>
+          </section>
+          <section className="af-card">
+            <div className="af-cardhead"><div><h2>Quality &amp; acceptance checks</h2><div className="af-sub">Current snapshot · Before work or final issue</div></div></div>
+            <Link className="af-controlrow" to="/app/customers">
+              <span className="af-ctrlicon">!</span>
+              <div><strong>Client acceptance incomplete</strong><small>{health.quality.kyc_missing} client(s) · KYC not on file</small></div>
+            </Link>
+            <Link className="af-controlrow" to="/app/quality-management">
+              <span className="af-ctrlicon">!</span>
+              <div><strong>Independence confirmations pending</strong><small>{health.quality.independence_pending} engagement(s) · Assigned team declarations</small></div>
+            </Link>
+            <Link className="af-controlrow" to="/app/engagements">
+              <span className="af-ctrlicon">!</span>
+              <div><strong>Open review points</strong><small>{health.quality.open_review_points} point(s) across engagements</small></div>
+            </Link>
+            <div className="af-mini"><span>Partner sign-off pending</span><b>{health.quality.signoff_pending} reports</b></div>
+            <p className="af-note">Counts may overlap across engagements. Clear applicable checks before accepting or issuing work.</p>
+            <Link className="af-link" to="/app/quality-management">View quality follow-ups ↗</Link>
+          </section>
+        </div>
+        <div className="af-quickstrip">
+          <div><strong>Quick access</strong><span>Move from the snapshot to the working area</span></div>
+          <div className="af-quickbtns">
+            <Link to="/app/engagements">Engagements ↗</Link>
+            <Link to="/app/invoices">Collections ↗</Link>
+            <Link to="/app/deadlines">Deadlines &amp; checks ↗</Link>
+            <Link to="/app/performance">Team capacity ↗</Link>
+          </div>
+        </div>
+      </section>
+      )}
 
       </>)}
 
