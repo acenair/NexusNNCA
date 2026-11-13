@@ -27,13 +27,15 @@ GMAIL_READONLY = "https://www.googleapis.com/auth/gmail.readonly"
 CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar"
 
 
-def _gmail_service(scopes=(GMAIL_READONLY,)):
+def _gmail_service(scopes=(GMAIL_READONLY,), subject=None):
     sa, _ = _sa_info()
     if not sa:
         return None
     from google.oauth2 import service_account as sa_creds
     from googleapiclient.discovery import build
     creds = sa_creds.Credentials.from_service_account_info(sa, scopes=list(scopes))
+    if subject:
+        creds = creds.with_subject(subject)  # impersonate the mailbox the mail was polled from
     return build("gmail", "v1", credentials=creds)
 
 
@@ -111,7 +113,7 @@ async def email_detail(email_id: str, authorization: str = Header(None), session
     attachments = []
     snippet = stored.get("subject", "")
     try:
-        service = _gmail_service()
+        service = _gmail_service(subject=stored.get("mailbox"))
         if service:
             msg = service.users().messages().get(userId="me", id=email_id, format="full").execute()
             for part in msg.get("payload", {}).get("parts", []):
@@ -145,10 +147,12 @@ async def file_email(email_id: str, payload: dict = Body(default=None),
         raise HTTPException(404, "Unknown client")
 
     stored = await db.mailbox_emails.find_one({"email_id": email_id})
-    if stored and stored.get("filed"):
+    if not stored:
+        raise HTTPException(404, "Email not in the poll cache")
+    if stored.get("filed"):
         return {"ok": True, "already_filed": True, "filed_file_ids": stored.get("filed_file_ids", [])}
 
-    service = _gmail_service()
+    service = _gmail_service(subject=stored.get("mailbox"))
     if not service:
         raise HTTPException(503, "Gmail service account not configured")
     try:
