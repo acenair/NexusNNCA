@@ -25,11 +25,14 @@ export default function TransferPricing() {
   const [testResult, setTestResult] = useState(null);
 
   useEffect(() => {
+    window.__tpDebug = window.__tpDebug || [];
+    window.__tpDebug.push('clients fetch start, API=' + (API || '(empty)'));
     axios.get(`${API}/clients`, { withCredentials: true }).then(r => {
       const list = Array.isArray(r.data) ? r.data : (Array.isArray(r.data?.clients) ? r.data.clients : []);
+      window.__tpDebug.push('clients ok: Array=' + Array.isArray(r.data) + ' len=' + (list.length));
       setClients(list);
       if (list.length) setClientId(c => c || list[0].client_id);
-    }).catch(() => {});
+    }).catch(err => { window.__tpDebug.push('clients FAIL: ' + String(err?.message || err).slice(0, 120)); });
   }, []);
 
   useEffect(() => {
