@@ -9,7 +9,7 @@ const API = `${BACKEND_URL}/api`;
 const SERVICE_MODULES = [
   'Statutory Audit', 'Internal Audit', 'Stock Audit', 'Fraud Audit',
   'VAT Registration', 'VAT Filing', 'VAT Amendments',
-  'Corporate Registration', 'Corporate Tax', 'Company Formation', 'Liquidation',
+  'Corporate Tax Registration', 'CT Filing', 'Company Formation', 'Liquidation',
   'Valuation', 'Due Diligence', 'AML Review', 'AML Filing', 'AML Report',
 ];
 const PRIORITIES = ['High', 'Medium', 'Low'];

@@ -23,7 +23,7 @@ const STAGE_COLORS = { awaiting: '#d8e9f7', progress: '#2e93d9', review: '#0b5e9
 
 const SERVICE_LABELS = {
   statutory_audit: 'External Audit', internal_audit: 'Internal Audit', stock_audit: 'Stock Audit',
-  fraud_audit: 'Fraud Audit', vat_filing: 'VAT', aml_review: 'AML', corporate_tax: 'Corporate Tax',
+  fraud_audit: 'Fraud Audit', vat_filing: 'VAT', aml_review: 'AML', corporate_tax: 'CT Filing',
   accounting: 'Accounting', due_diligence: 'Due Diligence', valuation: 'Valuation',
 };
 

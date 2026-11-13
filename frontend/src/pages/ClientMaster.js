@@ -13,7 +13,7 @@ const STATUSES = ['Active', 'Inactive', 'Onboarding', 'Suspended'];
 const ALL_SERVICES = [
   'Statutory Audit', 'Internal Audit', 'Stock Audit', 'Fraud Audit',
   'VAT Registration', 'VAT Filing', 'VAT Amendments',
-  'Corporate Registration', 'Corporate Tax', 'Company Formation', 'Liquidation',
+  'Corporate Tax Registration', 'CT Filing', 'Company Formation', 'Liquidation',
   'Valuation', 'Due Diligence', 'AML Review', 'AML Filing', 'AML Report',
 ];
 

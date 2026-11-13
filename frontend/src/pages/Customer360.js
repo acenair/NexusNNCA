@@ -8,8 +8,8 @@ const API = `${BACKEND_URL}/api`;
 const SERVICE_LABELS = {
   statutory_audit: 'External Audit', internal_audit: 'Internal Audit', stock_audit: 'Stock Audit',
   fraud_audit: 'Fraud Audit', vat_registration: 'VAT Registration', vat_filing: 'VAT',
-  vat_amendments: 'VAT Amendments', corporate_registration: 'Corporate Registration',
-  corporate_tax: 'Corporate Tax', company_formation: 'Company Formation', company_liquidation: 'Liquidation',
+  vat_amendments: 'VAT Amendments', corporate_registration: 'Corporate Tax Registration',
+  corporate_tax: 'CT Filing', company_formation: 'Company Formation', company_liquidation: 'Liquidation',
   advisory_valuation: 'Valuation', advisory_due_diligence: 'Due Diligence', aml_review: 'AML / CFT',
   aml_filing: 'AML Filing', goaml: 'goAML', aml_reports: 'AML Reports', accounting: 'Accounting',
 };
