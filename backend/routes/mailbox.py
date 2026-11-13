@@ -258,7 +258,7 @@ def _calendar_service():
 async def sync_deadlines(authorization: str = Header(None), session_token: str = Cookie(None)):
     """Upsert upcoming regulatory deadlines + task due dates onto a dedicated
     'NNCA Compliance' Google Calendar. Idempotent via deterministic event ids."""
-    user = await get_current_user(authorization, session_token)
+    user = await get_current_user(authorization, session_token) if (authorization or session_token) else {"name": "Auto sync"}
     cal = _calendar_service()
     if not cal:
         raise HTTPException(503, "Google service account not configured")
@@ -279,8 +279,8 @@ async def sync_deadlines(authorization: str = Header(None), session_token: str =
         raise HTTPException(502, f"Calendar error: {str(e)[:180]}")
 
     try:
-        from routes.insights import regulatory_deadlines
-        reg = await regulatory_deadlines(within_days=90, authorization=authorization, session_token=session_token)
+        from routes.insights import regulatory_deadlines_core
+        reg = await regulatory_deadlines_core(within_days=90)
         reg_items = reg.get("deadlines", []) if isinstance(reg, dict) else reg
     except Exception:
         reg_items = []

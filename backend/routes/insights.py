@@ -147,9 +147,8 @@ async def generate_retainer_drafts(authorization: str = Header(None), session_to
 
 # ---------- 2. Regulatory deadlines ----------
 
-@router.get("/insights/regulatory-deadlines")
-async def regulatory_deadlines(within_days: int = 90, authorization: str = Header(None), session_token: str = Cookie(None)):
-    await get_current_user(authorization, session_token)
+async def regulatory_deadlines_core(within_days: int = 90):
+    """Shared engine — usable by the API route AND the background calendar sync (no session needed)."""
     today = date.fromisoformat(datetime.now(timezone.utc).date().isoformat())
     horizon = today + timedelta(days=max(30, within_days))
     out = []
@@ -186,6 +185,12 @@ async def regulatory_deadlines(within_days: int = 90, authorization: str = Heade
 
     out.sort(key=lambda d: d["due"])
     return {"deadlines": out[:60], "today": today.isoformat()}
+
+
+@router.get("/insights/regulatory-deadlines")
+async def regulatory_deadlines(within_days: int = 90, authorization: str = Header(None), session_token: str = Cookie(None)):
+    await get_current_user(authorization, session_token)
+    return await regulatory_deadlines_core(within_days)
 
 
 # ---------- 3. Billable hours -> engagement costing ----------

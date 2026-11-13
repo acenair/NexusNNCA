@@ -61,11 +61,22 @@ async def lifespan(app):
     import asyncio
     from routes.mailbox import poll_mailboxes
 
+    cal_ok = True  # flips off after the first scope failure to avoid log spam
+
     async def _mailbox_loop():
+        nonlocal cal_ok
         while True:
             try:
                 if os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON"):
                     await poll_mailboxes()
+                    # keep the compliance calendar fresh without anyone clicking anything
+                    if cal_ok:
+                        try:
+                            from routes.mailbox import sync_deadlines
+                            await sync_deadlines(None, None)
+                        except Exception as e:
+                            cal_ok = False
+                            print(f"CALENDAR_AUTOSYNC_OFF (will retry on restart): {str(e)[:160]}")
             except Exception as e:
                 print(f"MAILBOX_POLL_ERROR {str(e)[:200]}")
             await asyncio.sleep(600)
