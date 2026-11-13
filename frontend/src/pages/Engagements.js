@@ -127,10 +127,26 @@ const Engagements = () => {  const { user } = useOutletContext();
   };
   const qSelKey = qSel || '';  // '' = all quarters
 
-  const rowRow = (e) => {
+  // visible rows with continuous serial numbers (group headers interleaved in the VAT view)
+  const displayRows = (() => {
+    const out = [];
+    if (vatGroups) {
+      let n = 0;
+      vatGroups.forEach(g => {
+        out.push({ qhead: g });
+        g.rows.forEach(e => { n += 1; out.push({ e, n }); });
+      });
+    } else {
+      filtered.forEach((e, i) => out.push({ e, n: i + 1 }));
+    }
+    return out;
+  })();
+
+  const rowRow = (e, n) => {
     const pct = progressOf(e);
     return (
       <tr key={e.engagement_id}>
+        <td style={{ color: 'var(--muted)', fontSize: 11 }}>{n}</td>
         <td><span className="af-avatar-cell"><Avatar name={e.client_name} size={26} /><b className="nm">{e.client_name || "—"}</b></span></td>
         <td><span className="af-badge af-badge-blue">{SERVICE_LABELS[e.service_type] || e.service_type}</span></td>
         <td>{e.phase || '—'}</td>
@@ -299,13 +315,10 @@ const Engagements = () => {  const { user } = useOutletContext();
           <table className="af-table">
             <thead><tr><th>CLIENT</th><th>SERVICE</th><th>PHASE</th><th>PROGRESS</th><th>ASSIGNED</th><th>STATUS</th><th>PERIOD (QUARTER)</th><th>DUE DATE</th><th></th></tr></thead>
             <tbody>
-              {(vatGroups ? vatGroups.flatMap(g => ([
-                <tr key={'q_' + g.key} className="af-qhead">
-                  <td colSpan="9"><b>VAT quarter {g.label}</b><small> · return due {g.due} · {g.rows.length} job(s)</small></td>
-                </tr>,
-                ...g.rows.map(rowRow),
-              ])) : filtered.map(rowRow))}
-              {filtered.length === 0 && <tr><td colSpan="9" className="af-empty">No engagements match. {preset ? 'Try the All filter.' : 'Create one with “New engagement”.'}</td></tr>}
+              {displayRows.map(it => it.qhead
+                ? <tr key={'q_' + it.qhead.key} className="af-qhead"><td colSpan="10"><b>VAT quarter {it.qhead.label}</b><small> · return due {it.qhead.due} · {it.qhead.rows.length} job(s)</small></td></tr>
+                : rowRow(it.e, it.n))}
+              {filtered.length === 0 && <tr><td colSpan="10" className="af-empty">No engagements match. {preset ? 'Try the All filter.' : 'Create one with “New engagement”.'}</td></tr>}
             </tbody>
           </table>
         </div>
