@@ -124,7 +124,7 @@ async def update_task(task_id: str, status: Optional[str] = None, payload: Optio
                         it["done"] = True
                 await db.service_engagements.update_one(
                     {"engagement_id": eng_id},
-                    {"$set": {"checklist": cl, "phase": cl[-1]["group"]}})
+                    {"$set": {"checklist": cl, "phase": cl[-1]["group"], "status": "Completed"}})
     return {"message": "Task updated"}
 
 
