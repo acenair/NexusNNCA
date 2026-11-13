@@ -319,7 +319,7 @@ const Engagements = () => {  const { user } = useOutletContext();
         </div>
         <div className="af-tablewrap af-tablewrap-tall">
           <table className="af-table">
-            <thead><tr><th>CLIENT</th><th>SERVICE</th><th>PHASE</th><th>PROGRESS</th><th>ASSIGNED</th><th>STATUS</th><th>PERIOD (QUARTER)</th><th>DUE DATE</th><th></th></tr></thead>
+            <thead><tr><th>#</th><th>CLIENT</th><th>SERVICE</th><th>PHASE</th><th>PROGRESS</th><th>ASSIGNED</th><th>STATUS</th><th>PERIOD (QUARTER)</th><th>DUE DATE</th><th></th></tr></thead>
             <tbody>
               {displayRows.map(it => it.qhead
                 ? <tr key={'q_' + it.qhead.key} className="af-qhead"><td colSpan="10"><b>VAT quarter {it.qhead.label}</b><small> · return due {it.qhead.due} · {it.qhead.rows.length} job(s)</small></td></tr>
