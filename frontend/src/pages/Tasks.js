@@ -129,6 +129,7 @@ const Tasks = () => {
     try {
       await axios.patch(`${API}/tasks/${editRow.task_id}`, {
         status: editForm.status, progress: Number(editForm.progress) || 0, blocker: editForm.blocker,
+        due_date: editForm.due_date || undefined,
       }, { withCredentials: true });
       setEditRow(null);
       setToast('Job updated');
@@ -224,7 +225,7 @@ const Tasks = () => {
                           <br /><small>{isLate(j) ? `${daysLate(j)} days late` : d === 'Completed' ? 'Closed' : j.due_date === today ? 'Due today' : 'Target date'}</small>
                         </td>
                         <td>
-                          <button className="af-link" onClick={() => { setEditRow(j); setEditForm({ status: d, progress: j.progress || 0, blocker: j.blocker || '' }); }} data-testid={`edit-task-${j.task_id}`}>
+                          <button className="af-link" onClick={() => { setEditRow(j); setEditForm({ status: d, progress: j.progress || 0, blocker: j.blocker || '', due_date: j.due_date || '' }); }} data-testid={`edit-task-${j.task_id}`}>
                             <Pencil size={12} />
                           </button>
                         </td>
