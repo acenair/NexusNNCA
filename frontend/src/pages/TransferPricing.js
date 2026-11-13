@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import axios from 'axios';
 import { Link2, AlertTriangle, CheckCircle2, FileText, Plus, Trash2 } from 'lucide-react';
 
-const API = process.env.REACT_APP_BACKEND_URL || '';
+const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const TXN_TYPES = ["Goods", "Services", "Interest / Loans", "Royalties / IP", "Asset transfer", "Guarantees", "Cost sharing", "Other"];
 const METHODS = ["CUP", "Resale Price", "Cost Plus", "TNMM", "Profit Split", "Not set"];
 const RELATIONSHIPS = ["Parent / Subsidiary", "Same ownership", "Director / Owner", "Relative of owner", "Associate / Partner", "Other"];
@@ -25,14 +25,11 @@ export default function TransferPricing() {
   const [testResult, setTestResult] = useState(null);
 
   useEffect(() => {
-    window.__tpDebug = window.__tpDebug || [];
-    window.__tpDebug.push('clients fetch start, API=' + (API || '(empty)'));
     axios.get(`${API}/clients`, { withCredentials: true }).then(r => {
       const list = Array.isArray(r.data) ? r.data : (Array.isArray(r.data?.clients) ? r.data.clients : []);
-      window.__tpDebug.push('clients ok: Array=' + Array.isArray(r.data) + ' len=' + (list.length));
       setClients(list);
       if (list.length) setClientId(c => c || list[0].client_id);
-    }).catch(err => { window.__tpDebug.push('clients FAIL: ' + String(err?.message || err).slice(0, 120)); });
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
