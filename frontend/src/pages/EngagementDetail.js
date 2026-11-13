@@ -478,7 +478,7 @@ const EngagementDetail = () => {
     )}
   </div>
 )}
-{activeTab === 'tb' &&{activeTab === 'tb' && AUDIT_SERVICE_TYPES.includes(eng.service_type) ? (
+{activeTab === 'tb' && AUDIT_SERVICE_TYPES.includes(eng.service_type) ? (
         <TrialBalance engagementId={engagementId} />
       ) : activeTab === 'receipts' && AUDIT_SERVICE_TYPES.includes(eng.service_type) ? (
         <ReceiptInbox engagementId={engagementId} isPartner={isPartner} />
