@@ -294,7 +294,7 @@ async def sync_deadlines(authorization: str = Header(None), session_token: str =
 
     async def _upsert(kind, ref_id, title, due_iso, color):
         nonlocal pushed, updated
-        nnca_key = f"{kind}:{ref_id}"
+        nnca_key = f"{kind}-{ref_id}"  # single colon rule: the filter param is key:value
         body = {"summary": title, "start": {"date": due_iso}, "end": {"date": due_iso},
                 "colorId": color, "transparency": "transparent",
                 "extendedProperties": {"private": {"nnca_key": nnca_key, "nnca_kind": kind, "nnca_ref": ref_id}}}
