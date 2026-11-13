@@ -174,7 +174,7 @@ async def disconnect_drive(authorization: str = Header(None), session_token: str
     return {"message": "Google Drive disconnected"}
 
 
-@router.post("/api/drive/provision-folders")
+@router.post("/drive/provision-folders")
 async def provision_client_folders(background_tasks: BackgroundTasks, authorization: str = Header(None), session_token: str = Cookie(None)):
     """Ensure a Drive folder exists for every client (Client / Service / FY structure).
     Runs in the background — poll /drive/status for progress."""

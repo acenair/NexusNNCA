@@ -1,52 +1,332 @@
 [
  {
-  "path": "/api/auth/register",
-  "methods": [
-   "POST"
-  ],
-  "name": "register"
- },
- {
-  "path": "/api/auth/login",
-  "methods": [
-   "POST"
-  ],
-  "name": "login"
- },
- {
-  "path": "/api/auth/users-list",
+  "path": "/api/admin/client-checklists/{client_id}",
   "methods": [
    "GET"
   ],
-  "name": "get_users_list"
+  "name": "get_client_checklist"
  },
  {
-  "path": "/api/auth/login-directory",
+  "path": "/api/admin/client-checklists/{client_id}",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "update_client_checklist"
+ },
+ {
+  "path": "/api/admin/data-stats",
   "methods": [
    "GET"
   ],
-  "name": "get_login_directory"
+  "name": "get_data_stats"
  },
  {
-  "path": "/api/auth/session",
+  "path": "/api/admin/reset-data",
   "methods": [
    "POST"
   ],
-  "name": "create_session"
+  "name": "reset_data"
  },
  {
-  "path": "/api/auth/me",
+  "path": "/api/ai/chat",
+  "methods": [
+   "POST"
+  ],
+  "name": "chat_with_ai"
+ },
+ {
+  "path": "/api/ai/chat/{session_id}",
+  "methods": [
+   "DELETE"
+  ],
+  "name": "delete_chat_session"
+ },
+ {
+  "path": "/api/ai/chat/{session_id}",
   "methods": [
    "GET"
   ],
-  "name": "get_me"
+  "name": "get_chat_history"
  },
  {
-  "path": "/api/auth/logout",
+  "path": "/api/ai/sessions",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_chat_sessions"
+ },
+ {
+  "path": "/api/ajes/{aje_id}",
+  "methods": [
+   "DELETE"
+  ],
+  "name": "delete_aje"
+ },
+ {
+  "path": "/api/ajes/{aje_id}",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "update_aje"
+ },
+ {
+  "path": "/api/ajes/{aje_id}/signoff",
   "methods": [
    "POST"
   ],
-  "name": "logout"
+  "name": "signoff_aje"
+ },
+ {
+  "path": "/api/ajes/{aje_id}/unsignoff",
+  "methods": [
+   "POST"
+  ],
+  "name": "unsignoff_aje"
+ },
+ {
+  "path": "/api/aml/alerts",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_aml_alerts"
+ },
+ {
+  "path": "/api/aml/alerts",
+  "methods": [
+   "POST"
+  ],
+  "name": "create_aml_alert"
+ },
+ {
+  "path": "/api/aml/alerts/{alert_id}",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "update_aml_alert"
+ },
+ {
+  "path": "/api/analytics/stats",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_analytics_stats"
+ },
+ {
+  "path": "/api/appreciations",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_appreciations"
+ },
+ {
+  "path": "/api/appreciations",
+  "methods": [
+   "POST"
+  ],
+  "name": "create_appreciation"
+ },
+ {
+  "path": "/api/attendance/holidays",
+  "methods": [
+   "GET"
+  ],
+  "name": "list_holidays"
+ },
+ {
+  "path": "/api/attendance/holidays",
+  "methods": [
+   "POST"
+  ],
+  "name": "add_holiday"
+ },
+ {
+  "path": "/api/attendance/leave",
+  "methods": [
+   "GET"
+  ],
+  "name": "list_leave"
+ },
+ {
+  "path": "/api/attendance/leave",
+  "methods": [
+   "POST"
+  ],
+  "name": "request_leave"
+ },
+ {
+  "path": "/api/attendance/leave/{leave_id}",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "decide_leave"
+ },
+ {
+  "path": "/api/attendance/mark",
+  "methods": [
+   "POST"
+  ],
+  "name": "mark_attendance"
+ },
+ {
+  "path": "/api/attendance/month",
+  "methods": [
+   "GET"
+  ],
+  "name": "attendance_month"
+ },
+ {
+  "path": "/api/attendance/summary",
+  "methods": [
+   "GET"
+  ],
+  "name": "attendance_summary"
+ },
+ {
+  "path": "/api/audit/client/{client_id}/history",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_client_audit_history"
+ },
+ {
+  "path": "/api/audit/clients-summary",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_audit_clients_summary"
+ },
+ {
+  "path": "/api/audit/engagements",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_audit_engagements"
+ },
+ {
+  "path": "/api/audit/engagements",
+  "methods": [
+   "POST"
+  ],
+  "name": "create_audit_engagement"
+ },
+ {
+  "path": "/api/audit/engagements/{engagement_id}",
+  "methods": [
+   "GET"
+  ],
+  "name": "list_engagement_audits"
+ },
+ {
+  "path": "/api/audit/engagements/{engagement_id}/start",
+  "methods": [
+   "POST"
+  ],
+  "name": "start_client_audit"
+ },
+ {
+  "path": "/api/audit/template",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_audit_template"
+ },
+ {
+  "path": "/api/audit/{audit_id}",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_client_audit"
+ },
+ {
+  "path": "/api/audit/{audit_id}/complete",
+  "methods": [
+   "POST"
+  ],
+  "name": "complete_client_audit"
+ },
+ {
+  "path": "/api/audit/{audit_id}/export.pdf",
+  "methods": [
+   "GET"
+  ],
+  "name": "export_audit_pdf"
+ },
+ {
+  "path": "/api/audit/{audit_id}/export.xlsx",
+  "methods": [
+   "GET"
+  ],
+  "name": "export_audit_xlsx"
+ },
+ {
+  "path": "/api/audit/{audit_id}/responses/{code}",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "save_audit_response"
+ },
+ {
+  "path": "/api/audit/{audit_id}/responses/{code}/download",
+  "methods": [
+   "GET"
+  ],
+  "name": "download_audit_attachment"
+ },
+ {
+  "path": "/api/audit/{audit_id}/responses/{code}/upload",
+  "methods": [
+   "POST"
+  ],
+  "name": "upload_audit_attachment"
+ },
+ {
+  "path": "/api/audit/{engagement_id}/corporate-tax",
+  "methods": [
+   "GET"
+  ],
+  "name": "corporate_tax"
+ },
+ {
+  "path": "/api/audit/{engagement_id}/corporate-tax",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "set_ct_adjustments"
+ },
+ {
+  "path": "/api/audit/{engagement_id}/je-tests",
+  "methods": [
+   "GET"
+  ],
+  "name": "je_tests"
+ },
+ {
+  "path": "/api/audit/{engagement_id}/materiality",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_materiality"
+ },
+ {
+  "path": "/api/audit/{engagement_id}/materiality",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "set_materiality"
+ },
+ {
+  "path": "/api/audit/{engagement_id}/pack-staleness",
+  "methods": [
+   "GET"
+  ],
+  "name": "pack_staleness"
+ },
+ {
+  "path": "/api/audit/{engagement_id}/risk-memo",
+  "methods": [
+   "GET"
+  ],
+  "name": "risk_memo"
  },
  {
   "path": "/api/auth/change-password",
@@ -63,6 +343,69 @@
   "name": "forgot_password"
  },
  {
+  "path": "/api/auth/google/callback",
+  "methods": [
+   "GET"
+  ],
+  "name": "google_callback"
+ },
+ {
+  "path": "/api/auth/google/exchange",
+  "methods": [
+   "POST"
+  ],
+  "name": "google_exchange"
+ },
+ {
+  "path": "/api/auth/google/start",
+  "methods": [
+   "GET"
+  ],
+  "name": "google_start"
+ },
+ {
+  "path": "/api/auth/google/status",
+  "methods": [
+   "GET"
+  ],
+  "name": "google_status"
+ },
+ {
+  "path": "/api/auth/login",
+  "methods": [
+   "POST"
+  ],
+  "name": "login"
+ },
+ {
+  "path": "/api/auth/login-directory",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_login_directory"
+ },
+ {
+  "path": "/api/auth/logout",
+  "methods": [
+   "POST"
+  ],
+  "name": "logout"
+ },
+ {
+  "path": "/api/auth/me",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_me"
+ },
+ {
+  "path": "/api/auth/register",
+  "methods": [
+   "POST"
+  ],
+  "name": "register"
+ },
+ {
   "path": "/api/auth/reset-password",
   "methods": [
    "POST"
@@ -70,32 +413,95 @@
   "name": "reset_password"
  },
  {
-  "path": "/api/dashboard/stats",
+  "path": "/api/auth/session",
   "methods": [
-   "GET"
+   "POST"
   ],
-  "name": "get_dashboard_stats"
+  "name": "create_session"
  },
  {
-  "path": "/api/dashboard/activities",
+  "path": "/api/auth/users-list",
   "methods": [
    "GET"
   ],
-  "name": "get_recent_activities"
+  "name": "get_users_list"
  },
  {
-  "path": "/api/analytics/stats",
+  "path": "/api/billable-hours",
   "methods": [
    "GET"
   ],
-  "name": "get_analytics_stats"
+  "name": "get_billable_hours"
  },
  {
-  "path": "/api/dashboard/visa-alerts",
+  "path": "/api/billable-hours",
+  "methods": [
+   "POST"
+  ],
+  "name": "log_billable_hours"
+ },
+ {
+  "path": "/api/billable-hours/export",
   "methods": [
    "GET"
   ],
-  "name": "get_visa_alerts"
+  "name": "export_billable_hours"
+ },
+ {
+  "path": "/api/billable-hours/summary",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_billable_hours_summary"
+ },
+ {
+  "path": "/api/billable-hours/{entry_id}",
+  "methods": [
+   "DELETE"
+  ],
+  "name": "delete_billable_hours"
+ },
+ {
+  "path": "/api/client-portal/documents",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_client_documents"
+ },
+ {
+  "path": "/api/client-portal/documents/{item_id}/upload",
+  "methods": [
+   "POST"
+  ],
+  "name": "upload_client_document"
+ },
+ {
+  "path": "/api/client-portal/invoices",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_client_invoices"
+ },
+ {
+  "path": "/api/client-portal/queries",
+  "methods": [
+   "GET"
+  ],
+  "name": "client_queries"
+ },
+ {
+  "path": "/api/client-portal/queries/{query_id}/reply",
+  "methods": [
+   "POST"
+  ],
+  "name": "client_reply"
+ },
+ {
+  "path": "/api/client-portal/workflow",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_client_workflow"
  },
  {
   "path": "/api/clients",
@@ -126,13 +532,6 @@
   "name": "update_client"
  },
  {
-  "path": "/api/clients/{client_id}/timeline",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_client_timeline"
- },
- {
   "path": "/api/clients/{client_id}/overview360",
   "methods": [
    "GET"
@@ -140,914 +539,11 @@
   "name": "get_client_overview360"
  },
  {
-  "path": "/api/tasks",
+  "path": "/api/clients/{client_id}/timeline",
   "methods": [
    "GET"
   ],
-  "name": "get_tasks"
- },
- {
-  "path": "/api/tasks",
-  "methods": [
-   "POST"
-  ],
-  "name": "create_task"
- },
- {
-  "path": "/api/tasks/{task_id}",
-  "methods": [
-   "PATCH"
-  ],
-  "name": "update_task"
- },
- {
-  "path": "/api/tasks/bulk-upload",
-  "methods": [
-   "POST"
-  ],
-  "name": "bulk_upload_tasks"
- },
- {
-  "path": "/api/tasks/bulk-preview",
-  "methods": [
-   "POST"
-  ],
-  "name": "preview_bulk_upload"
- },
- {
-  "path": "/api/events",
-  "methods": [
-   "POST"
-  ],
-  "name": "create_event"
- },
- {
-  "path": "/api/events",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_events"
- },
- {
-  "path": "/api/events/{event_id}",
-  "methods": [
-   "DELETE"
-  ],
-  "name": "delete_event"
- },
- {
-  "path": "/api/appreciations",
-  "methods": [
-   "POST"
-  ],
-  "name": "create_appreciation"
- },
- {
-  "path": "/api/appreciations",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_appreciations"
- },
- {
-  "path": "/api/ai/chat",
-  "methods": [
-   "POST"
-  ],
-  "name": "chat_with_ai"
- },
- {
-  "path": "/api/ai/chat/{session_id}",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_chat_history"
- },
- {
-  "path": "/api/ai/sessions",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_chat_sessions"
- },
- {
-  "path": "/api/ai/chat/{session_id}",
-  "methods": [
-   "DELETE"
-  ],
-  "name": "delete_chat_session"
- },
- {
-  "path": "/api/files/upload",
-  "methods": [
-   "POST"
-  ],
-  "name": "upload_file"
- },
- {
-  "path": "/api/documents",
-  "methods": [
-   "GET"
-  ],
-  "name": "list_documents"
- },
- {
-  "path": "/api/documents/{file_id}",
-  "methods": [
-   "DELETE"
-  ],
-  "name": "delete_document"
- },
- {
-  "path": "/api/files/{file_id}",
-  "methods": [
-   "GET"
-  ],
-  "name": "download_file"
- },
- {
-  "path": "/api/vat/registrations",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_vat_registrations"
- },
- {
-  "path": "/api/vat/registrations",
-  "methods": [
-   "POST"
-  ],
-  "name": "create_vat_registration"
- },
- {
-  "path": "/api/vat/registrations/{registration_id}",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_vat_registration"
- },
- {
-  "path": "/api/vat/registrations/{registration_id}",
-  "methods": [
-   "PATCH"
-  ],
-  "name": "update_vat_registration"
- },
- {
-  "path": "/api/vat/filings",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_vat_filings"
- },
- {
-  "path": "/api/vat/filings",
-  "methods": [
-   "POST"
-  ],
-  "name": "create_vat_filing"
- },
- {
-  "path": "/api/vat/filings/{filing_id}",
-  "methods": [
-   "PATCH"
-  ],
-  "name": "update_vat_filing"
- },
- {
-  "path": "/api/audit/engagements",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_audit_engagements"
- },
- {
-  "path": "/api/audit/engagements",
-  "methods": [
-   "POST"
-  ],
-  "name": "create_audit_engagement"
- },
- {
-  "path": "/api/audit/template",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_audit_template"
- },
- {
-  "path": "/api/audit/engagements/{engagement_id}/start",
-  "methods": [
-   "POST"
-  ],
-  "name": "start_client_audit"
- },
- {
-  "path": "/api/audit/engagements/{engagement_id}",
-  "methods": [
-   "GET"
-  ],
-  "name": "list_engagement_audits"
- },
- {
-  "path": "/api/audit/client/{client_id}/history",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_client_audit_history"
- },
- {
-  "path": "/api/audit/clients-summary",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_audit_clients_summary"
- },
- {
-  "path": "/api/audit/{audit_id}",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_client_audit"
- },
- {
-  "path": "/api/audit/{audit_id}/responses/{code}",
-  "methods": [
-   "PATCH"
-  ],
-  "name": "save_audit_response"
- },
- {
-  "path": "/api/audit/{audit_id}/responses/{code}/upload",
-  "methods": [
-   "POST"
-  ],
-  "name": "upload_audit_attachment"
- },
- {
-  "path": "/api/audit/{audit_id}/responses/{code}/download",
-  "methods": [
-   "GET"
-  ],
-  "name": "download_audit_attachment"
- },
- {
-  "path": "/api/audit/{audit_id}/complete",
-  "methods": [
-   "POST"
-  ],
-  "name": "complete_client_audit"
- },
- {
-  "path": "/api/audit/{audit_id}/export.xlsx",
-  "methods": [
-   "GET"
-  ],
-  "name": "export_audit_xlsx"
- },
- {
-  "path": "/api/audit/{audit_id}/export.pdf",
-  "methods": [
-   "GET"
-  ],
-  "name": "export_audit_pdf"
- },
- {
-  "path": "/api/aml/alerts",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_aml_alerts"
- },
- {
-  "path": "/api/aml/alerts",
-  "methods": [
-   "POST"
-  ],
-  "name": "create_aml_alert"
- },
- {
-  "path": "/api/aml/alerts/{alert_id}",
-  "methods": [
-   "PATCH"
-  ],
-  "name": "update_aml_alert"
- },
- {
-  "path": "/api/service/engagements",
-  "methods": [
-   "POST"
-  ],
-  "name": "create_service_engagement"
- },
- {
-  "path": "/api/service/engagement-terms",
-  "methods": [
-   "GET"
-  ],
-  "name": "engagement_terms"
- },
- {
-  "path": "/api/service/engagements",
-  "methods": [
-   "GET"
-  ],
-  "name": "list_service_engagements"
- },
- {
-  "path": "/api/service/engagements/{engagement_id}/checklist",
-  "methods": [
-   "PATCH"
-  ],
-  "name": "toggle_checklist_item"
- },
- {
-  "path": "/api/service/engagements/{engagement_id}",
-  "methods": [
-   "PATCH"
-  ],
-  "name": "update_service_engagement"
- },
- {
-  "path": "/api/service/engagements/{engagement_id}/checklist/items",
-  "methods": [
-   "POST"
-  ],
-  "name": "add_checklist_item"
- },
- {
-  "path": "/api/service/engagements/{engagement_id}/checklist/items/{group_index}/{item_index}",
-  "methods": [
-   "DELETE"
-  ],
-  "name": "remove_checklist_item"
- },
- {
-  "path": "/api/service/engagements/{engagement_id}/approve",
-  "methods": [
-   "POST"
-  ],
-  "name": "bypass_approve_engagement"
- },
- {
-  "path": "/api/service/workflows-for-type",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_workflows_for_service"
- },
- {
-  "path": "/api/settings/reminder-config",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_reminder_config"
- },
- {
-  "path": "/api/settings/reminder-config",
-  "methods": [
-   "PATCH"
-  ],
-  "name": "update_reminder_config"
- },
- {
-  "path": "/api/settings/rbac",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_rbac"
- },
- {
-  "path": "/api/settings/rbac",
-  "methods": [
-   "PATCH"
-  ],
-  "name": "update_rbac"
- },
- {
-  "path": "/api/settings/rbac-public",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_rbac_public"
- },
- {
-  "path": "/api/settings/firm",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_firm_settings"
- },
- {
-  "path": "/api/settings/firm",
-  "methods": [
-   "PATCH"
-  ],
-  "name": "update_firm_settings"
- },
- {
-  "path": "/api/settings/storage",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_storage_config"
- },
- {
-  "path": "/api/settings/storage",
-  "methods": [
-   "PATCH"
-  ],
-  "name": "update_storage_config"
- },
- {
-  "path": "/api/settings/users",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_all_users"
- },
- {
-  "path": "/api/settings/users/{user_id}",
-  "methods": [
-   "PATCH"
-  ],
-  "name": "update_user"
- },
- {
-  "path": "/api/settings/users",
-  "methods": [
-   "POST"
-  ],
-  "name": "create_user"
- },
- {
-  "path": "/api/settings/users/{user_id}/reset-password",
-  "methods": [
-   "POST"
-  ],
-  "name": "admin_reset_user_password"
- },
- {
-  "path": "/api/settings/password-reset-requests",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_pending_reset_requests"
- },
- {
-  "path": "/api/settings/users/{user_id}/generate-reset-code",
-  "methods": [
-   "POST"
-  ],
-  "name": "admin_generate_reset_code"
- },
- {
-  "path": "/api/settings/users/{user_id}/approve",
-  "methods": [
-   "PATCH"
-  ],
-  "name": "approve_user"
- },
- {
-  "path": "/api/settings/users/{user_id}/reject",
-  "methods": [
-   "PATCH"
-  ],
-  "name": "reject_user"
- },
- {
-  "path": "/api/settings/user-access/{user_id}",
-  "methods": [
-   "PATCH"
-  ],
-  "name": "update_user_access"
- },
- {
-  "path": "/api/settings/user-access",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_all_user_access"
- },
- {
-  "path": "/api/settings/workflows",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_workflows"
- },
- {
-  "path": "/api/settings/workflows",
-  "methods": [
-   "POST"
-  ],
-  "name": "create_workflow"
- },
- {
-  "path": "/api/settings/workflows/{workflow_id}",
-  "methods": [
-   "PATCH"
-  ],
-  "name": "update_workflow"
- },
- {
-  "path": "/api/settings/workflows/{workflow_id}",
-  "methods": [
-   "DELETE"
-  ],
-  "name": "delete_workflow"
- },
- {
-  "path": "/api/notifications",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_notifications"
- },
- {
-  "path": "/api/notifications/{notification_id}/dismiss",
-  "methods": [
-   "PATCH"
-  ],
-  "name": "dismiss_notification"
- },
- {
-  "path": "/api/onboarding",
-  "methods": [
-   "POST"
-  ],
-  "name": "onboard_client"
- },
- {
-  "path": "/api/onboarding/document-checklist",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_onboarding_doc_checklist"
- },
- {
-  "path": "/api/onboarding/{onboarding_id}",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_onboarding_record"
- },
- {
-  "path": "/api/onboarding/client/{client_id}",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_client_onboardings"
- },
- {
-  "path": "/api/onboarding/{onboarding_id}",
-  "methods": [
-   "PATCH"
-  ],
-  "name": "update_onboarding_stage"
- },
- {
-  "path": "/api/onboarding/{onboarding_id}/documents",
-  "methods": [
-   "POST"
-  ],
-  "name": "upload_onboarding_document"
- },
- {
-  "path": "/api/export/clients-csv",
-  "methods": [
-   "GET"
-  ],
-  "name": "export_clients_csv"
- },
- {
-  "path": "/api/export/audit-report/{engagement_id}",
-  "methods": [
-   "GET"
-  ],
-  "name": "export_audit_report"
- },
- {
-  "path": "/api/export/vat-return/{engagement_id}",
-  "methods": [
-   "GET"
-  ],
-  "name": "export_vat_return"
- },
- {
-  "path": "/api/billable-hours",
-  "methods": [
-   "POST"
-  ],
-  "name": "log_billable_hours"
- },
- {
-  "path": "/api/billable-hours",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_billable_hours"
- },
- {
-  "path": "/api/billable-hours/{entry_id}",
-  "methods": [
-   "DELETE"
-  ],
-  "name": "delete_billable_hours"
- },
- {
-  "path": "/api/billable-hours/summary",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_billable_hours_summary"
- },
- {
-  "path": "/api/billable-hours/export",
-  "methods": [
-   "GET"
-  ],
-  "name": "export_billable_hours"
- },
- {
-  "path": "/api/reminders",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_reminders"
- },
- {
-  "path": "/api/client-portal/documents",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_client_documents"
- },
- {
-  "path": "/api/client-portal/documents/{item_id}/upload",
-  "methods": [
-   "POST"
-  ],
-  "name": "upload_client_document"
- },
- {
-  "path": "/api/client-portal/workflow",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_client_workflow"
- },
- {
-  "path": "/api/client-portal/invoices",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_client_invoices"
- },
- {
-  "path": "/api/admin/client-checklists/{client_id}",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_client_checklist"
- },
- {
-  "path": "/api/admin/client-checklists/{client_id}",
-  "methods": [
-   "PATCH"
-  ],
-  "name": "update_client_checklist"
- },
- {
-  "path": "/api/invoices",
-  "methods": [
-   "POST"
-  ],
-  "name": "create_invoice"
- },
- {
-  "path": "/api/invoices",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_all_invoices"
- },
- {
-  "path": "/api/invoices/{invoice_id}",
-  "methods": [
-   "PATCH"
-  ],
-  "name": "update_invoice"
- },
- {
-  "path": "/api/invoices/{invoice_id}",
-  "methods": [
-   "DELETE"
-  ],
-  "name": "delete_invoice"
- },
- {
-  "path": "/api/invoices/ageing-report",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_ageing_report"
- },
- {
-  "path": "/api/invoices/follow-up",
-  "methods": [
-   "POST"
-  ],
-  "name": "create_follow_up"
- },
- {
-  "path": "/api/invoices/{invoice_id}/receipts",
-  "methods": [
-   "POST"
-  ],
-  "name": "add_receipt"
- },
- {
-  "path": "/api/invoices/{invoice_id}/credit",
-  "methods": [
-   "POST"
-  ],
-  "name": "add_credit"
- },
- {
-  "path": "/api/invoices/{invoice_id}/cancel",
-  "methods": [
-   "POST"
-  ],
-  "name": "cancel_invoice"
- },
- {
-  "path": "/api/invoices/{invoice_id}/issue",
-  "methods": [
-   "POST"
-  ],
-  "name": "issue_draft"
- },
- {
-  "path": "/api/invoices/billing-summary",
-  "methods": [
-   "GET"
-  ],
-  "name": "billing_summary"
- },
- {
-  "path": "/api/invoices/{invoice_id}/pdf",
-  "methods": [
-   "GET"
-  ],
-  "name": "invoice_pdf"
- },
- {
-  "path": "/api/proposal-templates",
-  "methods": [
-   "POST"
-  ],
-  "name": "create_proposal_template"
- },
- {
-  "path": "/api/proposal-templates",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_proposal_templates"
- },
- {
-  "path": "/api/proposal-templates/{template_id}",
-  "methods": [
-   "DELETE"
-  ],
-  "name": "delete_proposal_template"
- },
- {
-  "path": "/api/proposals",
-  "methods": [
-   "POST"
-  ],
-  "name": "create_proposal"
- },
- {
-  "path": "/api/proposals",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_proposals"
- },
- {
-  "path": "/api/proposals/{proposal_id}",
-  "methods": [
-   "PATCH"
-  ],
-  "name": "update_proposal"
- },
- {
-  "path": "/api/proposals/{proposal_id}",
-  "methods": [
-   "DELETE"
-  ],
-  "name": "delete_proposal"
- },
- {
-  "path": "/api/push/vapid-key",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_vapid_public_key"
- },
- {
-  "path": "/api/push/subscribe",
-  "methods": [
-   "POST"
-  ],
-  "name": "subscribe_push"
- },
- {
-  "path": "/api/push/unsubscribe",
-  "methods": [
-   "POST"
-  ],
-  "name": "unsubscribe_push"
- },
- {
-  "path": "/api/push/test",
-  "methods": [
-   "POST"
-  ],
-  "name": "test_push"
- },
- {
-  "path": "/api/push/send-deadline-alerts",
-  "methods": [
-   "POST"
-  ],
-  "name": "send_deadline_push_alerts"
- },
- {
-  "path": "/api/admin/reset-data",
-  "methods": [
-   "POST"
-  ],
-  "name": "reset_data"
- },
- {
-  "path": "/api/admin/data-stats",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_data_stats"
- },
- {
-  "path": "/api/drive/connect",
-  "methods": [
-   "GET"
-  ],
-  "name": "connect_drive"
- },
- {
-  "path": "/api/drive/callback",
-  "methods": [
-   "GET"
-  ],
-  "name": "drive_callback"
- },
- {
-  "path": "/api/drive/status",
-  "methods": [
-   "GET"
-  ],
-  "name": "drive_status"
- },
- {
-  "path": "/api/drive/sync-document/{file_id}",
-  "methods": [
-   "POST"
-  ],
-  "name": "sync_document_to_drive"
- },
- {
-  "path": "/api/drive/files",
-  "methods": [
-   "GET"
-  ],
-  "name": "list_drive_files"
- },
- {
-  "path": "/api/drive/disconnect",
-  "methods": [
-   "POST"
-  ],
-  "name": "disconnect_drive"
- },
- {
-  "path": "/api/drive/provision-folders",
-  "methods": [
-   "POST"
-  ],
-  "name": "provision_client_folders"
+  "name": "get_client_timeline"
  },
  {
   "path": "/api/compliance/categories",
@@ -1055,34 +551,6 @@
    "GET"
   ],
   "name": "compliance_categories"
- },
- {
-  "path": "/api/compliance/records",
-  "methods": [
-   "GET"
-  ],
-  "name": "list_records"
- },
- {
-  "path": "/api/compliance/records",
-  "methods": [
-   "POST"
-  ],
-  "name": "create_record"
- },
- {
-  "path": "/api/compliance/records/{record_id}",
-  "methods": [
-   "PATCH"
-  ],
-  "name": "update_record"
- },
- {
-  "path": "/api/compliance/records/{record_id}",
-  "methods": [
-   "DELETE"
-  ],
-  "name": "delete_record"
  },
  {
   "path": "/api/compliance/dues",
@@ -1101,100 +569,450 @@
  {
   "path": "/api/compliance/dues/{due_id}",
   "methods": [
-   "PATCH"
-  ],
-  "name": "update_due"
- },
- {
-  "path": "/api/compliance/dues/{due_id}",
-  "methods": [
    "DELETE"
   ],
   "name": "delete_due"
  },
  {
-  "path": "/api/auth/google/status",
-  "methods": [
-   "GET"
-  ],
-  "name": "google_status"
- },
- {
-  "path": "/api/auth/google/start",
-  "methods": [
-   "GET"
-  ],
-  "name": "google_start"
- },
- {
-  "path": "/api/auth/google/callback",
-  "methods": [
-   "GET"
-  ],
-  "name": "google_callback"
- },
- {
-  "path": "/api/auth/google/exchange",
-  "methods": [
-   "POST"
-  ],
-  "name": "google_exchange"
- },
- {
-  "path": "/api/attendance/month",
-  "methods": [
-   "GET"
-  ],
-  "name": "attendance_month"
- },
- {
-  "path": "/api/attendance/summary",
-  "methods": [
-   "GET"
-  ],
-  "name": "attendance_summary"
- },
- {
-  "path": "/api/attendance/mark",
-  "methods": [
-   "POST"
-  ],
-  "name": "mark_attendance"
- },
- {
-  "path": "/api/attendance/leave",
-  "methods": [
-   "POST"
-  ],
-  "name": "request_leave"
- },
- {
-  "path": "/api/attendance/leave",
-  "methods": [
-   "GET"
-  ],
-  "name": "list_leave"
- },
- {
-  "path": "/api/attendance/leave/{leave_id}",
+  "path": "/api/compliance/dues/{due_id}",
   "methods": [
    "PATCH"
   ],
-  "name": "decide_leave"
+  "name": "update_due"
  },
  {
-  "path": "/api/attendance/holidays",
-  "methods": [
-   "POST"
-  ],
-  "name": "add_holiday"
- },
- {
-  "path": "/api/attendance/holidays",
+  "path": "/api/compliance/records",
   "methods": [
    "GET"
   ],
-  "name": "list_holidays"
+  "name": "list_records"
+ },
+ {
+  "path": "/api/compliance/records",
+  "methods": [
+   "POST"
+  ],
+  "name": "create_record"
+ },
+ {
+  "path": "/api/compliance/records/{record_id}",
+  "methods": [
+   "DELETE"
+  ],
+  "name": "delete_record"
+ },
+ {
+  "path": "/api/compliance/records/{record_id}",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "update_record"
+ },
+ {
+  "path": "/api/dashboard/activities",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_recent_activities"
+ },
+ {
+  "path": "/api/dashboard/stats",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_dashboard_stats"
+ },
+ {
+  "path": "/api/dashboard/visa-alerts",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_visa_alerts"
+ },
+ {
+  "path": "/api/disclosure/{engagement_id}",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_disclosure"
+ },
+ {
+  "path": "/api/disclosure/{engagement_id}",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "patch_disclosure"
+ },
+ {
+  "path": "/api/doc-requests",
+  "methods": [
+   "GET"
+  ],
+  "name": "list_doc_requests"
+ },
+ {
+  "path": "/api/doc-requests",
+  "methods": [
+   "POST"
+  ],
+  "name": "create_doc_request"
+ },
+ {
+  "path": "/api/doc-requests/templates",
+  "methods": [
+   "GET"
+  ],
+  "name": "list_pbc_templates"
+ },
+ {
+  "path": "/api/doc-requests/{request_id}",
+  "methods": [
+   "DELETE"
+  ],
+  "name": "delete_doc_request"
+ },
+ {
+  "path": "/api/doc-requests/{request_id}",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_doc_request"
+ },
+ {
+  "path": "/api/documents",
+  "methods": [
+   "GET"
+  ],
+  "name": "list_documents"
+ },
+ {
+  "path": "/api/documents/{file_id}",
+  "methods": [
+   "DELETE"
+  ],
+  "name": "delete_document"
+ },
+ {
+  "path": "/api/drive/callback",
+  "methods": [
+   "GET"
+  ],
+  "name": "drive_callback"
+ },
+ {
+  "path": "/api/drive/connect",
+  "methods": [
+   "GET"
+  ],
+  "name": "connect_drive"
+ },
+ {
+  "path": "/api/drive/disconnect",
+  "methods": [
+   "POST"
+  ],
+  "name": "disconnect_drive"
+ },
+ {
+  "path": "/api/drive/files",
+  "methods": [
+   "GET"
+  ],
+  "name": "list_drive_files"
+ },
+ {
+  "path": "/api/drive/provision-folders",
+  "methods": [
+   "POST"
+  ],
+  "name": "provision_client_folders"
+ },
+ {
+  "path": "/api/drive/status",
+  "methods": [
+   "GET"
+  ],
+  "name": "drive_status"
+ },
+ {
+  "path": "/api/drive/sync-document/{file_id}",
+  "methods": [
+   "POST"
+  ],
+  "name": "sync_document_to_drive"
+ },
+ {
+  "path": "/api/einvoicing/archive",
+  "methods": [
+   "GET"
+  ],
+  "name": "archive_list"
+ },
+ {
+  "path": "/api/einvoicing/deadlines",
+  "methods": [
+   "GET"
+  ],
+  "name": "deadlines"
+ },
+ {
+  "path": "/api/einvoicing/invoices/{invoice_id}",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "update_invoice_einvoicing"
+ },
+ {
+  "path": "/api/einvoicing/invoices/{invoice_id}/pintae",
+  "methods": [
+   "GET"
+  ],
+  "name": "generate_pintae"
+ },
+ {
+  "path": "/api/einvoicing/invoices/{invoice_id}/validate",
+  "methods": [
+   "GET"
+  ],
+  "name": "validate_invoice"
+ },
+ {
+  "path": "/api/einvoicing/overview",
+  "methods": [
+   "GET"
+  ],
+  "name": "overview"
+ },
+ {
+  "path": "/api/einvoicing/readiness/{client_id}",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "update_readiness"
+ },
+ {
+  "path": "/api/events",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_events"
+ },
+ {
+  "path": "/api/events",
+  "methods": [
+   "POST"
+  ],
+  "name": "create_event"
+ },
+ {
+  "path": "/api/events/{event_id}",
+  "methods": [
+   "DELETE"
+  ],
+  "name": "delete_event"
+ },
+ {
+  "path": "/api/export/audit-report/{engagement_id}",
+  "methods": [
+   "GET"
+  ],
+  "name": "export_audit_report"
+ },
+ {
+  "path": "/api/export/clients-csv",
+  "methods": [
+   "GET"
+  ],
+  "name": "export_clients_csv"
+ },
+ {
+  "path": "/api/export/vat-return/{engagement_id}",
+  "methods": [
+   "GET"
+  ],
+  "name": "export_vat_return"
+ },
+ {
+  "path": "/api/files/upload",
+  "methods": [
+   "POST"
+  ],
+  "name": "upload_file"
+ },
+ {
+  "path": "/api/files/{file_id}",
+  "methods": [
+   "GET"
+  ],
+  "name": "download_file"
+ },
+ {
+  "path": "/api/insights/costing/sync-hours/{engagement_id}",
+  "methods": [
+   "POST"
+  ],
+  "name": "sync_costing_hours"
+ },
+ {
+  "path": "/api/insights/regulatory-deadlines",
+  "methods": [
+   "GET"
+  ],
+  "name": "regulatory_deadlines"
+ },
+ {
+  "path": "/api/insights/renew",
+  "methods": [
+   "POST"
+  ],
+  "name": "renew_engagement"
+ },
+ {
+  "path": "/api/insights/renewal-candidates",
+  "methods": [
+   "GET"
+  ],
+  "name": "renewal_candidates"
+ },
+ {
+  "path": "/api/insights/retainers",
+  "methods": [
+   "GET"
+  ],
+  "name": "list_retainers"
+ },
+ {
+  "path": "/api/insights/retainers/generate",
+  "methods": [
+   "POST"
+  ],
+  "name": "generate_retainer_drafts"
+ },
+ {
+  "path": "/api/insights/review-notes/{note_id}/clear",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "clear_review_note"
+ },
+ {
+  "path": "/api/insights/sanctions-screen",
+  "methods": [
+   "GET"
+  ],
+  "name": "sanctions_screen"
+ },
+ {
+  "path": "/api/insights/staff-utilization",
+  "methods": [
+   "GET"
+  ],
+  "name": "staff_utilization"
+ },
+ {
+  "path": "/api/invoices",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_all_invoices"
+ },
+ {
+  "path": "/api/invoices",
+  "methods": [
+   "POST"
+  ],
+  "name": "create_invoice"
+ },
+ {
+  "path": "/api/invoices/ageing-report",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_ageing_report"
+ },
+ {
+  "path": "/api/invoices/billing-summary",
+  "methods": [
+   "GET"
+  ],
+  "name": "billing_summary"
+ },
+ {
+  "path": "/api/invoices/follow-up",
+  "methods": [
+   "POST"
+  ],
+  "name": "create_follow_up"
+ },
+ {
+  "path": "/api/invoices/{invoice_id}",
+  "methods": [
+   "DELETE"
+  ],
+  "name": "delete_invoice"
+ },
+ {
+  "path": "/api/invoices/{invoice_id}",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "update_invoice"
+ },
+ {
+  "path": "/api/invoices/{invoice_id}/cancel",
+  "methods": [
+   "POST"
+  ],
+  "name": "cancel_invoice"
+ },
+ {
+  "path": "/api/invoices/{invoice_id}/credit",
+  "methods": [
+   "POST"
+  ],
+  "name": "add_credit"
+ },
+ {
+  "path": "/api/invoices/{invoice_id}/issue",
+  "methods": [
+   "POST"
+  ],
+  "name": "issue_draft"
+ },
+ {
+  "path": "/api/invoices/{invoice_id}/pdf",
+  "methods": [
+   "GET"
+  ],
+  "name": "invoice_pdf"
+ },
+ {
+  "path": "/api/invoices/{invoice_id}/receipts",
+  "methods": [
+   "POST"
+  ],
+  "name": "add_receipt"
+ },
+ {
+  "path": "/api/journal/{engagement_id}",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_journal"
+ },
+ {
+  "path": "/api/journal/{engagement_id}",
+  "methods": [
+   "POST"
+  ],
+  "name": "add_journal_note"
+ },
+ {
+  "path": "/api/journal/{engagement_id}/brief",
+  "methods": [
+   "GET"
+  ],
+  "name": "handover_brief"
  },
  {
   "path": "/api/leads",
@@ -1225,39 +1043,186 @@
   "name": "convert_lead"
  },
  {
-  "path": "/api/doc-requests/templates",
+  "path": "/api/ledger/integrations",
   "methods": [
    "GET"
   ],
-  "name": "list_pbc_templates"
+  "name": "integrations"
  },
  {
-  "path": "/api/doc-requests",
+  "path": "/api/ledger/integrations/{client_id}",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "set_accounting_system"
+ },
+ {
+  "path": "/api/ledger/{engagement_id}",
+  "methods": [
+   "GET"
+  ],
+  "name": "ledger_summary"
+ },
+ {
+  "path": "/api/ledger/{engagement_id}/ingest/confirm",
   "methods": [
    "POST"
   ],
-  "name": "create_doc_request"
+  "name": "ledger_confirm"
  },
  {
-  "path": "/api/doc-requests",
+  "path": "/api/ledger/{engagement_id}/ingest/preview",
+  "methods": [
+   "POST"
+  ],
+  "name": "ledger_preview"
+ },
+ {
+  "path": "/api/mailbox/emails",
   "methods": [
    "GET"
   ],
-  "name": "list_doc_requests"
+  "name": "list_mail_emails"
  },
  {
-  "path": "/api/doc-requests/{request_id}",
+  "path": "/api/mailbox/emails/{email_id}/dismiss",
+  "methods": [
+   "POST"
+  ],
+  "name": "dismiss_mail"
+ },
+ {
+  "path": "/api/mailbox/poll",
+  "methods": [
+   "POST"
+  ],
+  "name": "mailbox_poll"
+ },
+ {
+  "path": "/api/mailbox/status",
   "methods": [
    "GET"
   ],
-  "name": "get_doc_request"
+  "name": "mailbox_status"
  },
  {
-  "path": "/api/doc-requests/{request_id}",
+  "path": "/api/notifications",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_notifications"
+ },
+ {
+  "path": "/api/notifications/{notification_id}/dismiss",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "dismiss_notification"
+ },
+ {
+  "path": "/api/onboarding",
+  "methods": [
+   "POST"
+  ],
+  "name": "onboard_client"
+ },
+ {
+  "path": "/api/onboarding/client/{client_id}",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_client_onboardings"
+ },
+ {
+  "path": "/api/onboarding/document-checklist",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_onboarding_doc_checklist"
+ },
+ {
+  "path": "/api/onboarding/{onboarding_id}",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_onboarding_record"
+ },
+ {
+  "path": "/api/onboarding/{onboarding_id}",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "update_onboarding_stage"
+ },
+ {
+  "path": "/api/onboarding/{onboarding_id}/documents",
+  "methods": [
+   "POST"
+  ],
+  "name": "upload_onboarding_document"
+ },
+ {
+  "path": "/api/policy-library",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_policy_library"
+ },
+ {
+  "path": "/api/policy-library/{key}",
+  "methods": [
+   "PUT"
+  ],
+  "name": "put_policy"
+ },
+ {
+  "path": "/api/proposal-templates",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_proposal_templates"
+ },
+ {
+  "path": "/api/proposal-templates",
+  "methods": [
+   "POST"
+  ],
+  "name": "create_proposal_template"
+ },
+ {
+  "path": "/api/proposal-templates/{template_id}",
   "methods": [
    "DELETE"
   ],
-  "name": "delete_doc_request"
+  "name": "delete_proposal_template"
+ },
+ {
+  "path": "/api/proposals",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_proposals"
+ },
+ {
+  "path": "/api/proposals",
+  "methods": [
+   "POST"
+  ],
+  "name": "create_proposal"
+ },
+ {
+  "path": "/api/proposals/{proposal_id}",
+  "methods": [
+   "DELETE"
+  ],
+  "name": "delete_proposal"
+ },
+ {
+  "path": "/api/proposals/{proposal_id}",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "update_proposal"
  },
  {
   "path": "/api/public/doc-requests/{token}",
@@ -1274,81 +1239,137 @@
   "name": "portal_upload"
  },
  {
-  "path": "/api/insights/retainers",
-  "methods": [
-   "GET"
-  ],
-  "name": "list_retainers"
- },
- {
-  "path": "/api/insights/retainers/generate",
+  "path": "/api/push/send-deadline-alerts",
   "methods": [
    "POST"
   ],
-  "name": "generate_retainer_drafts"
+  "name": "send_deadline_push_alerts"
  },
  {
-  "path": "/api/insights/regulatory-deadlines",
-  "methods": [
-   "GET"
-  ],
-  "name": "regulatory_deadlines"
- },
- {
-  "path": "/api/insights/costing/sync-hours/{engagement_id}",
+  "path": "/api/push/subscribe",
   "methods": [
    "POST"
   ],
-  "name": "sync_costing_hours"
+  "name": "subscribe_push"
  },
  {
-  "path": "/api/insights/renewal-candidates",
-  "methods": [
-   "GET"
-  ],
-  "name": "renewal_candidates"
- },
- {
-  "path": "/api/insights/renew",
+  "path": "/api/push/test",
   "methods": [
    "POST"
   ],
-  "name": "renew_engagement"
+  "name": "test_push"
  },
  {
-  "path": "/api/insights/staff-utilization",
-  "methods": [
-   "GET"
-  ],
-  "name": "staff_utilization"
- },
- {
-  "path": "/api/insights/sanctions-screen",
-  "methods": [
-   "GET"
-  ],
-  "name": "sanctions_screen"
- },
- {
-  "path": "/api/service/engagements/{engagement_id}/review-notes",
-  "methods": [
-   "GET"
-  ],
-  "name": "list_review_notes"
- },
- {
-  "path": "/api/service/engagements/{engagement_id}/review-notes",
+  "path": "/api/push/unsubscribe",
   "methods": [
    "POST"
   ],
-  "name": "add_review_note"
+  "name": "unsubscribe_push"
  },
  {
-  "path": "/api/insights/review-notes/{note_id}/clear",
+  "path": "/api/push/vapid-key",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_vapid_public_key"
+ },
+ {
+  "path": "/api/queries/{query_id}/close",
+  "methods": [
+   "POST"
+  ],
+  "name": "close_query"
+ },
+ {
+  "path": "/api/receipts/{engagement_id}",
+  "methods": [
+   "GET"
+  ],
+  "name": "list_receipts"
+ },
+ {
+  "path": "/api/receipts/{engagement_id}/upload",
+  "methods": [
+   "POST"
+  ],
+  "name": "upload_receipt"
+ },
+ {
+  "path": "/api/receipts/{engagement_id}/{receipt_id}",
+  "methods": [
+   "DELETE"
+  ],
+  "name": "delete_receipt"
+ },
+ {
+  "path": "/api/receipts/{engagement_id}/{receipt_id}",
   "methods": [
    "PATCH"
   ],
-  "name": "clear_review_note"
+  "name": "update_receipt"
+ },
+ {
+  "path": "/api/receipts/{engagement_id}/{receipt_id}/file",
+  "methods": [
+   "GET"
+  ],
+  "name": "receipt_file"
+ },
+ {
+  "path": "/api/reminders",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_reminders"
+ },
+ {
+  "path": "/api/service/engagement-terms",
+  "methods": [
+   "GET"
+  ],
+  "name": "engagement_terms"
+ },
+ {
+  "path": "/api/service/engagements",
+  "methods": [
+   "GET"
+  ],
+  "name": "list_service_engagements"
+ },
+ {
+  "path": "/api/service/engagements",
+  "methods": [
+   "POST"
+  ],
+  "name": "create_service_engagement"
+ },
+ {
+  "path": "/api/service/engagements/{engagement_id}",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "update_service_engagement"
+ },
+ {
+  "path": "/api/service/engagements/{engagement_id}/ajes",
+  "methods": [
+   "GET"
+  ],
+  "name": "list_ajes"
+ },
+ {
+  "path": "/api/service/engagements/{engagement_id}/ajes",
+  "methods": [
+   "POST"
+  ],
+  "name": "create_aje"
+ },
+ {
+  "path": "/api/service/engagements/{engagement_id}/approve",
+  "methods": [
+   "POST"
+  ],
+  "name": "bypass_approve_engagement"
  },
  {
   "path": "/api/service/engagements/{engagement_id}/assumptions",
@@ -1372,88 +1393,25 @@
   "name": "remove_assumption"
  },
  {
-  "path": "/api/tb/{engagement_id}/import/preview",
-  "methods": [
-   "POST"
-  ],
-  "name": "import_preview"
- },
- {
-  "path": "/api/tb/{engagement_id}/import/confirm",
-  "methods": [
-   "POST"
-  ],
-  "name": "import_confirm"
- },
- {
-  "path": "/api/tb/{engagement_id}/client-documents",
-  "methods": [
-   "GET"
-  ],
-  "name": "client_documents"
- },
- {
-  "path": "/api/tb/{engagement_id}",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_tb"
- },
- {
-  "path": "/api/tb/{engagement_id}/mapping",
+  "path": "/api/service/engagements/{engagement_id}/checklist",
   "methods": [
    "PATCH"
   ],
-  "name": "set_mapping"
+  "name": "toggle_checklist_item"
  },
  {
-  "path": "/api/tb/{engagement_id}/automap",
+  "path": "/api/service/engagements/{engagement_id}/checklist/items",
   "methods": [
    "POST"
   ],
-  "name": "automap"
+  "name": "add_checklist_item"
  },
  {
-  "path": "/api/tb/{engagement_id}/checks",
-  "methods": [
-   "GET"
-  ],
-  "name": "tb_checks"
- },
- {
-  "path": "/api/tb/{engagement_id}",
+  "path": "/api/service/engagements/{engagement_id}/checklist/items/{group_index}/{item_index}",
   "methods": [
    "DELETE"
   ],
-  "name": "delete_tb"
- },
- {
-  "path": "/api/journal/{engagement_id}",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_journal"
- },
- {
-  "path": "/api/journal/{engagement_id}",
-  "methods": [
-   "POST"
-  ],
-  "name": "add_journal_note"
- },
- {
-  "path": "/api/journal/{engagement_id}/brief",
-  "methods": [
-   "GET"
-  ],
-  "name": "handover_brief"
- },
- {
-  "path": "/api/service/engagements/{engagement_id}/queries",
-  "methods": [
-   "POST"
-  ],
-  "name": "raise_query"
+  "name": "remove_checklist_item"
  },
  {
   "path": "/api/service/engagements/{engagement_id}/queries",
@@ -1463,158 +1421,193 @@
   "name": "list_engagement_queries"
  },
  {
-  "path": "/api/queries/{query_id}/close",
+  "path": "/api/service/engagements/{engagement_id}/queries",
   "methods": [
    "POST"
   ],
-  "name": "close_query"
+  "name": "raise_query"
  },
  {
-  "path": "/api/client-portal/queries",
+  "path": "/api/service/engagements/{engagement_id}/review-notes",
   "methods": [
    "GET"
   ],
-  "name": "client_queries"
+  "name": "list_review_notes"
  },
  {
-  "path": "/api/client-portal/queries/{query_id}/reply",
+  "path": "/api/service/engagements/{engagement_id}/review-notes",
   "methods": [
    "POST"
   ],
-  "name": "client_reply"
+  "name": "add_review_note"
  },
  {
-  "path": "/api/service/engagements/{engagement_id}/ajes",
+  "path": "/api/service/workflows-for-type",
   "methods": [
    "GET"
   ],
-  "name": "list_ajes"
+  "name": "get_workflows_for_service"
  },
  {
-  "path": "/api/service/engagements/{engagement_id}/ajes",
+  "path": "/api/settings/firm",
   "methods": [
-   "POST"
+   "GET"
   ],
-  "name": "create_aje"
+  "name": "get_firm_settings"
  },
  {
-  "path": "/api/ajes/{aje_id}",
+  "path": "/api/settings/firm",
   "methods": [
    "PATCH"
   ],
-  "name": "update_aje"
+  "name": "update_firm_settings"
  },
  {
-  "path": "/api/ajes/{aje_id}/signoff",
+  "path": "/api/settings/password-reset-requests",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_pending_reset_requests"
+ },
+ {
+  "path": "/api/settings/rbac",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_rbac"
+ },
+ {
+  "path": "/api/settings/rbac",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "update_rbac"
+ },
+ {
+  "path": "/api/settings/rbac-public",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_rbac_public"
+ },
+ {
+  "path": "/api/settings/reminder-config",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_reminder_config"
+ },
+ {
+  "path": "/api/settings/reminder-config",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "update_reminder_config"
+ },
+ {
+  "path": "/api/settings/storage",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_storage_config"
+ },
+ {
+  "path": "/api/settings/storage",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "update_storage_config"
+ },
+ {
+  "path": "/api/settings/user-access",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_all_user_access"
+ },
+ {
+  "path": "/api/settings/user-access/{user_id}",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "update_user_access"
+ },
+ {
+  "path": "/api/settings/users",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_all_users"
+ },
+ {
+  "path": "/api/settings/users",
   "methods": [
    "POST"
   ],
-  "name": "signoff_aje"
+  "name": "create_user"
  },
  {
-  "path": "/api/ajes/{aje_id}/unsignoff",
+  "path": "/api/settings/users/{user_id}",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "update_user"
+ },
+ {
+  "path": "/api/settings/users/{user_id}/approve",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "approve_user"
+ },
+ {
+  "path": "/api/settings/users/{user_id}/generate-reset-code",
   "methods": [
    "POST"
   ],
-  "name": "unsignoff_aje"
+  "name": "admin_generate_reset_code"
  },
  {
-  "path": "/api/ajes/{aje_id}",
+  "path": "/api/settings/users/{user_id}/reject",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "reject_user"
+ },
+ {
+  "path": "/api/settings/users/{user_id}/reset-password",
+  "methods": [
+   "POST"
+  ],
+  "name": "admin_reset_user_password"
+ },
+ {
+  "path": "/api/settings/workflows",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_workflows"
+ },
+ {
+  "path": "/api/settings/workflows",
+  "methods": [
+   "POST"
+  ],
+  "name": "create_workflow"
+ },
+ {
+  "path": "/api/settings/workflows/{workflow_id}",
   "methods": [
    "DELETE"
   ],
-  "name": "delete_aje"
+  "name": "delete_workflow"
  },
  {
-  "path": "/api/tb/{engagement_id}/final",
-  "methods": [
-   "GET"
-  ],
-  "name": "tb_final"
- },
- {
-  "path": "/api/einvoicing/overview",
-  "methods": [
-   "GET"
-  ],
-  "name": "overview"
- },
- {
-  "path": "/api/einvoicing/readiness/{client_id}",
+  "path": "/api/settings/workflows/{workflow_id}",
   "methods": [
    "PATCH"
   ],
-  "name": "update_readiness"
- },
- {
-  "path": "/api/einvoicing/deadlines",
-  "methods": [
-   "GET"
-  ],
-  "name": "deadlines"
- },
- {
-  "path": "/api/einvoicing/invoices/{invoice_id}/validate",
-  "methods": [
-   "GET"
-  ],
-  "name": "validate_invoice"
- },
- {
-  "path": "/api/einvoicing/invoices/{invoice_id}",
-  "methods": [
-   "PATCH"
-  ],
-  "name": "update_invoice_einvoicing"
- },
- {
-  "path": "/api/einvoicing/invoices/{invoice_id}/pintae",
-  "methods": [
-   "GET"
-  ],
-  "name": "generate_pintae"
- },
- {
-  "path": "/api/einvoicing/archive",
-  "methods": [
-   "GET"
-  ],
-  "name": "archive_list"
- },
- {
-  "path": "/api/ledger/{engagement_id}/ingest/preview",
-  "methods": [
-   "POST"
-  ],
-  "name": "ledger_preview"
- },
- {
-  "path": "/api/ledger/{engagement_id}/ingest/confirm",
-  "methods": [
-   "POST"
-  ],
-  "name": "ledger_confirm"
- },
- {
-  "path": "/api/ledger/integrations",
-  "methods": [
-   "GET"
-  ],
-  "name": "integrations"
- },
- {
-  "path": "/api/ledger/integrations/{client_id}",
-  "methods": [
-   "PATCH"
-  ],
-  "name": "set_accounting_system"
- },
- {
-  "path": "/api/ledger/{engagement_id}",
-  "methods": [
-   "GET"
-  ],
-  "name": "ledger_summary"
+  "name": "update_workflow"
  },
  {
   "path": "/api/statements/{engagement_id}",
@@ -1638,95 +1631,11 @@
   "name": "get_cashflow"
  },
  {
-  "path": "/api/statements/{engagement_id}/pdf",
+  "path": "/api/statements/{engagement_id}/notes",
   "methods": [
    "GET"
   ],
-  "name": "statements_pdf"
- },
- {
-  "path": "/api/statements/{engagement_id}/pack",
-  "methods": [
-   "GET"
-  ],
-  "name": "deliverable_pack"
- },
- {
-  "path": "/api/receipts/{engagement_id}/upload",
-  "methods": [
-   "POST"
-  ],
-  "name": "upload_receipt"
- },
- {
-  "path": "/api/receipts/{engagement_id}",
-  "methods": [
-   "GET"
-  ],
-  "name": "list_receipts"
- },
- {
-  "path": "/api/receipts/{engagement_id}/{receipt_id}/file",
-  "methods": [
-   "GET"
-  ],
-  "name": "receipt_file"
- },
- {
-  "path": "/api/receipts/{engagement_id}/{receipt_id}",
-  "methods": [
-   "PATCH"
-  ],
-  "name": "update_receipt"
- },
- {
-  "path": "/api/receipts/{engagement_id}/{receipt_id}",
-  "methods": [
-   "DELETE"
-  ],
-  "name": "delete_receipt"
- },
- {
-  "path": "/api/vat/recon/{engagement_id}",
-  "methods": [
-   "GET"
-  ],
-  "name": "vat_reconciliation"
- },
- {
-  "path": "/api/vat/recon/{engagement_id}/{period_key}",
-  "methods": [
-   "PATCH"
-  ],
-  "name": "review_period"
- },
- {
-  "path": "/api/vat/recon/{engagement_id}/{period_key}",
-  "methods": [
-   "DELETE"
-  ],
-  "name": "unreview_period"
- },
- {
-  "path": "/api/disclosure/{engagement_id}",
-  "methods": [
-   "GET"
-  ],
-  "name": "get_disclosure"
- },
- {
-  "path": "/api/disclosure/{engagement_id}",
-  "methods": [
-   "PATCH"
-  ],
-  "name": "patch_disclosure"
- },
- {
-  "path": "/api/statements/{engagement_id}/notes/{note_id}/predraft",
-  "methods": [
-   "POST"
-  ],
-  "name": "predraft_note"
+  "name": "get_notes"
  },
  {
   "path": "/api/statements/{engagement_id}/notes/{note_id}",
@@ -1743,73 +1652,192 @@
   "name": "clear_note"
  },
  {
-  "path": "/api/statements/{engagement_id}/notes",
+  "path": "/api/statements/{engagement_id}/notes/{note_id}/predraft",
+  "methods": [
+   "POST"
+  ],
+  "name": "predraft_note"
+ },
+ {
+  "path": "/api/statements/{engagement_id}/pack",
   "methods": [
    "GET"
   ],
-  "name": "get_notes"
+  "name": "deliverable_pack"
  },
  {
-  "path": "/api/policy-library",
+  "path": "/api/statements/{engagement_id}/pdf",
   "methods": [
    "GET"
   ],
-  "name": "get_policy_library"
+  "name": "statements_pdf"
  },
  {
-  "path": "/api/policy-library/{key}",
-  "methods": [
-   "PUT"
-  ],
-  "name": "put_policy"
- },
- {
-  "path": "/api/audit/{engagement_id}/materiality",
+  "path": "/api/tasks",
   "methods": [
    "GET"
   ],
-  "name": "get_materiality"
+  "name": "get_tasks"
  },
  {
-  "path": "/api/audit/{engagement_id}/materiality",
+  "path": "/api/tasks",
+  "methods": [
+   "POST"
+  ],
+  "name": "create_task"
+ },
+ {
+  "path": "/api/tasks/bulk-preview",
+  "methods": [
+   "POST"
+  ],
+  "name": "preview_bulk_upload"
+ },
+ {
+  "path": "/api/tasks/bulk-upload",
+  "methods": [
+   "POST"
+  ],
+  "name": "bulk_upload_tasks"
+ },
+ {
+  "path": "/api/tasks/{task_id}",
   "methods": [
    "PATCH"
   ],
-  "name": "set_materiality"
+  "name": "update_task"
  },
  {
-  "path": "/api/audit/{engagement_id}/je-tests",
+  "path": "/api/tb/{engagement_id}",
+  "methods": [
+   "DELETE"
+  ],
+  "name": "delete_tb"
+ },
+ {
+  "path": "/api/tb/{engagement_id}",
   "methods": [
    "GET"
   ],
-  "name": "je_tests"
+  "name": "get_tb"
  },
  {
-  "path": "/api/audit/{engagement_id}/corporate-tax",
+  "path": "/api/tb/{engagement_id}/automap",
+  "methods": [
+   "POST"
+  ],
+  "name": "automap"
+ },
+ {
+  "path": "/api/tb/{engagement_id}/checks",
   "methods": [
    "GET"
   ],
-  "name": "corporate_tax"
+  "name": "tb_checks"
  },
  {
-  "path": "/api/audit/{engagement_id}/corporate-tax",
+  "path": "/api/tb/{engagement_id}/client-documents",
+  "methods": [
+   "GET"
+  ],
+  "name": "client_documents"
+ },
+ {
+  "path": "/api/tb/{engagement_id}/final",
+  "methods": [
+   "GET"
+  ],
+  "name": "tb_final"
+ },
+ {
+  "path": "/api/tb/{engagement_id}/import/confirm",
+  "methods": [
+   "POST"
+  ],
+  "name": "import_confirm"
+ },
+ {
+  "path": "/api/tb/{engagement_id}/import/preview",
+  "methods": [
+   "POST"
+  ],
+  "name": "import_preview"
+ },
+ {
+  "path": "/api/tb/{engagement_id}/mapping",
   "methods": [
    "PATCH"
   ],
-  "name": "set_ct_adjustments"
+  "name": "set_mapping"
  },
  {
-  "path": "/api/audit/{engagement_id}/risk-memo",
+  "path": "/api/vat/filings",
   "methods": [
    "GET"
   ],
-  "name": "risk_memo"
+  "name": "get_vat_filings"
  },
  {
-  "path": "/api/audit/{engagement_id}/pack-staleness",
+  "path": "/api/vat/filings",
+  "methods": [
+   "POST"
+  ],
+  "name": "create_vat_filing"
+ },
+ {
+  "path": "/api/vat/filings/{filing_id}",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "update_vat_filing"
+ },
+ {
+  "path": "/api/vat/recon/{engagement_id}",
   "methods": [
    "GET"
   ],
-  "name": "pack_staleness"
+  "name": "vat_reconciliation"
+ },
+ {
+  "path": "/api/vat/recon/{engagement_id}/{period_key}",
+  "methods": [
+   "DELETE"
+  ],
+  "name": "unreview_period"
+ },
+ {
+  "path": "/api/vat/recon/{engagement_id}/{period_key}",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "review_period"
+ },
+ {
+  "path": "/api/vat/registrations",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_vat_registrations"
+ },
+ {
+  "path": "/api/vat/registrations",
+  "methods": [
+   "POST"
+  ],
+  "name": "create_vat_registration"
+ },
+ {
+  "path": "/api/vat/registrations/{registration_id}",
+  "methods": [
+   "GET"
+  ],
+  "name": "get_vat_registration"
+ },
+ {
+  "path": "/api/vat/registrations/{registration_id}",
+  "methods": [
+   "PATCH"
+  ],
+  "name": "update_vat_registration"
  }
 ]
