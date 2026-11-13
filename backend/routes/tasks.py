@@ -98,6 +98,11 @@ async def update_task(task_id: str, status: Optional[str] = None, payload: Optio
             update_data["progress"] = max(0, min(100, int(payload["progress"])))
         if "blocker" in payload:
             update_data["blocker"] = (payload.get("blocker") or "").strip() or None
+        if payload.get("due_date") is not None:
+            dd = str(payload["due_date"]).strip()
+            # accept YYYY-MM-DD only — keeps sorting/comparison logic valid
+            datetime.strptime(dd, "%Y-%m-%d")
+            update_data["due_date"] = dd
         if payload.get("status") and not status:
             update_data["status"] = payload["status"]
             if payload["status"] == "Completed":

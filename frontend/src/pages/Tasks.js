@@ -354,6 +354,9 @@ const Tasks = () => {
             <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)' }}>PROGRESS %</label>
             <input type="number" min={0} max={100} value={editForm.progress} onChange={e => setEditForm({ ...editForm, progress: e.target.value })} data-testid="edit-progress"
               style={{ width: '100%', padding: '9px 10px', borderRadius: 8, border: '1px solid var(--line, #e4eff6)', background: '#fff', color: 'var(--text)', fontSize: 12.5, marginBottom: 10, boxSizing: 'border-box' }} />
+            <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)' }}>TARGET DATE</label>
+            <input type="date" value={editForm.due_date || ''} onChange={e => setEditForm({ ...editForm, due_date: e.target.value })} data-testid="edit-due-date"
+              style={{ width: '100%', padding: '9px 10px', borderRadius: 8, border: '1px solid var(--line, #e4eff6)', background: '#fff', color: 'var(--text)', fontSize: 12.5, marginBottom: 10, boxSizing: 'border-box' }} />
             <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)' }}>CLIENT BLOCKER (optional)</label>
             <input value={editForm.blocker} onChange={e => setEditForm({ ...editForm, blocker: e.target.value })} placeholder="e.g. Trial balance awaited" data-testid="edit-blocker"
               style={{ width: '100%', padding: '9px 10px', borderRadius: 8, border: '1px solid var(--line, #e4eff6)', background: '#fff', color: 'var(--text)', fontSize: 12.5, marginBottom: 14, boxSizing: 'border-box' }} />
