@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useOutletContext, Link, useSearchParams, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Pencil, X } from 'lucide-react';
 import Avatar from '../components/Avatar';
 import Skeleton from '../components/Skeleton';
 
@@ -58,6 +58,9 @@ const Engagements = () => {  const { user } = useOutletContext();
   const [search, setSearch] = useState('');
   const [phaseFilter, setPhaseFilter] = useState('');
   const [staffFilter, setStaffFilter] = useState('');
+  const [engEdit, setEngEdit] = useState(null);      // engagement row being status-edited (partners)
+  const [engEditForm, setEngEditForm] = useState({ status: 'Active', assigned_to: '', assigned_to_name: '' });
+  const [staffList, setStaffList] = useState([]);
   const [statusFilter, setStatusFilter] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -95,6 +98,7 @@ const Engagements = () => {  const { user } = useOutletContext();
 
   useEffect(() => { loadEngs(); }, [loadEngs]);
   useEffect(() => {
+    axios.get(`${API}/auth/users-list`, { withCredentials: true }).then(r => setStaffList(Array.isArray(r.data) ? r.data : [])).catch(() => {});
     axios.get(`${API}/clients`, { withCredentials: true }).then(r => setClients(Array.isArray(r.data) ? r.data : [])).catch(() => {});
     axios.get(`${API}/auth/users-list`, { withCredentials: true }).then(r => setUsers(Array.isArray(r.data) ? r.data : [])).catch(() => {});
     axios.get(`${API}/service/engagement-terms`, { withCredentials: true }).then(r => setTermDefs(r.data)).catch(() => {});
@@ -128,6 +132,14 @@ const Engagements = () => {  const { user } = useOutletContext();
   };
   const qSelKey = qSel || '';  // '' = all quarters
 
+  const saveEngEdit = async () => {
+    try {
+      await axios.patch(`${API}/service/engagements/${engEdit.engagement_id}?status=${encodeURIComponent(engEditForm.status)}&assigned_to=${encodeURIComponent(engEditForm.assigned_to || '')}&assigned_to_name=${encodeURIComponent(engEditForm.assigned_to_name || '')}`, {}, { withCredentials: true });
+      setEngEdit(null);
+      await loadEngs();
+    } catch (err) { alert('Could not update the engagement'); }
+  };
+
   const rowRow = (e, n) => {
     const pct = progressOf(e);
     return (
@@ -148,7 +160,16 @@ const Engagements = () => {  const { user } = useOutletContext();
             : <span style={{ color: 'var(--muted)' }}>—</span>; })()}
         </td>
         <td data-testid="eng-due">{e.due_date ? fmt(e.due_date) : <span style={{ color: 'var(--muted)' }}>—</span>}</td>
-        <td><Link className="af-link" to={`/app/engagements/${e.engagement_id}`} data-testid={`open-eng-${e.engagement_id}`}>Open ↗</Link></td>
+        <td style={{ whiteSpace: 'nowrap' }}>
+          {user?.role === 'partner' && e.status !== 'Completed' && (
+            <button className="af-link" style={{ marginRight: 8 }} data-testid={`edit-eng-${e.engagement_id}`}
+              title="Update status / assignment"
+              onClick={() => { setEngEdit(e); setEngEditForm({ status: e.status, assigned_to: e.assigned_to || '', assigned_to_name: e.assigned_to_name || '' }); }}>
+              <Pencil size={12} />
+            </button>
+          )}
+          <Link className="af-link" to={`/app/engagements/${e.engagement_id}`} data-testid={`open-eng-${e.engagement_id}`}>Open ↗</Link>
+        </td>
       </tr>
     );
   };
@@ -329,6 +350,32 @@ const Engagements = () => {  const { user } = useOutletContext();
           </table>
         </div>
       </section>
+
+      {engEdit && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(1,20,35,0.45)', zIndex: 70, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setEngEdit(null)}>
+          <div className="af-card" style={{ width: 420, padding: 20 }} onClick={e => e.stopPropagation()} data-testid="edit-engagement-modal">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <h3 style={{ fontSize: 15 }}>Update engagement — {engEdit.client_name}</h3>
+              <button style={{ background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => setEngEdit(null)}><X size={16} /></button>
+            </div>
+            <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)' }}>STATUS</label>
+            <select value={engEditForm.status} onChange={e => setEngEditForm({ ...engEditForm, status: e.target.value })} data-testid="edit-eng-status"
+              style={{ width: '100%', padding: '9px 10px', borderRadius: 8, border: '1px solid var(--line, #e4eff6)', background: '#fff', color: 'var(--text)', fontSize: 12.5, marginBottom: 10 }}>
+              {['Active', 'Completed'].map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)' }}>ASSIGNED TO</label>
+            <select value={engEditForm.assigned_to} onChange={e => { const u = staffList.find(x => x.user_id === e.target.value); setEngEditForm({ ...engEditForm, assigned_to: e.target.value, assigned_to_name: u?.name || engEditForm.assigned_to_name }); }} data-testid="edit-eng-assigned"
+              style={{ width: '100%', padding: '9px 10px', borderRadius: 8, border: '1px solid var(--line, #e4eff6)', background: '#fff', color: 'var(--text)', fontSize: 12.5, marginBottom: 14 }}>
+              <option value="">Unassigned</option>
+              {staffList.map(u => <option key={u.user_id} value={u.user_id}>{u.name}</option>)}
+            </select>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button className="af-btn" onClick={() => setEngEdit(null)}>Cancel</button>
+              <button className="af-btn-primary" onClick={saveEngEdit} data-testid="save-eng-edit">Save</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Create modal */}
       {showCreate && (
