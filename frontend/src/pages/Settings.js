@@ -130,6 +130,8 @@ const Settings = () => {
 
   // Drive
   const [driveStatus, setDriveStatus] = useState(null);
+const [calSyncStatus, setCalSyncStatus] = useState(null);
+const [calSyncing, setCalSyncing] = useState(false);
   const [disconnectStep, setDisconnectStep] = useState(0); // 0 = hidden, 1 = confirm, 2 = type-to-confirm
   const [disconnectText, setDisconnectText] = useState('');
   const doDisconnectDrive = async () => {
@@ -148,7 +150,7 @@ const Settings = () => {
   useEffect(() => { loadSettings(); }, []);
   useEffect(() => { loadIntegrations(); }, []);
   useEffect(() => { if (tab === 'reset') loadDataStats(); }, [tab]);
-  useEffect(() => { if (tab === 'storage') loadDriveStatus(); }, [tab]);
+  useEffect(() => { if (tab === 'storage') { loadDriveStatus(); loadCalSyncStatus(); } }, [tab]);
   useEffect(() => { if (tab === 'reminders') loadReminderConfig(); }, [tab]);
   useEffect(() => { if (tab === 'user-access') loadUserAccess(); }, [tab]);
 
@@ -208,6 +210,24 @@ const Settings = () => {
       const res = await axios.get(`${API}/drive/status`, { withCredentials: true });
       setDriveStatus(res.data);
     } catch (err) { console.error(err); }
+  };
+
+  const loadCalSyncStatus = async () => {
+    try {
+      const res = await axios.get(`${API}/calendar/sync-status`, { withCredentials: true });
+      setCalSyncStatus(res.data);
+    } catch (err) { console.error(err); }
+  };
+
+  const syncDeadlinesToCalendar = async () => {
+    setCalSyncing(true);
+    try {
+      const res = await axios.post(`${API}/calendar/sync-deadlines`, {}, { withCredentials: true });
+      alert(`Calendar synced — ${res.data.pushed} event${res.data.pushed === 1 ? '' : 's'} created, ${res.data.updated} updated. See the "NNCA Compliance" calendar in Google Calendar.`);
+      await loadCalSyncStatus();
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Calendar sync failed');
+    } finally { setCalSyncing(false); }
   };
 
   const loadIntegrations = async () => {
@@ -1494,6 +1514,26 @@ const Settings = () => {
                 {resetting ? 'Resetting...' : resetSelected.length > 0 ? `Reset ${resetSelected.length} Selected` : 'Reset All Data'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* === STORAGE TAB - GOOGLE WORKSPACE NUDGES === */}
+      {tab === 'storage' && (
+        <div className="nn-card" style={{ overflow: 'hidden', marginTop: 14 }} data-testid="mailbox-calendar-card">
+          <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--nn-border)' }}>
+            <h3 style={{ fontSize: 14, fontFamily: 'DM Sans', color: 'var(--text)' }}>Mailbox nudges &amp; compliance calendar</h3>
+            <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>Client emails to care@ / tax@ / audit@ / compliance@ / info@ ring the notification bell. Deadlines and task due dates can be pushed to a "NNCA Compliance" Google Calendar.</p>
+          </div>
+          <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 12, color: 'var(--muted)' }} data-testid="cal-sync-status">
+              {calSyncStatus?.last_sync
+                ? `Last synced ${new Date(calSyncStatus.last_sync.at).toLocaleString()} — ${calSyncStatus.last_sync.pushed} created, ${calSyncStatus.last_sync.updated} updated`
+                : 'Compliance calendar not synced yet.'}
+            </div>
+            <button onClick={syncDeadlinesToCalendar} disabled={calSyncing} className="tbtn tbtn-gold" style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 6 }} data-testid="calendar-sync-btn">
+              <LinkIcon size={12} /> {calSyncing ? 'Syncing…' : 'Sync deadlines to Google Calendar'}
+            </button>
           </div>
         </div>
       )}

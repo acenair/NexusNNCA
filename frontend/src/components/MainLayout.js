@@ -40,6 +40,10 @@ const MainLayout = ({ user }) => {
   const [notifications, setNotifications] = useState([]);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [notifPermission, setNotifPermission] = useState(typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'default');
+  // Email filing (save client email to client file)
+  const [filingEmail, setFilingEmail] = useState(null);
+  const [filingClientId, setFilingClientId] = useState('');
+  const [filingBusy, setFilingBusy] = useState(false);
 
   // Forms
   const [taskForm, setTaskForm] = useState({ title: '', service_module: '', client_id: '', client_name: '', assigned_to: '', assigned_to_name: '', due_date: '', priority: 'Medium', description: '' });
@@ -516,6 +520,9 @@ const MainLayout = ({ user }) => {
                           <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>{n.title}</div>
                           <div style={{ fontSize: 11, color: 'var(--muted)' }}>{n.message}</div>
                           {n.due_date && <div style={{ fontSize: 10, color: n.severity === 'urgent' ? 'var(--red, #ef4444)' : 'var(--muted)', fontWeight: 600, marginTop: 3 }}>Due: {n.due_date}</div>}
+                          {n.type === 'client_email' && (
+                            <button onClick={() => { setFilingEmail(n); setFilingClientId(''); }} style={{ marginTop: 5, padding: '3px 8px', borderRadius: 6, border: '1px solid var(--gold)', background: 'rgba(14,109,180,0.06)', color: 'var(--gold4)', fontSize: 10, fontWeight: 600, cursor: 'pointer' }} data-testid={`file-email-${n.ref_id}`}>File to client</button>
+                          )}
                         </div>
                         <button onClick={() => dismissNotification(n.notification_id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--light)', padding: 2 }} data-testid={`dismiss-${n.notification_id}`}><X size={12} /></button>
                       </div>
@@ -606,6 +613,44 @@ const MainLayout = ({ user }) => {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* File email to client modal */}
+      {filingEmail && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(1,20,35,0.5)', zIndex: 90, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setFilingEmail(null)} data-testid="file-email-modal">
+          <div style={{ background: 'var(--white)', borderRadius: 12, width: 420, maxWidth: '92vw', padding: 20 }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', fontFamily: 'DM Sans' }}>File email to client</div>
+            <div style={{ fontSize: 12, color: 'var(--muted)', margin: '6px 0 12px' }}>
+              {filingEmail.title}{filingEmail.message ? ` — ${filingEmail.message}` : ''}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 4, fontWeight: 600 }}>Client</div>
+            <select value={filingClientId} onChange={e => setFilingClientId(e.target.value)}
+              style={{ width: '100%', padding: '9px 10px', borderRadius: 8, border: '1px solid var(--nn-border)', background: 'var(--off)', fontSize: 13, color: 'var(--text)' }} data-testid="file-email-client-select">
+              <option value="">Select a client…</option>
+              {clients.map(c => <option key={c.client_id} value={c.client_id}>{c.name}</option>)}
+            </select>
+            <div style={{ fontSize: 11, color: 'var(--muted)', margin: '10px 0 14px' }}>
+              The attachments and the original email (.eml) will be saved to the client's Documents and synced to their Drive folder.
+            </div>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button className="tbtn tbtn-outline" style={{ fontSize: 12 }} onClick={() => setFilingEmail(null)} data-testid="file-email-cancel">Cancel</button>
+              <button className="tbtn tbtn-blue" style={{ fontSize: 12 }} disabled={!filingClientId || filingBusy}
+                onClick={async () => {
+                  setFilingBusy(true);
+                  try {
+                    const res = await axios.post(`${API}/mailbox/emails/${filingEmail.ref_id}/file`, { client_id: filingClientId }, { withCredentials: true });
+                    const names = (res.data.filed_file_ids || []).length;
+                    setNotifications(prev => prev.filter(x => x.notification_id !== filingEmail.notification_id));
+                    setSuccessMsg(names > 0 ? `Filed to client — ${names} document${names === 1 ? '' : 's'} saved.` : 'Filed to client.');
+                    setTimeout(() => setSuccessMsg(''), 4000);
+                    setFilingEmail(null);
+                  } catch (e2) {
+                    alert(e2.response?.data?.detail || 'Could not file the email');
+                  } finally { setFilingBusy(false); }
+                }} data-testid="file-email-submit">{filingBusy ? 'Filing…' : 'File email'}</button>
+            </div>
           </div>
         </div>
       )}
