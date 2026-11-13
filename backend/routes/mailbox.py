@@ -311,7 +311,7 @@ async def sync_deadlines(authorization: str = Header(None), session_token: str =
         new_ev = cal.events().insert(calendarId=cal_id, body=body).execute()
         await db.calendar_syncs.update_one(
             {"type": "event", "key": nnca_key},
-            {"$set": {"event_id": new_ev["id"], "calendar_id": cal_id, "updated_at": _now()}},
+            {"$set": {"event_id": new_ev["id"], "calendar_id": cal_id, "updated_at": datetime.now(timezone.utc).isoformat()}},
             upsert=True)
         pushed += 1
 
