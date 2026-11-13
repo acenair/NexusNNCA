@@ -1,5 +1,5 @@
 """Routes / auth — extracted from server.py without behavior changes."""
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from pydantic import BaseModel
 from fastapi import Cookie
 from fastapi import HTTPException
@@ -21,6 +21,33 @@ import uuid
 from core import verify_password
 
 router = APIRouter(prefix="/api")
+
+# ---- Brute-force guard: per-IP+email failure counter (in-memory, resets on restart) ----
+import time as _time
+from collections import defaultdict as _dd
+
+_LOGIN_FAILS = _dd(list)  # key -> [timestamps of failed attempts]
+_LOGIN_WINDOW = 900  # 15 minutes
+_LOGIN_MAX_FAILS = 6
+
+
+def _client_ip(request=None):
+    if request is not None:
+        fwd = request.headers.get("x-forwarded-for") or ""
+        if fwd:
+            return fwd.split(",")[0].strip()
+        return request.client.host if request.client else "?"
+    return "?"
+
+
+def _login_guard_ok(key: str) -> bool:
+    now = _time.time()
+    _LOGIN_FAILS[key] = [t for t in _LOGIN_FAILS.get(key, []) if now - t < _LOGIN_WINDOW]
+    return len(_LOGIN_FAILS[key]) < _LOGIN_MAX_FAILS
+
+
+def _login_fail(key: str):
+    _LOGIN_FAILS[key].append(_time.time())
 
 
 @router.post("/auth/register")
@@ -53,9 +80,15 @@ class LoginRequest(BaseModel):
 
 
 @router.post("/auth/login")
-async def login(req: LoginRequest):
+async def login(req: LoginRequest, request: Request = None):
+    from fastapi import Request
+    # brute-force guard: 6 failed attempts per IP+email in 15 minutes -> 429
+    key = f"{_client_ip(request)}:{req.email.lower()}"
+    if not _login_guard_ok(key):
+        raise HTTPException(status_code=429, detail="Too many failed attempts — try again in 15 minutes")
     user_doc = await db.users.find_one({"email": req.email})
     if not user_doc or not verify_password(req.password, user_doc.get("password", "")):
+        _login_fail(key)
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
     session_token = create_jwt_token(user_doc["user_id"])
