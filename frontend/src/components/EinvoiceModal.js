@@ -85,7 +85,7 @@ const EinvoiceModal = ({ invoice, onClose }) => {
           </button>
         </div>
         <div style={{ flex: '1 1 0', minHeight: 0, overflowY: 'auto', margin: '0 -20px', padding: '0 20px' }}>
-
+        {!result && <div data-testid="einv-debug">state: result=null busy={String(busy)}</div>}
         {result && (() => {
           const fails = (result.issues || []).filter(i => i.severity === 'fail');
           const warns = (result.issues || []).filter(i => i.severity === 'warn');
