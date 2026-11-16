@@ -49,16 +49,16 @@ const EinvoiceModal = ({ invoice, onClose }) => {
   if (!invoice) return null;
   return (
     <div className="modal-overlay" onClick={onClose} data-testid="einvoicing-modal">
-      <div className="modal-box" style={{ maxWidth: 560, maxHeight: '88vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }} onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+      <div className="modal-box" style={{ maxWidth: 560, height: 'min(88vh, calc(100dvh - 24px))', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4, flexShrink: 0 }}>
           <h3 style={{ fontSize: 15, fontFamily: 'DM Sans', color: 'var(--text)', margin: 0, display: 'flex', alignItems: 'center', gap: 7 }}>
             <FileCheck2 size={15} color="#0e6db4" /> E-invoice (PINT AE) — {invoice.invoice_number || invoice.invoice_id}
           </h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }} data-testid="einvoicing-close"><X size={16} /></button>
         </div>
-        <p style={{ fontSize: 11.5, color: 'var(--muted)', margin: '0 0 12px' }}>{invoice.client_name} · {invoice.service_name}</p>
+        <p style={{ fontSize: 11.5, color: 'var(--muted)', margin: '0 0 12px', flexShrink: 0 }}>{invoice.client_name} · {invoice.service_name}</p>
 
-        <div style={{ display: 'grid', gap: 10, marginBottom: 12 }}>
+        <div style={{ display: 'grid', gap: 10, marginBottom: 12, flexShrink: 0 }}>
           <div>
             <label style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', display: 'block', marginBottom: 3 }}>Transaction-type code</label>
             <select value={type} onChange={e => setType(e.target.value)} data-testid="einvoicing-type-select"
@@ -74,7 +74,7 @@ const EinvoiceModal = ({ invoice, onClose }) => {
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexShrink: 0 }}>
           <button className="tbtn tbtn-gold" onClick={save} disabled={busy} data-testid="einvoicing-save-btn">
             {busy ? <Loader2 size={12} className="spin" /> : <ShieldCheck size={12} />} Save & validate
           </button>
