@@ -171,7 +171,7 @@ const Customer360 = () => {
           <button onClick={() => scroll('deadlines')} title="Jump to Reminders & deadlines" data-testid="metric-deadline" style={numLink}>
             {nextTask ? fmtShort(nextTask.due_date) : '—'}
           </button>
-          <small>{nextTask ? `${nextTask.title.slice(0, 34)} · ${daysTo(nextTask.due_date) != null ? `in ${Math.max(0, daysTo(nextTask.due_date))} days` : 'target date not set'}` : 'No open deadlines'}</small>
+          <small>{nextTask ? `${(nextTask.title || '').slice(0, 34)} · ${daysTo(nextTask.due_date) != null ? `in ${Math.max(0, daysTo(nextTask.due_date))} days` : 'target date not set'}` : 'No open deadlines'}</small>
         </section>
       </section>
 
@@ -285,10 +285,10 @@ const Customer360 = () => {
               return (
                 <div key={t.task_id} style={{ display: 'flex', gap: 13, padding: '13px 0', borderBottom: '1px solid var(--line, #e4eff6)' }}>
                   <div style={{ background: '#f1f5f7', borderRadius: 8, textAlign: 'center', padding: '8px 10px', minWidth: 48, height: 50, fontWeight: 700, fontSize: 17 }}>
-                    {t.due_date.slice(-2)}<small style={{ display: 'block', fontSize: 9, fontWeight: 500 }}>{new Date(t.due_date + 'T00:00:00').toLocaleDateString('en-GB', { month: 'short' }).toUpperCase()}</small>
+                    {t.due_date ? t.due_date.slice(-2) : '–'}<small style={{ display: 'block', fontSize: 9, fontWeight: 500 }}>{t.due_date ? new Date(t.due_date + 'T00:00:00').toLocaleDateString('en-GB', { month: 'short' }).toUpperCase()}</small>
                   </div>
                   <div>
-                    <strong style={{ fontSize: 12 }}>{t.title.slice(0, 46)}</strong>
+                    <strong style={{ fontSize: 12 }}>{(t.title || '').slice(0, 46)}</strong>
                     <p style={{ fontSize: 11, color: 'var(--muted)', margin: '5px 0 8px' }}>{t.assigned_to_name ? `Internal target · ${t.assigned_to_name}` : 'Internal target'}</p>
                     <span className={`af-badge ${dt < 0 ? 'af-badge-red' : disp(t.status) === 'Awaiting client' ? 'af-badge-amber' : 'af-badge-grey'}`}>{dt < 0 ? `${-dt} days overdue` : dt === 0 ? 'Due today' : `In ${dt} days`}</span>
                   </div>
