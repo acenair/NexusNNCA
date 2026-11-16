@@ -122,6 +122,25 @@ const Engagements = () => {  const { user } = useOutletContext();
   const qSel = params.get('quarter') || '';
   const MONS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   // quarter key/label/due from an engagement (FTA due = 28th of the month after the quarter ends)
+  // fiscal period label from an audit year-end: Dec -> 'Jan 2026 - Dec 2026'; Mar -> 'Apr 2026 - Mar 2027'
+  const fiscalPeriodOf = (e) => {
+    const ye = (e.year_end || '').slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(ye)) return null;
+    const y = parseInt(ye.slice(0, 4), 10), m = parseInt(ye.slice(5, 7), 10);
+    const startY = m === 12 ? y : y - 1;
+    return `${MONS[m % 12]} ${startY} – ${MONS[m - 1]} ${y}`;
+  };
+  const periodLabelOf = (e) => {
+    const q = quarterOf(e);
+    if (q) return { label: q.label, due: `due ${q.due}` };
+    const f = fiscalPeriodOf(e);
+    if (f) return { label: f, due: `FY end ${ye_fmt(e.year_end)}` };
+    return null;
+  };
+  const ye_fmt = (ye) => {
+    const [y, m, d] = (ye || '').slice(0, 10).split('-');
+    return d ? `${d} ${MONS[parseInt(m, 10) - 1]} ${y}` : ye;
+  };
   const quarterOf = (e) => {
     const pf = (e.period_from || '').slice(0, 10), pt = (e.period_to || '').slice(0, 10);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(pf) || !/^\d{4}-\d{2}-\d{2}$/.test(pt)) return null;
@@ -155,8 +174,8 @@ const Engagements = () => {  const { user } = useOutletContext();
         <td>{e.assigned_to_name || '—'}</td>
         <td><span className={`af-badge ${e.status === 'Completed' ? 'af-badge-green' : 'af-badge-blue'}`}>{e.status}</span></td>
         <td data-testid="eng-period">
-          {(() => { const q = quarterOf(e); return q
-            ? <b style={{ fontSize: 11.5 }}>{q.label}</b>
+          {(() => { const p = periodLabelOf(e); return p
+            ? <span><b style={{ fontSize: 11.5 }}>{p.label}</b><br /><small style={{ color: 'var(--muted)', fontSize: 10 }}>{p.due}</small></span>
             : <span style={{ color: 'var(--muted)' }}>—</span>; })()}
         </td>
         <td data-testid="eng-due">{e.due_date ? fmt(e.due_date) : <span style={{ color: 'var(--muted)' }}>—</span>}</td>
