@@ -92,6 +92,7 @@ class UpdateClientRequest(BaseModel):
     status: Optional[str] = None
     active_services: Optional[List[str]] = None
     relationship_manager_id: Optional[str] = None
+    financial_year: Optional[str] = None
     # onboarding-master fields
     contact_name: Optional[str] = None
     contact_designation: Optional[str] = None

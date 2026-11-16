@@ -9,6 +9,7 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const ENTITY_TYPES = ['LLC', 'Group', 'Holding', 'Free Zone', 'Branch', 'Sole Proprietorship'];
 const JURISDICTIONS = ['Dubai Mainland', 'Abu Dhabi', 'Sharjah', 'DMCC Free Zone', 'JAFZA Free Zone', 'Ajman Free Zone', 'Dubai Marina', 'DIFC', 'ADGM', 'RAK Free Zone'];
 const RISK_RATINGS = ['Low', 'Medium', 'High'];
+const FINANCIAL_YEARS = ['Jan – Dec', 'Apr – Mar', 'Jul – Jun', 'Oct – Sep'];
 const STATUSES = ['Active', 'Inactive', 'Onboarding', 'Suspended'];
 const ALL_SERVICES = [
   'Statutory Audit', 'Internal Audit', 'Stock Audit', 'Fraud Audit',
@@ -80,7 +81,7 @@ const ClientMaster = () => {
     setSaving(true);
     try {
       const payload = {};
-      const fields = ['name', 'entity_type', 'jurisdiction', 'trade_licence_no', 'trn', 'ct_registration_no', 'vat_registration_date', 'tax_period', 'aml_risk_rating', 'pep_flag', 'status', 'active_services'];
+      const fields = ['name', 'entity_type', 'jurisdiction', 'financial_year', 'trade_licence_no', 'trn', 'ct_registration_no', 'vat_registration_date', 'tax_period', 'aml_risk_rating', 'pep_flag', 'status', 'active_services'];
       fields.forEach(f => {
         if (JSON.stringify(editForm[f]) !== JSON.stringify(editClient[f])) payload[f] = editForm[f];
       });
@@ -260,6 +261,10 @@ const ClientMaster = () => {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
                     <div><label style={labelStyle}>Entity Type</label><select value={editForm.entity_type || ''} onChange={(e) => setEditForm(p => ({ ...p, entity_type: e.target.value }))} style={inputStyle} data-testid="edit-entity-type">{ENTITY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}</select></div>
                     <div><label style={labelStyle}>Jurisdiction</label><select value={editForm.jurisdiction || ''} onChange={(e) => setEditForm(p => ({ ...p, jurisdiction: e.target.value }))} style={inputStyle} data-testid="edit-jurisdiction"><option value="">—</option>{JURISDICTIONS.map(j => <option key={j} value={j}>{j}</option>)}</select></div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+                    <div><label style={labelStyle}>Financial Year</label><select value={editForm.financial_year || ''} onChange={(e) => setEditForm(p => ({ ...p, financial_year: e.target.value }))} style={inputStyle} data-testid="edit-financial-year"><option value="">—</option>{FINANCIAL_YEARS.map(f => <option key={f} value={f}>{f}</option>)}</select></div>
+                    <div />
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
                     <div><label style={labelStyle}>TRN</label><input value={editForm.trn || ''} onChange={(e) => setEditForm(p => ({ ...p, trn: e.target.value }))} style={inputStyle} data-testid="edit-trn" /></div>
