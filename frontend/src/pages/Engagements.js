@@ -353,7 +353,7 @@ const Engagements = () => {  const { user } = useOutletContext();
       )}
       {/* Service chips: all service lines (restored per partner feedback), wrapped — no horizontal scroll. */}
       <div className="af-chips" role="tablist" style={{ flexWrap: 'wrap', overflowX: 'visible' }}>
-        <button role="tab" aria-selected={!preset} onClick={clearPreset}>All ({engs.length})</button>
+        <button role="tab" aria-selected={!preset} onClick={clearPreset}>All ({baseList.length})</button>
         {chips.map(([k, label]) => (
           <button key={k} role="tab" aria-selected={preset === k}
             style={serviceCounts[k] ? undefined : { opacity: 0.55 }}
