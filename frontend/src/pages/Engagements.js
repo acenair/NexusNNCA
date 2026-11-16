@@ -109,11 +109,11 @@ const Engagements = () => {  const { user } = useOutletContext();
   const todayStr = new Date().toISOString().slice(0, 10);
   const refDateOf = (e) => ((e.period_to || e.year_end || '') + '').slice(0, 10);
   const isUpcomingEng = (e) => e.status === 'Active' && refDateOf(e) && refDateOf(e) > todayStr;
-  const cycleFn = (e) => cycle === 'past' ? e.status === 'Completed'
-    : cycle === 'upcoming' ? isUpcomingEng(e)
-    : cycle === 'current' ? (e.status === 'Active' && !isUpcomingEng(e)) : true;
+  const cycleFn = (c, e) => c === 'past' ? e.status === 'Completed'
+    : c === 'upcoming' ? isUpcomingEng(e)
+    : c === 'current' ? (e.status === 'Active' && !isUpcomingEng(e)) : true;
 
-  const baseList = engs.filter(cycleFn);
+  const baseList = engs.filter(e => cycleFn(cycle, e));
   const serviceCounts = {};
   baseList.forEach(e => { serviceCounts[e.service_type] = (serviceCounts[e.service_type] || 0) + 1; });
   const chips = Object.entries(SERVICE_LABELS)
@@ -354,7 +354,7 @@ const Engagements = () => {  const { user } = useOutletContext();
       {/* Cycle tabs: past / current / upcoming across the whole book */}
       <div className="af-chips" role="tablist" style={{ flexWrap: 'wrap', marginBottom: 8 }} data-testid="cycle-tabs">
         {[['', 'All cycles'], ['upcoming', 'Upcoming'], ['current', 'Current'], ['past', 'Past']].map(([k, label]) => {
-          const cnt = k === '' ? engs.length : engs.filter(e => cycleFn(e)).length;
+          const cnt = k === '' ? engs.length : engs.filter(e => cycleFn(k, e)).length;
           return (
             <button key={k} role="tab" aria-selected={cycle === k}
               style={cycle === k ? { borderColor: '#0e6db4', background: 'rgba(14,109,180,0.08)', color: '#0e6db4' } : undefined}
