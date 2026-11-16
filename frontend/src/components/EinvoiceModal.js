@@ -47,6 +47,24 @@ const EinvoiceModal = ({ invoice, onClose }) => {
   };
 
   if (!invoice) return null;
+
+  const fails = (result?.issues || []).filter(i => i.severity === 'fail');
+  const warns = (result?.issues || []).filter(i => i.severity === 'warn');
+
+  const fixLink = (msg) => {
+    if (/settings/i.test(msg)) return { to: '/app/settings', label: 'Fix in Settings → Firm Identity ↗' };
+    if (/reassign/i.test(msg)) return { to: '/app/invoices', label: 'Reassign in Billing ↗' };
+    if (/client/i.test(msg) && invoice.client_id) return { to: `/app/customers/${invoice.client_id}`, label: 'Open the client record ↗' };
+    return null;
+  };
+
+  const issueRow = (i) => (
+    <div key={i.field} style={{ fontSize: 11.5, padding: '5px 9px', borderRadius: 6, marginBottom: 3, lineHeight: 1.45, background: i.severity === 'fail' ? '#fdecec' : '#fdf6ec', color: i.severity === 'fail' ? 'var(--red)' : '#b45309' }} data-testid={`einv-issue-${i.field}`}>
+      {i.severity === 'fail' ? '✕' : '⚠'} <b>{i.field.replace(/_/g, ' ')}:</b> {i.message}
+      {(() => { const l = fixLink(i.message || ''); return l ? <a href={l.to} style={{ display: 'inline-block', marginLeft: 8, color: '#0e6db4', fontWeight: 700, textDecoration: 'underline' }}>{l.label}</a> : null; })()}
+    </div>
+  );
+
   return (
     <div className="modal-overlay" onClick={onClose} data-testid="einvoicing-modal">
       <div className="modal-box" style={{ maxWidth: 560, height: 'min(88vh, calc(100dvh - 24px))', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
@@ -76,7 +94,7 @@ const EinvoiceModal = ({ invoice, onClose }) => {
 
         <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexShrink: 0 }}>
           <button className="tbtn tbtn-gold" onClick={save} disabled={busy} data-testid="einvoicing-save-btn">
-            {busy ? <Loader2 size={12} className="spin" /> : <ShieldCheck size={12} />} Save & validate
+            {busy ? <Loader2 size={12} className="spin" /> : <ShieldCheck size={12} />} Save &amp; validate
           </button>
           <button className="tbtn" onClick={download} disabled={busy || !result?.valid}
             title={result?.valid ? 'Download PINT AE XML' : 'Fix failing fields first'}
@@ -84,48 +102,31 @@ const EinvoiceModal = ({ invoice, onClose }) => {
             <Download size={12} /> PINT AE XML
           </button>
         </div>
-        <div style={{ flex: '1 1 0', minHeight: 0, overflowY: 'auto', margin: '0 -20px', padding: '0 20px' }}>
-        {!result && <div data-testid="einv-debug">state: result=null busy={String(busy)}</div>}
-        {result && (() => {
-          const fails = (result.issues || []).filter(i => i.severity === 'fail');
-          const warns = (result.issues || []).filter(i => i.severity === 'warn');
-          const fixLink = (msg) => {
-            if (/settings/i.test(msg)) return { to: '/app/settings', label: 'Fix in Settings → Firm Identity ↗' };
-            if (/client/i.test(msg) && invoice.client_id) return { to: `/app/customers/${invoice.client_id}`, label: 'Open the client record ↗' };
-            if (/reassign/i.test(msg)) return { to: '/app/invoices', label: 'Reassign in Billing ↗' };
-            return null;
-          };
-          const Row = ({ i }) => {
-            const link = fixLink(i.message || '');
-            return (
-              <div style={{ fontSize: 11.5, padding: '5px 9px', borderRadius: 6, marginBottom: 3, lineHeight: 1.45, background: i.severity === 'fail' ? '#fdecec' : '#fdf6ec', color: i.severity === 'fail' ? 'var(--red)' : '#b45309' }} data-testid={`einv-issue-${i.field}`}>
-                {i.severity === 'fail' ? '✕' : '⚠'} <b>{i.field.replace(/_/g, ' ')}:</b> {i.message}
-                {link && <a href={link.to} style={{ display: 'inline-block', marginLeft: 8, color: '#0e6db4', fontWeight: 700, textDecoration: 'underline' }}>{link.label}</a>}
+
+        <div style={{ flex: '1 1 0', minHeight: 0, overflowY: 'auto', margin: '0 -20px', padding: '0 20px', borderTop: '1px solid var(--line)' }} data-testid="einvoicing-validation">
+          {busy && !result && <div style={{ fontSize: 11.5, color: 'var(--muted)', padding: '12px 2px' }}>Validating…</div>}
+          {result && (
+            <div style={{ paddingTop: 10 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, color: result.valid ? 'var(--green)' : 'var(--red)' }} data-testid="einvoicing-verdict">
+                {result.valid
+                  ? '✓ Ready for transmission to an accredited ASP'
+                  : `✗ Not e-invoice ready — ${fails.length} blocker${fails.length === 1 ? '' : 's'}${warns.length ? ` · ${warns.length} recommendation${warns.length === 1 ? '' : 's'}` : ''}`}
               </div>
-            );
-          };
-          return (
-          <div data-testid="einvoicing-validation" style={{ overflowY: 'auto', minHeight: 0 }}>
-            <style>{'[data-testid="einvoicing-validation"] > div:last-child { padding-bottom: 4px; }'}</style>
-            <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, color: result.valid ? 'var(--green)' : 'var(--red)' }} data-testid="einvoicing-verdict">
-              {result.valid ? '✓ Ready for transmission to an accredited ASP' : `✗ Not e-invoice ready — ${fails.length} blocker${fails.length === 1 ? '' : 's'}${warns.length ? ` · ${warns.length} recommendation${warns.length === 1 ? '' : 's'}` : ''}`}
+              {result.client_missing && (
+                <div style={{ fontSize: 11.5, padding: '8px 10px', borderRadius: 6, marginBottom: 8, background: '#fdf6ec', border: '1px solid #f0d9a8', color: '#b45309' }} data-testid="einv-orphan-banner">
+                  ⚠ The client on this invoice no longer exists in the client master. Reassign this invoice to a client, then revalidate.
+                </div>
+              )}
+              {fails.length > 0 && <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1, color: 'var(--muted)', margin: '8px 0 4px' }}>MUST FIX</div>}
+              {fails.map(issueRow)}
+              {warns.length > 0 && <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1, color: 'var(--muted)', margin: '10px 0 4px' }}>RECOMMENDED</div>}
+              {warns.map(issueRow)}
+              {(result.issues || []).length === 0 && <div style={{ fontSize: 11.5, color: 'var(--green)' }}>All mandatory field groups present.</div>}
+              <p className="af-note" style={{ fontSize: 10.5 }}>
+                The XML is generated as Corner-1 data (UBL 2.1, PINT AE) and archived with a SHA-256 hash. Once the client appoints their ASP, this file is what transmits — or connect the ASP API and it flows automatically.
+              </p>
             </div>
-            {result.client_missing && (
-              <div style={{ fontSize: 11.5, padding: '8px 10px', borderRadius: 6, marginBottom: 8, background: '#fdf6ec', border: '1px solid #f0d9a8', color: '#b45309' }} data-testid="einv-orphan-banner">
-                ⚠ The client on this invoice no longer exists in the client master. Reassign this invoice to a client, then revalidate.
-              </div>
-            )}
-            {fails.length > 0 && <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1, color: 'var(--muted)', margin: '8px 0 4px' }}>MUST FIX</div>}
-            {fails.map(i => <Row key={i.field} i={i} />)}
-            {warns.length > 0 && <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1, color: 'var(--muted)', margin: '10px 0 4px' }}>RECOMMENDED</div>}
-            {warns.map(i => <Row key={i.field} i={i} />)}
-            {(result.issues || []).length === 0 && <div style={{ fontSize: 11.5, color: 'var(--green)' }}>All mandatory field groups present.</div>}
-            <p className="af-note" style={{ fontSize: 10.5 }}>
-              The XML is generated as Corner-1 data (UBL 2.1, PINT AE) and archived with a SHA-256 hash. Once the client appoints their ASP, this file is what transmits — or connect the ASP API and it flows automatically.
-            </p>
-          </div>
-          );
-        })}
+          )}
         </div>
       </div>
     </div>
