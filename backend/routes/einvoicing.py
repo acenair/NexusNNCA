@@ -222,7 +222,11 @@ async def _validate_invoice(invoice_id):
         bad("buyer_trn", "Buyer TRN equals the supplier TRN — check the client record")
 
     ok = not any(i["severity"] == "fail" for i in issues)
+    client_missing = not client
+    if client_missing:
+        bad("buyer_record", "Client record missing — this invoice points to a client that no longer exists. Reassign the invoice to a client in Billing")
     return {"invoice_id": invoice_id, "valid": ok, "issues": issues,
+            "client_missing": client_missing, "client_id": inv.get("client_id"),
             "field_count": 51, "checked_groups": 22,
             "einvoicing": einv, "client": client, "firm": firm, "invoice": inv}
 

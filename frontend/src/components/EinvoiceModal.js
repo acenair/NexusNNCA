@@ -85,22 +85,45 @@ const EinvoiceModal = ({ invoice, onClose }) => {
           </button>
         </div>
 
-        {result && (
+        {result && (() => {
+          const fails = (result.issues || []).filter(i => i.severity === 'fail');
+          const warns = (result.issues || []).filter(i => i.severity === 'warn');
+          const fixLink = (msg) => {
+            if (/settings/i.test(msg)) return { to: '/app/settings', label: 'Fix in Settings → Firm Identity ↗' };
+            if (/client/i.test(msg) && invoice.client_id) return { to: `/app/customers/${invoice.client_id}`, label: 'Open the client record ↗' };
+            if (/reassign/i.test(msg)) return { to: '/app/invoices', label: 'Reassign in Billing ↗' };
+            return null;
+          };
+          const Row = ({ i }) => {
+            const link = fixLink(i.message || '');
+            return (
+              <div style={{ fontSize: 11.5, padding: '7px 10px', borderRadius: 6, marginBottom: 4, background: i.severity === 'fail' ? '#fdecec' : '#fdf6ec', color: i.severity === 'fail' ? 'var(--red)' : '#b45309' }} data-testid={`einv-issue-${i.field}`}>
+                {i.severity === 'fail' ? '✕' : '⚠'} <b>{i.field.replace(/_/g, ' ')}:</b> {i.message}
+                {link && <a href={link.to} style={{ display: 'inline-block', marginLeft: 8, color: '#0e6db4', fontWeight: 700, textDecoration: 'underline' }}>{link.label}</a>}
+              </div>
+            );
+          };
+          return (
           <div data-testid="einvoicing-validation">
             <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, color: result.valid ? 'var(--green)' : 'var(--red)' }} data-testid="einvoicing-verdict">
-              {result.valid ? '✓ Ready for transmission to an accredited ASP' : '✗ Not e-invoice ready — fix the failing fields'}
+              {result.valid ? '✓ Ready for transmission to an accredited ASP' : `✗ Not e-invoice ready — ${fails.length} blocker${fails.length === 1 ? '' : 's'}${warns.length ? ` · ${warns.length} recommendation${warns.length === 1 ? '' : 's'}` : ''}`}
             </div>
-            {(result.issues || []).map((i, ix) => (
-              <div key={ix} style={{ fontSize: 11.5, padding: '6px 10px', borderRadius: 6, marginBottom: 4, background: i.severity === 'fail' ? '#fdecec' : '#fdf6ec', color: i.severity === 'fail' ? 'var(--red)' : '#b45309' }} data-testid={`einv-issue-${i.field}`}>
-                {i.severity === 'fail' ? '✕' : '⚠'} <b>{i.field.replace(/_/g, ' ')}:</b> {i.message}
+            {result.client_missing && (
+              <div style={{ fontSize: 11.5, padding: '8px 10px', borderRadius: 6, marginBottom: 8, background: '#fdf6ec', border: '1px solid #f0d9a8', color: '#b45309' }} data-testid="einv-orphan-banner">
+                ⚠ The client on this invoice no longer exists in the client master. Reassign this invoice to a client, then revalidate.
               </div>
-            ))}
+            )}
+            {fails.length > 0 && <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1, color: 'var(--muted)', margin: '8px 0 4px' }}>MUST FIX</div>}
+            {fails.map(i => <Row key={i.field} i={i} />)}
+            {warns.length > 0 && <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1, color: 'var(--muted)', margin: '10px 0 4px' }}>RECOMMENDED</div>}
+            {warns.map(i => <Row key={i.field} i={i} />)}
             {(result.issues || []).length === 0 && <div style={{ fontSize: 11.5, color: 'var(--green)' }}>All mandatory field groups present.</div>}
             <p className="af-note" style={{ fontSize: 10.5 }}>
               The XML is generated as Corner-1 data (UBL 2.1, PINT AE) and archived with a SHA-256 hash. Once the client appoints their ASP, this file is what transmits — or connect the ASP API and it flows automatically.
             </p>
           </div>
-        )}
+          );
+        })()}
       </div>
     </div>
   );
