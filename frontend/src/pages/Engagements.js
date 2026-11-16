@@ -351,20 +351,6 @@ const Engagements = () => {  const { user } = useOutletContext();
           ))}
         </section>
       )}
-      {/* Cycle tabs: past / current / upcoming across the whole book */}
-      <div className="af-chips" role="tablist" style={{ flexWrap: 'wrap', marginBottom: 8 }} data-testid="cycle-tabs">
-        {[['', 'All cycles'], ['upcoming', 'Upcoming'], ['current', 'Current'], ['past', 'Past']].map(([k, label]) => {
-          const cnt = k === '' ? engs.length : engs.filter(e => cycleFn(k, e)).length;
-          return (
-            <button key={k} role="tab" aria-selected={cycle === k}
-              style={cycle === k ? { borderColor: '#0e6db4', background: 'rgba(14,109,180,0.08)', color: '#0e6db4' } : undefined}
-              onClick={() => { const p2 = new URLSearchParams(params); if (k) p2.set('cycle', k); else p2.delete('cycle'); setParams(p2, { replace: true }); }}>
-              {label} ({cnt})
-            </button>
-          );
-        })}
-      </div>
-
       {/* Service chips: all service lines (restored per partner feedback), wrapped — no horizontal scroll. */}
       <div className="af-chips" role="tablist" style={{ flexWrap: 'wrap', overflowX: 'visible' }}>
         <button role="tab" aria-selected={!preset} onClick={clearPreset}>All ({engs.length})</button>
@@ -404,6 +390,12 @@ const Engagements = () => {  const { user } = useOutletContext();
             <div className="af-searchbox"><Search size={13} />
               <input placeholder="Search client…" value={search} onChange={e => setSearch(e.target.value)} aria-label="Search engagements by client" />
             </div>
+            <select value={cycle} onChange={e => { const p2 = new URLSearchParams(params); if (e.target.value) p2.set('cycle', e.target.value); else p2.delete('cycle'); setParams(p2, { replace: true }); }} aria-label="Filter by cycle" data-testid="cycle-filter">
+              <option value="">All cycles</option>
+              <option value="upcoming">Upcoming</option>
+              <option value="current">Current</option>
+              <option value="past">Past</option>
+            </select>
             <select value={staffFilter} onChange={e => setStaffFilter(e.target.value)} aria-label="Filter by assigned staff" data-testid="staff-filter">
               <option value="">All staff</option>
               {[...new Set(baseList.map(e => e.assigned_to_name).filter(Boolean))].sort().map(s => <option key={s} value={s}>{s}</option>)}
