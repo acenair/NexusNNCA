@@ -15,7 +15,7 @@ const SECTIONS = [
 ];
 
 const SERVICE_TYPES = [
-  { key: 'statutory_audit', label: 'External Audit' },
+  { key: 'statutory_audit', label: 'Statutory Audits' },
   { key: 'internal_audit', label: 'Internal Audit' },
   { key: 'stock_audit', label: 'Stock Audit' },
   { key: 'fraud_audit', label: 'Fraud Audit' },

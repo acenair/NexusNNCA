@@ -12,7 +12,7 @@ const todayIso = () => new Date().toISOString().slice(0, 10);
 const pct = (a, b) => b ? Math.round(a / b * 100) + '%' : '\u2014';
 
 const SOURCES = ['Referral', 'Website', 'Email enquiry', 'Phone / WhatsApp', 'Existing client', 'Networking'];
-const SERVICES = ['External Audit', 'Internal Audit', 'Accounting', 'VAT', 'Corporate Tax', 'AML', 'Advisory'];
+const SERVICES = ['Statutory Audits', 'Internal Audit', 'Accounting', 'VAT', 'Corporate Tax', 'AML', 'Advisory'];
 const stageBadge = (s) => ({ 'New lead': 'af-badge-blue', 'Qualified': 'af-badge-blue', 'Proposal sent': 'af-badge-amber', 'Negotiation': 'af-badge-amber', 'Confirmed': 'af-badge-green', 'Rejected': 'af-badge-red' }[s] || 'af-badge-blue');
 
 const Leads = () => {
@@ -51,7 +51,7 @@ const Leads = () => {
   const followups = openLeads.filter(l => l.followup_date).sort((a, b) => (a.followup_date || '').localeCompare(b.followup_date || ''));
 
   const openCreate = () => {
-    setForm({ company: '', contact_name: '', phone: '', email: '', source: 'Referral', source_detail: '', service: 'External Audit', owner: user?.name || '', received_date: todayIso(), value: '', stage: 'New lead', proposal_ref: '', sent_date: '', expected_decision_date: '', followup_date: '', closed_date: '', rejection_reason: '', notes: '' });
+    setForm({ company: '', contact_name: '', phone: '', email: '', source: 'Referral', source_detail: '', service: 'Statutory Audits', owner: user?.name || '', received_date: todayIso(), value: '', stage: 'New lead', proposal_ref: '', sent_date: '', expected_decision_date: '', followup_date: '', closed_date: '', rejection_reason: '', notes: '' });
     setCreating(true); setEditing(null);
   };
   const openEdit = (l) => { setForm({ ...l }); setEditing(l); setCreating(false); };
@@ -291,7 +291,7 @@ const Leads = () => {
               <div className="af-formrow"><label>Phone</label><input value={form.phone || ''} onChange={e => setForm({ ...form, phone: e.target.value })} /></div>
               <div className="af-formrow"><label>Email</label><input type="email" value={form.email || ''} onChange={e => setForm({ ...form, email: e.target.value })} /></div>
               <div className="af-formrow"><label>Service</label>
-                <select value={form.service || 'External Audit'} onChange={e => setForm({ ...form, service: e.target.value })}>
+                <select value={form.service || 'Statutory Audits'} onChange={e => setForm({ ...form, service: e.target.value })}>
                   {SERVICES.map(s => <option key={s}>{s}</option>)}
                 </select>
               </div>

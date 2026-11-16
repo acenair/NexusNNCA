@@ -34,7 +34,7 @@ const BillingWorkspace = ({ initialTab }) => {
   const [receipt, setReceipt] = useState({ amount: '', method: 'Bank transfer', reference: '', date: new Date().toISOString().slice(0, 10) });
   const [showCreate, setShowCreate] = useState(false);
   const [asDraft, setAsDraft] = useState(false);
-  const [form, setForm] = useState({ client_id: '', service_name: 'External Audit', amount: '', vat_percent: '5', date: new Date().toISOString().slice(0, 10), due_date: '', staff: '' });
+  const [form, setForm] = useState({ client_id: '', service_name: 'Statutory Audits', amount: '', vat_percent: '5', date: new Date().toISOString().slice(0, 10), due_date: '', staff: '' });
   const [saving, setSaving] = useState(false);
   const [invQ, setInvQ] = useState('');
   const [rcptQ, setRcptQ] = useState('');

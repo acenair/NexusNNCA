@@ -6,7 +6,7 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 const SERVICE_LABELS = {
-  statutory_audit: 'External Audit', internal_audit: 'Internal Audit', stock_audit: 'Stock Audit',
+  statutory_audit: 'Statutory Audits', internal_audit: 'Internal Audit', stock_audit: 'Stock Audit',
   fraud_audit: 'Fraud Audit', vat_registration: 'VAT Registration', vat_filing: 'VAT',
   vat_amendments: 'VAT Amendments', corporate_registration: 'Corporate Tax Registration',
   corporate_tax: 'CT Filing', company_formation: 'Company Formation', company_liquidation: 'Liquidation',

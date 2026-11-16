@@ -6,13 +6,13 @@ import { Plus, Search, X, Pencil, Bell } from 'lucide-react';
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const SERVICE_LABELS = {
-  statutory_audit: 'External Audit', internal_audit: 'Internal Audit', stock_audit: 'Stock Audit',
+  statutory_audit: 'Statutory Audits', internal_audit: 'Internal Audit', stock_audit: 'Stock Audit',
   fraud_audit: 'Fraud Audit', vat_registration: 'VAT Registration', vat_filing: 'VAT Filing',
   vat_amendments: 'VAT Amendments', corporate_registration: 'Corporate Tax Registration',
   corporate_tax: 'CT Filing', company_formation: 'Company Formation', company_liquidation: 'Liquidation',
   advisory_valuation: 'Valuation', advisory_due_diligence: 'Due Diligence', aml_review: 'AML Review',
   aml_filing: 'AML Filing', goaml: 'goAML', aml_reports: 'AML Reports', accounting: 'Accounting',
-  audit: 'External Audit', vat: 'VAT', aml: 'AML', liquidation: 'Liquidation',
+  audit: 'Statutory Audits', vat: 'VAT', aml: 'AML', liquidation: 'Liquidation',
   tax: 'CT Filing', corporate: 'CT Filing', other: 'Other',
 };
 const svcLabel = (s) => SERVICE_LABELS[s] || s;

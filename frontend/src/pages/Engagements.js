@@ -29,7 +29,7 @@ const ROUTE_PRESETS = {
 };
 
 const SERVICE_LABELS = {
-  statutory_audit: 'External Audit', internal_audit: 'Internal Audit', stock_audit: 'Stock Audit',
+  statutory_audit: 'Statutory Audits', internal_audit: 'Internal Audit', stock_audit: 'Stock Audit',
   fraud_audit: 'Fraud Audit', vat_registration: 'VAT Registration', vat_filing: 'VAT Filing',
   vat_amendments: 'VAT Amendments', corporate_registration: 'Corporate Tax Registration',
   corporate_tax: 'CT Filing', company_formation: 'Company Formation',
@@ -165,7 +165,14 @@ const Engagements = () => {  const { user } = useOutletContext();
       <tr key={e.engagement_id}>
         <td style={{ color: 'var(--muted)', fontSize: 11 }}>{n}</td>
         <td><span className="af-avatar-cell"><Avatar name={e.client_name} size={26} /><b className="nm">{e.client_name || "—"}</b></span></td>
-        <td><span className="af-badge af-badge-blue">{SERVICE_LABELS[e.service_type] || e.service_type}</span></td>
+        <td>
+          <span className="af-badge af-badge-blue">{SERVICE_LABELS[e.service_type] || e.service_type}</span>
+          {(() => {
+            const ye = (e.year_end || '').slice(0, 10);
+            const upcoming = ye && ye > '2025-12-31';
+            return upcoming ? <span style={{ marginLeft: 6, padding: '2px 8px', borderRadius: 999, fontSize: 10, fontWeight: 700, background: '#eaf3fb', color: '#0e6db4', border: '1px solid rgba(14,109,180,0.25)' }} data-testid="upcoming-pill">Upcoming</span> : null;
+          })()}
+        </td>
         <td>{e.phase || '—'}</td>
         <td style={{ minWidth: 110 }}>
           <div className="af-track"><i style={{ width: pct + '%' }} /></div>
