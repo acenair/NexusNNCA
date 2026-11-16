@@ -18,7 +18,7 @@ const disp = (s) => s === 'Pending' ? 'Scheduled' : s === 'In Progress' ? 'In pr
 const aed = (n) => 'AED ' + Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 0 });
 const fmt = (d) => d ? new Date(d.length > 10 ? d : d + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 const fmtShort = (d) => d ? new Date(d.length > 10 ? d : d + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '—';
-const daysTo = (d) => Math.round((new Date(d.length > 10 ? d : d + 'T00:00:00') - new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00')) / 86400000);
+const daysTo = (d) => d ? Math.round((new Date(d.length > 10 ? d : d + 'T00:00:00') - new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00')) / 86400000) : null;
 const initials = (name) => (name || '?').replace(/[^\w\s]/g, '').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('');
 
 const numLink = { fontSize: 26, letterSpacing: '-0.8px', fontWeight: 650, margin: '10px 0 5px', display: 'inline-block', color: '#01457C', cursor: 'pointer', textDecoration: 'underline', textDecorationColor: 'rgba(14,109,180,0.35)', textUnderlineOffset: 4, background: 'none', border: 'none', padding: 0, fontFamily: 'inherit' };
@@ -171,7 +171,7 @@ const Customer360 = () => {
           <button onClick={() => scroll('deadlines')} title="Jump to Reminders & deadlines" data-testid="metric-deadline" style={numLink}>
             {nextTask ? fmtShort(nextTask.due_date) : '—'}
           </button>
-          <small>{nextTask ? `${nextTask.title.slice(0, 34)} · in ${Math.max(0, daysTo(nextTask.due_date))} days` : 'No open deadlines'}</small>
+          <small>{nextTask ? `${nextTask.title.slice(0, 34)} · ${daysTo(nextTask.due_date) != null ? `in ${Math.max(0, daysTo(nextTask.due_date))} days` : 'target date not set'}` : 'No open deadlines'}</small>
         </section>
       </section>
 
@@ -277,7 +277,7 @@ const Customer360 = () => {
             <div className="af-cardhead"><div><h2 style={{ fontSize: 15 }}>Reminders &amp; deadlines</h2></div><span className="af-sub">{new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}</span></div>
             {overdueInv.length > 0 && (
               <div style={{ padding: '12px 14px', background: '#fdebea', color: '#b14943', fontSize: 12, borderRadius: 7, marginBottom: 14, lineHeight: 1.6 }}>
-                <b>Overdue follow-up</b><br />{overdueInv[0].invoice_number} · {aed(overdueInv[0].amount - (overdueInv[0].amount_paid || 0))}<br />Due {fmt(overdueInv[0].due_date)} · {Math.abs(daysTo(overdueInv[0].due_date))} days overdue
+                <b>Overdue follow-up</b><br />{overdueInv[0].invoice_number} · {aed(overdueInv[0].amount - (overdueInv[0].amount_paid || 0))}<br />Due {fmt(overdueInv[0].due_date)}{overdueInv[0].due_date && daysTo(overdueInv[0].due_date) != null ? ` · ${Math.abs(daysTo(overdueInv[0].due_date))} days overdue` : ''}
               </div>
             )}
             {openTasks.slice().sort((a, b) => (a.due_date || '').localeCompare(b.due_date || '')).slice(0, 4).map(t => {
