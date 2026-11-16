@@ -254,11 +254,12 @@ const Engagements = () => {  const { user } = useOutletContext();
 
   const clearPreset = () => { const p = new URLSearchParams(params); p.delete('service'); setParams(p, { replace: true }); };
 
-  if (loading) return <div className="ov-wrap"><div className="ov-heading"><div><div className="ov-eyebrow">DELIVERY</div><h1>Engagements</h1></div></div><Skeleton kpi={4} rows={8} cols={5} /></div>;
-
-  // column sorting (click a header; click again flips direction)
+  // column sorting state (click a header; click again flips direction)
   const [sortCol, setSortCol] = useState(null);
   const [sortDir, setSortDir] = useState(1);
+
+  if (loading) return <div className="ov-wrap"><div className="ov-heading"><div><div className="ov-eyebrow">DELIVERY</div><h1>Engagements</h1></div></div><Skeleton kpi={4} rows={8} cols={5} /></div>;
+
   const SORTERS = {
     '#': null,
     client: e => (e.client_name || '').toLowerCase(),
