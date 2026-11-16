@@ -113,7 +113,7 @@ const Engagements = () => {  const { user } = useOutletContext();
     : c === 'upcoming' ? isUpcomingEng(e)
     : c === 'current' ? (e.status === 'Active' && !isUpcomingEng(e)) : true;
 
-  const baseList = engs.filter(e => cycleFn(cycle, e));
+  const baseList = engs.filter(e => cycleFn(cycle, e) && yearFn(e));
   const serviceCounts = {};
   baseList.forEach(e => { serviceCounts[e.service_type] = (serviceCounts[e.service_type] || 0) + 1; });
   const chips = Object.entries(SERVICE_LABELS)
@@ -160,6 +160,10 @@ const Engagements = () => {  const { user } = useOutletContext();
     return { key: pf + '_' + pt, label: `${MONS[m1 - 1]} – ${MONS[m2 - 1]} ${y}`, due: `28 ${dueM} ${dueY}` };
   };
   const qSelKey = qSel || '';  // '' = all quarters
+  // YEAR filter (all services): default = the current year; 'all' = everything
+  const yearSel = params.get('year') || String(new Date().getFullYear());
+  const yearOf = (e) => (((e.period_to || e.year_end || '') + '').slice(0, 10) || '').slice(0, 4);
+  const yearFn = (e) => yearSel === 'all' || yearOf(e) === yearSel;
 
   const saveEngEdit = async () => {
     try {
@@ -233,15 +237,6 @@ const Engagements = () => {  const { user } = useOutletContext();
     const gs = [...map.values()];
     gs.sort((a, b) => ((a.key === '_none') - (b.key === '_none')) || (b.key || '').localeCompare(a.key || ''));
     gs.forEach(g => g.rows.sort((a, b) => (a.client_name || '').localeCompare(b.client_name || '')));
-    return gs;
-  })();
-  // quarter tabs: built from ALL vat engagements so every quarter is reachable
-  const qTabs = (() => {
-    if (preset !== 'vat_filing') return null;
-    const map = new Map();
-    baseList.filter(e => e.service_type === 'vat_filing').forEach(e => { const q = quarterOf(e); const k = q ? q.key : '_none'; const o = map.get(k) || { ...q, key: k, label: q ? q.label : 'No period set', due: q ? q.due : '', rows: [] }; o.rows.push(e); map.set(k, o); });
-    const gs = [...map.values()];
-    gs.sort((a, b) => ((a.key === '_none') - (b.key === '_none')) || (b.key || '').localeCompare(a.key || ''));
     return gs;
   })();
 
@@ -363,21 +358,6 @@ const Engagements = () => {  const { user } = useOutletContext();
         ))}
       </div>
 
-      {preset === 'vat_filing' && qTabs && qTabs.length > 0 && (
-        <div className="af-chips" role="tablist" style={{ flexWrap: 'wrap', marginBottom: 10 }} data-testid="quarter-tabs">
-          <button role="tab" aria-selected={!qSel}
-            onClick={() => { const p2 = new URLSearchParams(params); p2.delete('quarter'); setParams(p2, { replace: true }); }}>
-            All quarters
-          </button>
-          {qTabs.map(q => (
-            <button key={q.key} role="tab" aria-selected={qSel === q.key}
-              onClick={() => { const p2 = new URLSearchParams(params); p2.set('quarter', q.key); setParams(p2, { replace: true }); }}>
-              {q.label} ({q.rows.length})
-            </button>
-          ))}
-        </div>
-      )}
-
       {/* Filters + table */}
       <section className="af-card">
         <div className="af-cardhead">
@@ -390,6 +370,14 @@ const Engagements = () => {  const { user } = useOutletContext();
             <div className="af-searchbox"><Search size={13} />
               <input placeholder="Search client…" value={search} onChange={e => setSearch(e.target.value)} aria-label="Search engagements by client" />
             </div>
+            <select value={yearSel} onChange={e => { const p2 = new URLSearchParams(params); if (e.target.value) p2.set('year', e.target.value); else p2.delete('year'); setParams(p2, { replace: true }); }} aria-label="Filter by year" data-testid="year-filter">
+              {(() => {
+                const ys = [...new Set(engs.map(yearOf).filter(Boolean))].sort().reverse();
+                const cur = String(new Date().getFullYear());
+                const opts = [cur, ...ys.filter(y => y !== cur)];
+                return [<option key="all" value="all">All years</option>, ...opts.map(y => <option key={y} value={y}>{y}</option>)];
+              })()}
+            </select>
             <select value={cycle} onChange={e => { const p2 = new URLSearchParams(params); if (e.target.value) p2.set('cycle', e.target.value); else p2.delete('cycle'); setParams(p2, { replace: true }); }} aria-label="Filter by cycle" data-testid="cycle-filter">
               <option value="">All cycles</option>
               <option value="upcoming">Upcoming</option>
