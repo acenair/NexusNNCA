@@ -84,6 +84,7 @@ const EinvoiceModal = ({ invoice, onClose }) => {
             <Download size={12} /> PINT AE XML
           </button>
         </div>
+        <div style={{ flex: '1 1 0', minHeight: 0, overflowY: 'auto', margin: '0 -20px', padding: '0 20px' }}>
 
         {result && (() => {
           const fails = (result.issues || []).filter(i => i.severity === 'fail');
@@ -124,7 +125,8 @@ const EinvoiceModal = ({ invoice, onClose }) => {
             </p>
           </div>
           );
-        })()}
+        })}
+        </div>
       </div>
     </div>
   );
