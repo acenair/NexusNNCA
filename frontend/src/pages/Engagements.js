@@ -113,6 +113,10 @@ const Engagements = () => {  const { user } = useOutletContext();
     : c === 'upcoming' ? isUpcomingEng(e)
     : c === 'current' ? (e.status === 'Active' && !isUpcomingEng(e)) : true;
 
+  // YEAR filter (all services): default = the current year; 'all' = everything
+  const yearSel = params.get('year') || String(new Date().getFullYear());
+  const yearOf = (e) => (((e.period_to || e.year_end || '') + '').slice(0, 10) || '').slice(0, 4);
+  const yearFn = (e) => yearSel === 'all' || yearOf(e) === yearSel;
   const baseList = engs.filter(e => cycleFn(cycle, e) && yearFn(e));
   const serviceCounts = {};
   baseList.forEach(e => { serviceCounts[e.service_type] = (serviceCounts[e.service_type] || 0) + 1; });
@@ -160,10 +164,6 @@ const Engagements = () => {  const { user } = useOutletContext();
     return { key: pf + '_' + pt, label: `${MONS[m1 - 1]} – ${MONS[m2 - 1]} ${y}`, due: `28 ${dueM} ${dueY}` };
   };
   const qSelKey = qSel || '';  // '' = all quarters
-  // YEAR filter (all services): default = the current year; 'all' = everything
-  const yearSel = params.get('year') || String(new Date().getFullYear());
-  const yearOf = (e) => (((e.period_to || e.year_end || '') + '').slice(0, 10) || '').slice(0, 4);
-  const yearFn = (e) => yearSel === 'all' || yearOf(e) === yearSel;
 
   const saveEngEdit = async () => {
     try {
