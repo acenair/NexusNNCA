@@ -49,7 +49,7 @@ const EinvoiceModal = ({ invoice, onClose }) => {
   if (!invoice) return null;
   return (
     <div className="modal-overlay" onClick={onClose} data-testid="einvoicing-modal">
-      <div className="modal-box" style={{ maxWidth: 560, maxHeight: '85vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
+      <div className="modal-box" style={{ maxWidth: 560, maxHeight: '88vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
           <h3 style={{ fontSize: 15, fontFamily: 'DM Sans', color: 'var(--text)', margin: 0, display: 'flex', alignItems: 'center', gap: 7 }}>
             <FileCheck2 size={15} color="#0e6db4" /> E-invoice (PINT AE) — {invoice.invoice_number || invoice.invoice_id}
@@ -97,14 +97,15 @@ const EinvoiceModal = ({ invoice, onClose }) => {
           const Row = ({ i }) => {
             const link = fixLink(i.message || '');
             return (
-              <div style={{ fontSize: 11.5, padding: '7px 10px', borderRadius: 6, marginBottom: 4, background: i.severity === 'fail' ? '#fdecec' : '#fdf6ec', color: i.severity === 'fail' ? 'var(--red)' : '#b45309' }} data-testid={`einv-issue-${i.field}`}>
+              <div style={{ fontSize: 11.5, padding: '5px 9px', borderRadius: 6, marginBottom: 3, lineHeight: 1.45, background: i.severity === 'fail' ? '#fdecec' : '#fdf6ec', color: i.severity === 'fail' ? 'var(--red)' : '#b45309' }} data-testid={`einv-issue-${i.field}`}>
                 {i.severity === 'fail' ? '✕' : '⚠'} <b>{i.field.replace(/_/g, ' ')}:</b> {i.message}
                 {link && <a href={link.to} style={{ display: 'inline-block', marginLeft: 8, color: '#0e6db4', fontWeight: 700, textDecoration: 'underline' }}>{link.label}</a>}
               </div>
             );
           };
           return (
-          <div data-testid="einvoicing-validation">
+          <div data-testid="einvoicing-validation" style={{ overflowY: 'auto', minHeight: 0 }}>
+            <style>{'[data-testid="einvoicing-validation"] > div:last-child { padding-bottom: 4px; }'}</style>
             <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, color: result.valid ? 'var(--green)' : 'var(--red)' }} data-testid="einvoicing-verdict">
               {result.valid ? '✓ Ready for transmission to an accredited ASP' : `✗ Not e-invoice ready — ${fails.length} blocker${fails.length === 1 ? '' : 's'}${warns.length ? ` · ${warns.length} recommendation${warns.length === 1 ? '' : 's'}` : ''}`}
             </div>
