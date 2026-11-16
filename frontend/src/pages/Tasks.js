@@ -65,8 +65,8 @@ const Tasks = () => {
   useEffect(() => { load(); }, []);
 
   const open = (j) => disp(j.status) !== 'Completed';
-  const isLate = (j) => open(j) && j.due_date < today;
-  const isUpcoming = (j) => open(j) && j.due_date >= today && j.due_date <= end14;
+  const isLate = (j) => open(j) && j.due_date && j.due_date < today;   // no target date = never 'late'
+  const isUpcoming = (j) => open(j) && j.due_date && j.due_date >= today && j.due_date <= end14;
   const active = (j) => open(j);  // Active = every open job (Scheduled included)
   const daysLate = (j) => Math.round((new Date(today) - new Date(j.due_date)) / 86400000);
 
