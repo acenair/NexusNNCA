@@ -104,12 +104,22 @@ const Engagements = () => {  const { user } = useOutletContext();
     axios.get(`${API}/service/engagement-terms`, { withCredentials: true }).then(r => setTermDefs(r.data)).catch(() => {});
   }, []);
 
+  // Cycle tabs: Past (closed) / Current (period ended, work live) / Upcoming (period not yet over)
+  const cycle = params.get('cycle') || '';
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const refDateOf = (e) => ((e.period_to || e.year_end || '') + '').slice(0, 10);
+  const isUpcomingEng = (e) => e.status === 'Active' && refDateOf(e) && refDateOf(e) > todayStr;
+  const cycleFn = (e) => cycle === 'past' ? e.status === 'Completed'
+    : cycle === 'upcoming' ? isUpcomingEng(e)
+    : cycle === 'current' ? (e.status === 'Active' && !isUpcomingEng(e)) : true;
+
+  const baseList = engs.filter(cycleFn);
   const serviceCounts = {};
-  engs.forEach(e => { serviceCounts[e.service_type] = (serviceCounts[e.service_type] || 0) + 1; });
+  baseList.forEach(e => { serviceCounts[e.service_type] = (serviceCounts[e.service_type] || 0) + 1; });
   const chips = Object.entries(SERVICE_LABELS)
     .sort((a, b) => (serviceCounts[b[0]] || 0) - (serviceCounts[a[0]] || 0));
 
-  const phases = [...new Set(engs.map(e => e.phase).filter(Boolean))];
+  const phases = [...new Set(baseList.map(e => e.phase).filter(Boolean))];
   const STAGE_MAP = {
     awaiting: ['Client Due Diligence', 'Scoping', 'Setup', 'Application', ''],
     progress: ['Planning', 'Fieldwork', 'Preparation', 'Documentation', 'Collection', 'Processing', 'Analysis', 'Assessment', 'Compilation', 'Computation', 'Transaction Monitoring'],
@@ -200,7 +210,7 @@ const Engagements = () => {  const { user } = useOutletContext();
     );
   };
 
-  const filtered = engs.filter(e =>
+  const filtered = baseList.filter(e =>
     (!preset || e.service_type === preset) &&
     (!stagePreset || (STAGE_MAP[stagePreset] || []).includes(e.phase)) &&
     (!phaseFilter || e.phase === phaseFilter) &&
@@ -229,7 +239,7 @@ const Engagements = () => {  const { user } = useOutletContext();
   const qTabs = (() => {
     if (preset !== 'vat_filing') return null;
     const map = new Map();
-    filtered.forEach(e => { const q = quarterOf(e); const k = q ? q.key : '_none'; const o = map.get(k) || { ...q, key: k, label: q ? q.label : 'No period set', due: q ? q.due : '', rows: [] }; o.rows.push(e); map.set(k, o); });
+    baseList.filter(e => e.service_type === 'vat_filing').forEach(e => { const q = quarterOf(e); const k = q ? q.key : '_none'; const o = map.get(k) || { ...q, key: k, label: q ? q.label : 'No period set', due: q ? q.due : '', rows: [] }; o.rows.push(e); map.set(k, o); });
     const gs = [...map.values()];
     gs.sort((a, b) => ((a.key === '_none') - (b.key === '_none')) || (b.key || '').localeCompare(a.key || ''));
     return gs;
@@ -341,6 +351,20 @@ const Engagements = () => {  const { user } = useOutletContext();
           ))}
         </section>
       )}
+      {/* Cycle tabs: past / current / upcoming across the whole book */}
+      <div className="af-chips" role="tablist" style={{ flexWrap: 'wrap', marginBottom: 8 }} data-testid="cycle-tabs">
+        {[['', 'All cycles'], ['upcoming', 'Upcoming'], ['current', 'Current'], ['past', 'Past']].map(([k, label]) => {
+          const cnt = k === '' ? engs.length : engs.filter(e => cycleFn(e)).length;
+          return (
+            <button key={k} role="tab" aria-selected={cycle === k}
+              style={cycle === k ? { borderColor: '#0e6db4', background: 'rgba(14,109,180,0.08)', color: '#0e6db4' } : undefined}
+              onClick={() => { const p2 = new URLSearchParams(params); if (k) p2.set('cycle', k); else p2.delete('cycle'); setParams(p2, { replace: true }); }}>
+              {label} ({cnt})
+            </button>
+          );
+        })}
+      </div>
+
       {/* Service chips: all service lines (restored per partner feedback), wrapped — no horizontal scroll. */}
       <div className="af-chips" role="tablist" style={{ flexWrap: 'wrap', overflowX: 'visible' }}>
         <button role="tab" aria-selected={!preset} onClick={clearPreset}>All ({engs.length})</button>
@@ -382,7 +406,7 @@ const Engagements = () => {  const { user } = useOutletContext();
             </div>
             <select value={staffFilter} onChange={e => setStaffFilter(e.target.value)} aria-label="Filter by assigned staff" data-testid="staff-filter">
               <option value="">All staff</option>
-              {[...new Set(engs.map(e => e.assigned_to_name).filter(Boolean))].sort().map(s => <option key={s} value={s}>{s}</option>)}
+              {[...new Set(baseList.map(e => e.assigned_to_name).filter(Boolean))].sort().map(s => <option key={s} value={s}>{s}</option>)}
             </select>
             <select value={phaseFilter} onChange={e => setPhaseFilter(e.target.value)} aria-label="Filter by phase">
               <option value="">All phases</option>
