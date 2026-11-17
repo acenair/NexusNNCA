@@ -238,11 +238,12 @@ async def corporate_tax(engagement_id: str, authorization: str = Header(None), s
         try:
             ye = datetime.fromisoformat(year_end).date()
             filing_deadline = (ye.replace(year=ye.year + 1, month=ye.month + 9 if ye.month + 9 <= 12 else ye.month - 3, day=ye.day) if ye.month <= 3 else ye.replace(year=ye.year + 2))if False else None
-            # 9 months after period end
+            # 9 months after period end, snapped to the 28th (firm convention from
+            # the CT filing list 2026: FTA due dates fall on the 28th, like VAT)
             m = ye.month + 9
             y = ye.year + (m - 1) // 12
             m = (m - 1) % 12 + 1
-            d = min(ye.day, [31, 29 if y % 4 == 0 and (y % 100 != 0 or y % 400 == 0) else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][m - 1])
+            d = 28
             filing_deadline = f"{y}-{m:02d}-{d:02d}"
         except ValueError:
             pass

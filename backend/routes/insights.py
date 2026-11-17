@@ -169,12 +169,29 @@ async def regulatory_deadlines_core(within_days: int = 90):
                 quarter_end + timedelta(days=28), "FTA filing deadline (28 days after quarter end)")
 
     async for e in db.service_engagements.find({"service_type": "corporate_tax", "status": {"$ne": "Deleted"}}, {"_id": 0}):
-        fy = (e.get("terms") or {}).get("tax_period") or ""
-        m = re.search(r"(20\d\d)", fy)
-        if m:
-            year = int(m.group(1))
+        # CT due date — firm convention (CT filing list 2026): the 28th day of the
+        # month 9 months after FY end (e.g. FY end 31/03/2026 -> 28/12/2026). The
+        # stored due_date (FTA date from the sheet import) wins when present.
+        due = None
+        if e.get("due_date"):
+            try:
+                due = date.fromisoformat(e["due_date"][:10])
+            except (ValueError, TypeError):
+                due = None
+        ye = None
+        if e.get("year_end"):
+            try:
+                ye = date.fromisoformat(e["year_end"][:10])
+            except (ValueError, TypeError):
+                ye = None
+        if due is None and ye:
+            m9 = ye.month + 9
+            due = date(ye.year + (m9 - 1) // 12, (m9 - 1) % 12 + 1, 28)
+        if due:
+            fy_label = (e.get("terms") or {}).get("tax_period") or (f"FY {ye.year}" if ye else "")
+            label = f"CT return — {fy_label}" if fy_label else "CT return"
             add("Corporate tax return", e["engagement_id"], e.get("client_name"),
-                f"CT return — FY {year}", date(year + 1, 9, 30), "Due 9 months after financial year end")
+                label, due, "Due 28th of the month, 9 months after financial year end")
 
     async for c in db.clients.find({"license_expiry_date": {"$nin": [None, ""]}}, {"_id": 0}):
         try:
