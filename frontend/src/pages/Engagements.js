@@ -116,7 +116,7 @@ const Engagements = () => {  const { user } = useOutletContext();
   // YEAR filter (all services): default = the current year; 'all' = everything
   const yearSel = params.get('year') || String(new Date().getFullYear());
   const yearOf = (e) => (((e.period_to || e.year_end || '') + '').slice(0, 10) || '').slice(0, 4);
-  const yearFn = (e) => yearSel === 'all' || yearOf(e) === yearSel;
+  const yearFn = (e) => yearSel === 'all' || yearOf(e) === (yearSel === 'none' ? '' : yearSel);
   const baseList = engs.filter(e => cycleFn(cycle, e) && yearFn(e));
   const serviceCounts = {};
   baseList.forEach(e => { serviceCounts[e.service_type] = (serviceCounts[e.service_type] || 0) + 1; });
@@ -378,7 +378,12 @@ const Engagements = () => {  const { user } = useOutletContext();
                 const ys = [...new Set(engs.map(yearOf).filter(Boolean))].sort().reverse();
                 const cur = String(new Date().getFullYear());
                 const opts = [cur, ...ys.filter(y => y !== cur)];
-                return [<option key="all" value="all">All years</option>, ...opts.map(y => <option key={y} value={y}>{y}</option>)];
+                const noYear = engs.filter(e => !yearOf(e)).length;
+                return [
+                  <option key="all" value="all">All years</option>,
+                  ...opts.map(y => <option key={y} value={y}>{y}</option>),
+                  ...(noYear ? [<option key="none" value="none">Year not set ({noYear})</option>] : []),
+                ];
               })()}
             </select>
             <select value={cycle} onChange={e => { const p2 = new URLSearchParams(params); if (e.target.value) p2.set('cycle', e.target.value); else p2.delete('cycle'); setParams(p2, { replace: true }); }} aria-label="Filter by cycle" data-testid="cycle-filter">
