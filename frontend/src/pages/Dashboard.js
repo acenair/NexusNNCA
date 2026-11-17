@@ -51,12 +51,17 @@ const Dashboard = () => {
   const [renewals, setRenewals] = useState([]);
   const [kycRecs, setKycRecs] = useState([]);
   const [health, setHealth] = useState(null);
+  const [auditFlags, setAuditFlags] = useState(null);
   const isPartner = user?.role === 'partner';
 
   useEffect(() => { loadData(); }, []);
   useEffect(() => {
     axios.get(`${API}/dashboard/health`, { withCredentials: true }).then(r => setHealth(r.data)).catch(() => {});
   }, []);
+  useEffect(() => {
+    if (!isPartner) return;
+    axios.get(`${API}/audit/flags-digest`, { withCredentials: true }).then(r => setAuditFlags(r.data)).catch(() => {});
+  }, [isPartner]);
 
   const loadData = async () => {
     try {
@@ -416,6 +421,25 @@ const Dashboard = () => {
           )) : <p className="af-note">No exceptions. Delivery and cash flow are clean.</p>}
         </section>
       </div>
+
+      {isPartner && (
+        <section className="af-card" data-testid="audit-flags-widget" style={{ marginBottom: 20 }}>
+          <div className="af-cardhead">
+            <div><h2>Audit red-flags</h2><div className="af-sub">Checklist questions currently answered No · across all live audits</div></div>
+            {auditFlags?.total > 0 && <span className="af-badge af-badge-red">{auditFlags.total} open · {auditFlags.clients_affected} client{auditFlags.clients_affected === 1 ? '' : 's'}</span>}
+          </div>
+          {auditFlags?.flags?.length ? auditFlags.flags.slice(0, 6).map((f) => (
+            <div className="af-attention" key={`${f.audit_id}_${f.code}`}>
+              <div>
+                <strong>{f.client_name}{f.period ? ` · ${f.period}` : ''}</strong>
+                <small>{f.section ? `${f.section} — ` : ''}{f.question}{f.updated_by_name ? ` · answered No by ${f.updated_by_name}` : ''}</small>
+              </div>
+              <button className="af-badge af-badge-red" onClick={() => navigate(`/app/service/engagements/${f.engagement_id}`)}>{fmtDay(f.updated_at)} ↗</button>
+            </div>
+          )) : <p className="af-note" data-testid="audit-flags-clear">No open red-flags. All checklist controls are answering clean.</p>}
+          {auditFlags?.flags?.length > 6 && <p className="af-note">Showing the 6 most recent of {auditFlags.total} open flags.</p>}
+        </section>
+      )}
 
       <div className="af-grid af-grid-3">
         <section className="af-card">

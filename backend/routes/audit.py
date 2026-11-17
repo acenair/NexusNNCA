@@ -209,6 +209,55 @@ async def get_audit_clients_summary(authorization: str = Header(None), session_t
     return summary
 
 
+@router.get("/audit/flags-digest")
+async def get_audit_flags_digest(authorization: str = Header(None), session_token: str = Cookie(None)):
+    """Open audit red-flags across every audit — partner dashboard digest widget.
+
+    A flag is a yes_no template question currently answered No (responses.<code>.flagged).
+    MUST stay declared before /audit/{audit_id} so FastAPI resolves the literal path first.
+    """
+    user = await get_current_user(authorization, session_token)
+    if user.get("role") == "client":
+        raise HTTPException(status_code=403, detail="Not available for this role")
+    # NOTE: {"responses.flagged": True} does NOT match — responses is a map of
+    # question-code → response, and a dot-path only descends one level. Same as
+    # /audit/clients-summary, fetch and evaluate in Python instead.
+    audits = await db.client_audits.find({}, {"_id": 0}).sort("created_at", -1).to_list(2000)
+    templates: dict = {}
+    flags = []
+    for a in audits:
+        template_id = a.get("template_id")
+        if template_id not in templates:
+            tpl = await db.audit_templates.find_one({"template_id": template_id}, {"_id": 0})
+            templates[template_id] = tpl or {}
+        template = templates[template_id]
+        for code, r in (a.get("responses") or {}).items():
+            if not r.get("flagged"):
+                continue
+            sec, question = _find_question(template, code)
+            flags.append({
+                "audit_id": a.get("audit_id"),
+                "engagement_id": a.get("engagement_id"),
+                "client_id": a.get("client_id"),
+                "client_name": a.get("client_name"),
+                "period": a.get("period"),
+                "audit_status": a.get("status"),
+                "code": code,
+                "section": sec["name"] if sec else None,
+                "question": (question.get("text") if question else None) or code,
+                "answer_value": r.get("value"),
+                "remarks": r.get("remarks"),
+                "updated_by_name": r.get("updated_by_name"),
+                "updated_at": r.get("updated_at"),
+            })
+    flags.sort(key=lambda f: f.get("updated_at") or "", reverse=True)
+    return {
+        "flags": flags,
+        "total": len(flags),
+        "clients_affected": len({f["client_id"] for f in flags if f.get("client_id")}),
+    }
+
+
 @router.get("/audit/{audit_id}")
 async def get_client_audit(audit_id: str, authorization: str = Header(None), session_token: str = Cookie(None)):
     user = await get_current_user(authorization, session_token)
