@@ -145,10 +145,13 @@ const Engagements = () => {  const { user } = useOutletContext();
     return `${MONS[m % 12]} ${startY} – ${MONS[m - 1]} ${y}`;
   };
   const periodLabelOf = (e) => {
-    const q = quarterOf(e);
-    if (q) return { label: q.label, due: `due ${q.due}` };
+    // VAT: quarter label + the 28th-of-next-month rule. CT and others: fiscal year + the stored statutory due date.
+    if (e.service_type === 'vat_filing') {
+      const q = quarterOf(e);
+      if (q) return { label: q.label, due: `due ${q.due}` };
+    }
     const f = fiscalPeriodOf(e);
-    if (f) return { label: f, due: `FY end ${ye_fmt(e.year_end)}` };
+    if (f) return { label: f, due: e.due_date ? `due ${ye_fmt(e.due_date)}` : `FY end ${ye_fmt(e.year_end)}` };
     return null;
   };
   const ye_fmt = (ye) => {
