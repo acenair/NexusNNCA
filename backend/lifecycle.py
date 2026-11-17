@@ -37,6 +37,9 @@ async def seed_nn_users():
                 "title": member["title"],
                 "role": member["role"],
                 "password": default_password,
+                # Plan (security round): any account on the default password must
+                # change it before the app is usable — same as admin-created users.
+                "must_change_password": True,
                 "created_at": datetime.now(timezone.utc).isoformat()
             })
             logger.info(f"Seeded user: {member['name']}")
