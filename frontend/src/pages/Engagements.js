@@ -113,8 +113,10 @@ const Engagements = () => {  const { user } = useOutletContext();
     : c === 'upcoming' ? isUpcomingEng(e)
     : c === 'current' ? (e.status === 'Active' && !isUpcomingEng(e)) : true;
 
-  // YEAR filter (all services): default = the current year; 'all' = everything
-  const yearSel = params.get('year') || String(new Date().getFullYear());
+  // CLIENT FY-END filter: the fiscal year of the DATA being audited/filed (period_to
+  // / year_end) — NOT the year NNCA is working on it. Defaults to 'all' so FY-2025
+  // data engaged in 2026 isn't hidden; the primary lens is the Engagement year filter.
+  const yearSel = params.get('year') || 'all';
   const yearOf = (e) => (((e.period_to || e.year_end || '') + '').slice(0, 10) || '').slice(0, 4);
   const yearFn = (e) => yearSel === 'all' || yearOf(e) === (yearSel === 'none' ? '' : yearSel);
   // ENGAGEMENT YEAR filter: the year NNCA took the engagement on (created_at) —
@@ -392,16 +394,14 @@ const Engagements = () => {  const { user } = useOutletContext();
             <div className="af-searchbox"><Search size={13} />
               <input placeholder="Search client…" value={search} onChange={e => setSearch(e.target.value)} aria-label="Search engagements by client" />
             </div>
-            <select value={yearSel} onChange={e => { const p2 = new URLSearchParams(params); if (e.target.value) p2.set('year', e.target.value); else p2.delete('year'); setParams(p2, { replace: true }); }} aria-label="Filter by year" data-testid="year-filter">
+            <select value={yearSel} onChange={e => { const p2 = new URLSearchParams(params); if (e.target.value !== 'all') p2.set('year', e.target.value); else p2.delete('year'); setParams(p2, { replace: true }); }} aria-label="Filter by client financial year end" data-testid="year-filter">
               {(() => {
                 const ys = [...new Set(engs.map(yearOf).filter(Boolean))].sort().reverse();
-                const cur = String(new Date().getFullYear());
-                const opts = [cur, ...ys.filter(y => y !== cur)];
                 const noYear = engs.filter(e => !yearOf(e)).length;
                 return [
-                  <option key="all" value="all">All years</option>,
-                  ...opts.map(y => <option key={y} value={y}>{y}</option>),
-                  ...(noYear ? [<option key="none" value="none">Year not set ({noYear})</option>] : []),
+                  <option key="all" value="all">All client FY ends</option>,
+                  ...ys.map(y => <option key={y} value={y}>Client FY end {y}</option>),
+                  ...(noYear ? [<option key="none" value="none">FY not set ({noYear})</option>] : []),
                 ];
               })()}
             </select>
