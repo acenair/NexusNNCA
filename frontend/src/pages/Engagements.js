@@ -113,17 +113,41 @@ const Engagements = () => {  const { user } = useOutletContext();
     : c === 'upcoming' ? isUpcomingEng(e)
     : c === 'current' ? (e.status === 'Active' && !isUpcomingEng(e)) : true;
 
+  const MONS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const quarterOf = (e) => {
+    const pf = (e.period_from || '').slice(0, 10), pt = (e.period_to || '').slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(pf) || !/^\d{4}-\d{2}-\d{2}$/.test(pt)) return null;
+    const y = pt.slice(0, 4), m1 = parseInt(pf.slice(5, 7), 10), m2 = parseInt(pt.slice(5, 7), 10);
+    const dueY = m2 === 12 ? parseInt(y, 10) + 1 : y;
+    const dueM = m2 === 12 ? 'Jan' : MONS[m2];
+    return { key: pf + '_' + pt, label: `${MONS[m1 - 1]} – ${MONS[m2 - 1]} ${y}`, due: `28 ${dueM} ${dueY}` };
+  };
   // CLIENT FY-END filter: the fiscal year of the DATA being audited/filed (period_to
   // / year_end) — NOT the year NNCA is working on it. Defaults to 'all' so FY-2025
   // data engaged in 2026 isn't hidden; the primary lens is the Engagement year filter.
   const yearSel = params.get('year') || 'all';
   const yearOf = (e) => (((e.period_to || e.year_end || '') + '').slice(0, 10) || '').slice(0, 4);
   const yearFn = (e) => yearSel === 'all' || yearOf(e) === (yearSel === 'none' ? '' : yearSel);
-  // ENGAGEMENT YEAR filter: the year NNCA took the engagement on (created_at) —
-  // independent of the data's fiscal year above, so FY-2025 data being worked on
-  // in 2026 stays visible under engagement year 2026.
+  // ENGAGEMENT CYCLE filter: the year the engagement's filing deadline falls in —
+  // NNCA's cycle convention (matches the sheet's "Engagement Year" column exactly).
+  // Stored due_date wins; else VAT = quarter end + 28 days; else audits/CT = the
+  // 28th-of-the-month deadline 9 months after FY end -> its calendar year; else
+  // created_at. FY-2025 data being filed in 2026 shows under cycle 2026, the FY-2026
+  // upcoming cycle under 2027 — never confused with the client's FY (separate filter).
   const eyearSel = params.get('eyear') || String(new Date().getFullYear());
-  const eyearOf = (e) => ((e.created_at || '') + '').slice(0, 4);
+  const eyearOf = (e) => {
+    if (/^\d{4}-\d{2}-\d{2}$/.test((e.due_date || '').slice(0, 10))) return e.due_date.slice(0, 4);
+    if (e.service_type === 'vat_filing') {
+      const q = quarterOf(e);
+      if (q) return q.due.split(' ').pop();
+    }
+    const ye = (e.year_end || '').slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(ye)) {
+      const y = parseInt(ye.slice(0, 4), 10), m = parseInt(ye.slice(5, 7), 10);
+      return String(y + Math.floor((m - 1 + 9) / 12));  // filing deadline year: FY end + 9 months
+    }
+    return ((e.created_at || '') + '').slice(0, 4);
+  };
   const eyearFn = (e) => eyearSel === 'all' || eyearOf(e) === eyearSel;
   const baseList = engs.filter(e => cycleFn(cycle, e) && yearFn(e) && eyearFn(e));
   const serviceCounts = {};
@@ -142,8 +166,6 @@ const Engagements = () => {  const { user } = useOutletContext();
   const STAGE_LABELS = { awaiting: 'Awaiting documents', progress: 'In progress', review: 'Manager review', draft: 'Draft sent', confirmed: 'Management confirmed' };
   const stageLabel = STAGE_LABELS[stagePreset];
   const qSel = params.get('quarter') || '';
-  const MONS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  // quarter key/label/due from an engagement (FTA due = 28th of the month after the quarter ends)
   // fiscal period label from an audit year-end: Dec -> 'Jan 2026 - Dec 2026'; Mar -> 'Apr 2026 - Mar 2027'
   const fiscalPeriodOf = (e) => {
     const ye = (e.year_end || '').slice(0, 10);
@@ -165,14 +187,6 @@ const Engagements = () => {  const { user } = useOutletContext();
   const ye_fmt = (ye) => {
     const [y, m, d] = (ye || '').slice(0, 10).split('-');
     return d ? `${d} ${MONS[parseInt(m, 10) - 1]} ${y}` : ye;
-  };
-  const quarterOf = (e) => {
-    const pf = (e.period_from || '').slice(0, 10), pt = (e.period_to || '').slice(0, 10);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(pf) || !/^\d{4}-\d{2}-\d{2}$/.test(pt)) return null;
-    const y = pt.slice(0, 4), m1 = parseInt(pf.slice(5, 7), 10), m2 = parseInt(pt.slice(5, 7), 10);
-    const dueY = m2 === 12 ? parseInt(y, 10) + 1 : y;
-    const dueM = m2 === 12 ? 'Jan' : MONS[m2];
-    return { key: pf + '_' + pt, label: `${MONS[m1 - 1]} – ${MONS[m2 - 1]} ${y}`, due: `28 ${dueM} ${dueY}` };
   };
   const qSelKey = qSel || '';  // '' = all quarters
 
@@ -334,14 +348,14 @@ const Engagements = () => {  const { user } = useOutletContext();
           <p>Every engagement across all service lines — one view, filter by service.</p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <select value={eyearSel} onChange={e => { const p2 = new URLSearchParams(params); if (e.target.value) p2.set('eyear', e.target.value); else p2.delete('eyear'); setParams(p2, { replace: true }); }} aria-label="Filter by engagement year" data-testid="engagement-year-filter" style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line, #d8e2ea)', background: '#fff', fontSize: 12.5, color: 'inherit', cursor: 'pointer' }}>
+          <select value={eyearSel} onChange={e => { const p2 = new URLSearchParams(params); if (e.target.value) p2.set('eyear', e.target.value); else p2.delete('eyear'); setParams(p2, { replace: true }); }} aria-label="Filter by engagement cycle" data-testid="engagement-year-filter" style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line, #d8e2ea)', background: '#fff', fontSize: 12.5, color: 'inherit', cursor: 'pointer' }}>
             {(() => {
               const ys = [...new Set(engs.map(eyearOf).filter(Boolean))].sort().reverse();
               const cur = String(new Date().getFullYear());
               const opts = [cur, ...ys.filter(y => y !== cur)];
               return [
-                <option key="all" value="all">All engagement years</option>,
-                ...opts.map(y => <option key={y} value={y}>Engagement year {y} ({engs.filter(e => eyearOf(e) === y).length})</option>),
+                <option key="all" value="all">All engagement cycles</option>,
+                ...opts.map(y => <option key={y} value={y}>Cycle {y} ({engs.filter(e => eyearOf(e) === y).length})</option>),
               ];
             })()}
           </select>
