@@ -117,7 +117,13 @@ const Engagements = () => {  const { user } = useOutletContext();
   const yearSel = params.get('year') || String(new Date().getFullYear());
   const yearOf = (e) => (((e.period_to || e.year_end || '') + '').slice(0, 10) || '').slice(0, 4);
   const yearFn = (e) => yearSel === 'all' || yearOf(e) === (yearSel === 'none' ? '' : yearSel);
-  const baseList = engs.filter(e => cycleFn(cycle, e) && yearFn(e));
+  // ENGAGEMENT YEAR filter: the year NNCA took the engagement on (created_at) —
+  // independent of the data's fiscal year above, so FY-2025 data being worked on
+  // in 2026 stays visible under engagement year 2026.
+  const eyearSel = params.get('eyear') || String(new Date().getFullYear());
+  const eyearOf = (e) => ((e.created_at || '') + '').slice(0, 4);
+  const eyearFn = (e) => eyearSel === 'all' || eyearOf(e) === eyearSel;
+  const baseList = engs.filter(e => cycleFn(cycle, e) && yearFn(e) && eyearFn(e));
   const serviceCounts = {};
   baseList.forEach(e => { serviceCounts[e.service_type] = (serviceCounts[e.service_type] || 0) + 1; });
   const chips = Object.entries(SERVICE_LABELS)
@@ -325,7 +331,20 @@ const Engagements = () => {  const { user } = useOutletContext();
           <h1>Engagements</h1>
           <p>Every engagement across all service lines — one view, filter by service.</p>
         </div>
-        <button className="af-btn-primary" data-testid="new-engagement-btn" onClick={() => setShowCreate(true)}><Plus size={14} style={{ marginRight: 4 }} /> New engagement</button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <select value={eyearSel} onChange={e => { const p2 = new URLSearchParams(params); if (e.target.value) p2.set('eyear', e.target.value); else p2.delete('eyear'); setParams(p2, { replace: true }); }} aria-label="Filter by engagement year" data-testid="engagement-year-filter" style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line, #d8e2ea)', background: '#fff', fontSize: 12.5, color: 'inherit', cursor: 'pointer' }}>
+            {(() => {
+              const ys = [...new Set(engs.map(eyearOf).filter(Boolean))].sort().reverse();
+              const cur = String(new Date().getFullYear());
+              const opts = [cur, ...ys.filter(y => y !== cur)];
+              return [
+                <option key="all" value="all">All engagement years</option>,
+                ...opts.map(y => <option key={y} value={y}>Engagement year {y} ({engs.filter(e => eyearOf(e) === y).length})</option>),
+              ];
+            })()}
+          </select>
+          <button className="af-btn-primary" data-testid="new-engagement-btn" onClick={() => setShowCreate(true)}><Plus size={14} style={{ marginRight: 4 }} /> New engagement</button>
+        </div>
       </div>
 
       {/* Stats strip */}
