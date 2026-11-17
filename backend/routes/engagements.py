@@ -132,7 +132,7 @@ async def list_service_engagements(authorization: str = Header(None), session_to
         query["service_type"] = service_type
     if client_id:
         query["client_id"] = client_id
-    engs = await db.service_engagements.find(query, {"_id": 0}).sort("created_at", -1).to_list(200)
+    engs = await db.service_engagements.find(query, {"_id": 0}).sort("created_at", -1).to_list(None)  # full list — the UI scrolls
     return engs
 
 
