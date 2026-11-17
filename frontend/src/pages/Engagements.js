@@ -119,11 +119,19 @@ const Engagements = () => {  const { user } = useOutletContext();
   const yearSel = params.get('year') || 'all';
   const yearOf = (e) => (((e.period_to || e.year_end || '') + '').slice(0, 10) || '').slice(0, 4);
   const yearFn = (e) => yearSel === 'all' || yearOf(e) === (yearSel === 'none' ? '' : yearSel);
-  // ENGAGEMENT YEAR filter: the year NNCA took the engagement on (created_at) —
-  // independent of the data's fiscal year above, so FY-2025 data being worked on
-  // in 2026 stays visible under engagement year 2026.
+  // ENGAGEMENT YEAR filter: the year NNCA took the work on. created_at year, but
+  // an engagement taken on early for a future cycle rolls forward: FY end 31/12/2026
+  // created in 2026 is a 2027 engagement (the sheet's "Engagement Year 2027"). No
+  // year is ever invented — only years with actual inserted work appear.
   const eyearSel = params.get('eyear') || String(new Date().getFullYear());
-  const eyearOf = (e) => ((e.created_at || '') + '').slice(0, 4);
+  const eyearOf = (e) => {
+    const cy = ((e.created_at || '') + '').slice(0, 4);
+    const ye = (e.year_end || '').slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(ye)) return cy;
+    const y = parseInt(ye.slice(0, 4), 10), m = parseInt(ye.slice(5, 7), 10);
+    const fyCycle = y + (m === 12 ? 1 : 0);  // the cycle this FY rolls into
+    return fyCycle > cy ? String(fyCycle) : cy;
+  };
   const eyearFn = (e) => eyearSel === 'all' || eyearOf(e) === eyearSel;
   const baseList = engs.filter(e => cycleFn(cycle, e) && yearFn(e) && eyearFn(e));
   const serviceCounts = {};
