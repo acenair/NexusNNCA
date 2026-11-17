@@ -70,12 +70,12 @@ Build a comprehensive practice management system for "Nair & Nelliyatt Chartered
 - Review the new multi-service onboarding and tracker experience with live firm workflows.
 
 ### P2
-- Audit Flag Digest (Partner Dashboard widget for open red-flags)
+- ~~Audit Flag Digest (Partner Dashboard widget for open red-flags)~~ — Completed 2026-11-17: `GET /api/audit/flags-digest` + partner dashboard widget; note `{"responses.flagged": true}` cannot match Mongo maps, digest evaluates responses in Python (like clients-summary)
 - Accounting Sync (Tally/Xero/QuickBooks → Audit Workbook)
 
 ### P3 — Future
-- Security Phase 2 (lockout after failed logins, audit trail for resets)
-- Consider unique session-token identifiers: same-user logins within one second can currently produce identical JWTs (pre-existing behavior, intentionally unchanged in P0).
+- Security Phase 2 (lockout after failed logins, audit trail for resets) — lockout already shipped (login brute-force guard, 6 fails / IP+email / 15 min); reset events already written to the activity log
+- ~~Unique session-token identifiers~~ — Completed: `create_jwt_token` includes a random `jti`, every login mints a distinct token
 - Security Phase 3 (email/SMS codes, partner 2FA, re-evaluate Google sign-in)
 - Notification delivery via email/SMS using notification_email and phone fields
 
